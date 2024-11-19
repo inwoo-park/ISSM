@@ -23,13 +23,13 @@ if strcmpi(hostname,host)
 else
 	%just use standard unix scp string to copy multiple files using scp: 
 	if numel(packages)==1,
-		fileliststr=packages{1};
+		string=packages{1};
 	else
-		fileliststr='';
+		string='\{';
 		for i=1:numel(packages)-1,
-			fileliststr=[fileliststr path '/' packages{i} ' '];
+			string=[string packages{i} ','];
 		end
-		fileliststr=[fileliststr path '/' packages{end}];
+		string=[string packages{end} '\}'];
 	end
 
 	%get ssh version
@@ -38,17 +38,9 @@ else
 	%NOTE: scp option "-O" and "-T" is added in version "OpenSSH 8.7" (2021 Aug.).
 	%Before "OpenSSH 8.7", scp with "-O" and "-T" option does not works.
 	if port,
-		if v.date > datetime(2021,8,1)
-			eval(['!scp -OT -P ' num2str(port) ' ' login '@localhost:"' fileliststr '" .']);
-		else
-			eval(['!scp -P ' num2str(port) ' ' login '@localhost:"' fileliststr '" .']);
-		end
+		eval(['!scp -P ' num2str(port) ' ' login '@localhost:' path '/' string ' ./']);
 	else
-		if v.date > datetime(2021,8,1)
-			eval(['!scp -OT ' login '@' host ':"' fileliststr '" .']);
-		else
-			eval(['!scp ' login '@' host ':"' fileliststr '" .']);
-		end
+		eval(['!scp ' login '@' host ':' path '/' string ' ./']);
 	end
 
 	%check scp worked
