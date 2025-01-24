@@ -151,4 +151,8 @@ def mechanicalproperties(md, vx, vy, *args):
     deviatoricstress.effectivevalue = 1. / np.sqrt(2.) * np.sqrt(deviatoricstress.xx**2 + deviatoricstress.yy**2 + 2. * deviatoricstress.xy**2)
     md.results.deviatoricstress = deviatoricstress
 
+    viscosity=results()
+    viscosity.nu = nu
+    md.results.viscosity = viscosity;
+
     return md
