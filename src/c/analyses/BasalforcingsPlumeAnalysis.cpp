@@ -951,29 +951,61 @@ IssmDouble GetBasalforcingsFrictionVelocity(Element *element){/*{{{*/
 
 	 See also
 	 Eq 13. in Lambert et al. (2023TC)
+
+	 Output
+	 * Ustar - element friction velocity
 	 */
 
-	/* Hard coding for specific parameters */
+	/*Hard coding for specific parameters*/
 	IssmDouble Cd_top=1.1e-3; // top drag coefficient 
 	IssmDouble Utide=0.01; // tide velocity [m s-1]
+	
+	/*Input values*/
+	IssmDouble vx, vy;
+
+	/*Output values*/
 	IssmDouble Ustar; // Friction velocity
 
 	/* Get parameters */
 	element->FindParam(&Cd_top,BasalforcingsPlumeCdTop);
 
 	/* Get inputs */
-	Input* vxaverage_input=element->GetInput(BasalforcingsPlumeVxEnum); _assert_(vxaverage_input);
-	Input* vyaverage_input=element->GetInput(BasalforcingsPlumeVyEnum); _assert_(vyaverage_input);
+	Input* vx_input =element->GetInput(BasalforcingsPlumeVxEnum); _assert_(vx_input);
+	Input* vy_input =element->GetInput(BasalforcingsPlumeVyEnum); _assert_(vy_input);
 
-	/* Start  looping on the number of gaussian points: */
-	Gauss* gauss=element->NewGauss(2);
-	while(gauss->next()){
-	}
+	/*Start  looping on the number of gaussian points: */
+	Gauss* gauss=element->NewGauss(1);
+	/*Retrieve input value */
+	gauss->GaussPoint(0); /* Maybe element value */
 
-	switch(this->ObjectEnum()){
-		case TriaEnum:
-			break;
-		default: _error_("Not implemented yet");
-	}
-	return 
+	vx_input->GetInputValue(&vx,gauss);
+	vy_input->GetInputValue(&vy,gauss);
+
+	/*Calculate fricition velocity*/
+	Ustar = (Cd_top * (vx^2 + vy^2 + Utide^2))**0.5;
+
+	return Ustar
+}/*}}}*/
+void GetHeatExchangeCoefficient(Element *element, IssmDouble *pgammaT, IssmDouble *pgammaS){/*{{{*/
+	/*
+	 Explain
+	 Calculate elemental heat exchange coefficient for temperature (gamma_T) and salinity (gamma_S).
+
+	 Output
+	 * pgammaT
+	 * pgammaS
+
+	 See also Eq. 11 and Eq. 12 in Lambert et al. (2023TC).
+	 */
+
+	/*Initialize variable*/
+	IssmDouble Ustar; // Friction velocity 
+	IssmDouble Pr=13.8; /*Prandtl number*/
+	IssmDouble Sc=2432; /*Schmidt number*/
+	
+	/*Get friction velocity*/
+	Ustar = GetBasalforcingsFrictionVelocity(element);
+
+	/*Calculate exchange coefficient for temperature*/
+	pgammaT = Ustar/(2.12*log10(Ustar/D)
 }/*}}}*/
