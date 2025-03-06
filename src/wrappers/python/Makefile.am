@@ -96,6 +96,8 @@ endif
 if STANDALONE_MODULES
 if MAC
 AM_LDFLAGS += -Wl,-rpath,'@rpath'
+AM_LDFLAGS += -Wl,-rpath,/System/Volumes/Data/Applications/Xcode.app/Contents/Developer/Library/Frameworks
+AM_LDFLAGS += -Wl,-rpath,/System/Volumes/Data/Library/Developer/CommandLineTools/Library/Frameworks
 else
 AM_LDFLAGS += -Wl,-lbacktrace
 if !MSYS2
@@ -109,9 +111,7 @@ if MAC
 if HAVE_FORTRANDIR
 AM_LDFLAGS += -Wl,-rpath,$(FORTRANDIR)
 endif
-if MAC
 AM_LDFLAGS += -Wl,-rpath,$(PROJROOT)/lib
-endif
 endif
 endif
 

@@ -77,14 +77,19 @@ jobs:
           sudo apt-get install libpython${{ inputs.python_version }}-dev
           sudo apt-get install python3-dev
           python -m pip install --upgrade pip
-          sudo apt-get update && sudo apt-get install -y python-tk python3-tk
+          sudo apt-get update && sudo apt-get install -y python3-tk
           python -m pip install numpy scipy matplotlib nose
 
       - name: Build ISSM
         run: |
+          export CC=${{ env.ISSM_DIR }}/externalpackages/petsc/install/bin/mpicc
+          export CXX=${{ env.ISSM_DIR }}/externalpackages/petsc/install/bin/mpicxx
+          export FC=${{ env.ISSM_DIR }}/externalpackages/petsc/install/bin/mpifort
+          export F77=$FC
+          export F90=$FC
           export MATLAB_ROOT=${{ steps.setup-matlab.outputs.matlabroot }}
           export PYTHON_ROOT=${{ env.pythonLocation }}
-          export NUMPY_ROOT=${{ env.LD_LIBRARY_PATH }}/python3.11/site-packages/numpy
+          export NUMPY_ROOT=${{ env.LD_LIBRARY_PATH }}/python${{ inputs.python_version }}/site-packages/numpy
           ${{ inputs.build_command }}
 
       - name: Compile ISSM
@@ -171,7 +176,7 @@ jobs:
         if: contains( inputs.interface, 'python')
         run: |
           python -m pip install --upgrade pip
-          sudo apt-get update && sudo apt-get install -y python-tk python3-tk
+          sudo apt-get update && sudo apt-get install -y python3-tk
           python -m pip install numpy scipy matplotlib nose netCDF4
 
       - name: Run Python tests

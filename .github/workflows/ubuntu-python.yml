@@ -13,18 +13,20 @@ jobs:
     uses: ./.github/workflows/common-workflow.yml 
     with:
       os: ubuntu-latest
-      build_type: basic-python-3.11
+      build_type: basic-python
       interface: python
-      python_version: 3.11
+      python_version: 3.12
       build_command: |
         source $ISSM_DIR/etc/environment.sh
         autoreconf -ivf
+        ls ${ISSM_DIR}/externalpackages/petsc/install/bin/
+        which mpicxx
         ./configure --prefix=${ISSM_DIR} \
         --disable-static \
         --enable-development \
         --enable-debugging \
         --with-numthreads=4 \
-        --with-python-version=3.11 \
+        --with-python-version=3.12 \
         --with-python-dir=$PYTHON_ROOT \
         --with-python-numpy-dir=$NUMPY_ROOT \
         --with-fortran-lib="-L/usr/lib/x86_64-linux-gnu -lgfortran" \

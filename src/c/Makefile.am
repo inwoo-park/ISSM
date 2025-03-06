@@ -269,7 +269,6 @@ issm_sources += \
 	./solutionsequences/solutionsequence_sampling.cpp \
 	./solutionsequences/convergence.cpp \
 	./classes/Options/Options.cpp \
-	./classes/Options/OptionUtilities.cpp \
 	./classes/RiftStruct.cpp \
 	./modules/ModelProcessorx/Transient/UpdateElementsTransient.cpp \
 	./modules/ModelProcessorx/Transient/UpdateParametersTransient.cpp \
@@ -391,7 +390,6 @@ issm_sources += \
 	./toolkits/petsc/patches/VecFree.cpp \
 	./toolkits/petsc/patches/KSPFree.cpp \
 	./toolkits/petsc/patches/MatFree.cpp \
-	./toolkits/petsc/patches/MatMultPatch.cpp \
 	./toolkits/petsc/patches/ISSMToPetscMatrixType.cpp \
 	./toolkits/petsc/patches/ISSMToPetscInsertMode.cpp \
 	./toolkits/petsc/patches/ISSMToPetscNormMode.cpp \
