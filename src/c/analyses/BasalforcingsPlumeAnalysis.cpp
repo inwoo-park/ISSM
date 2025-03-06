@@ -943,7 +943,7 @@ ElementMatrix* BasalforcingsPlumeAnalysis::CreateKMatrixCGMassbalance(Element* e
 	return Ke;
 }/*}}}*/
 
-IssmDouble GetBasalforcingsFrictionVelocity(Element *element){/*{{{*/
+IssmDouble GetBasalforcingsFrictionVelocity(IssmDouble Cd_top, IssmDouble D, IssmDouble vx, IssmDouble vy){/*{{{*/
 	/*
 	 Calculate the friction velocity Ustar defined in Jenkins et al. (2010)
 
@@ -957,7 +957,7 @@ IssmDouble GetBasalforcingsFrictionVelocity(Element *element){/*{{{*/
 	 */
 
 	/*Hard coding for specific parameters*/
-	IssmDouble Cd_top=1.1e-3; // top drag coefficient 
+	// IssmDouble Cd_top=1.1e-3; // top drag coefficient 
 	IssmDouble Utide=0.01; // tide velocity [m s-1]
 	
 	/*Input values*/
@@ -970,8 +970,8 @@ IssmDouble GetBasalforcingsFrictionVelocity(Element *element){/*{{{*/
 	element->FindParam(&Cd_top,BasalforcingsPlumeCdTop);
 
 	/* Get inputs */
-	Input* vx_input =element->GetInput(BasalforcingsPlumeVxEnum); _assert_(vx_input);
-	Input* vy_input =element->GetInput(BasalforcingsPlumeVyEnum); _assert_(vy_input);
+	Input* vx_input = element->GetInput(BasalforcingsPlumeVxEnum); _assert_(vx_input);
+	Input* vy_input = element->GetInput(BasalforcingsPlumeVyEnum); _assert_(vy_input);
 
 	/*Start  looping on the number of gaussian points: */
 	Gauss* gauss=element->NewGauss(1);
@@ -982,7 +982,8 @@ IssmDouble GetBasalforcingsFrictionVelocity(Element *element){/*{{{*/
 	vy_input->GetInputValue(&vy,gauss);
 
 	/*Calculate fricition velocity*/
-	Ustar = (Cd_top * (vx^2 + vy^2 + Utide^2))**0.5;
+	Ustar = (Cd_top * (pow(vx,2.0) + pow(vy,2.0) + pow(Utide,2)));
+    Ustar = pow(Ustar,0.5);
 
 	return Ustar
 }/*}}}*/
@@ -1002,10 +1003,56 @@ void GetHeatExchangeCoefficient(Element *element, IssmDouble *pgammaT, IssmDoubl
 	IssmDouble Ustar; // Friction velocity 
 	IssmDouble Pr=13.8; /*Prandtl number*/
 	IssmDouble Sc=2432; /*Schmidt number*/
+    IssmDouble nu0=1.95e-6; /*Kinematic viscosity = mu / rho*/
+    IssmDouble D; /*Plume depth*/
+    
+    /*Get plume depth*/
+    Input* D_input = element->GetInput(BasalforcingsPlumeDepthEnum);
 	
 	/*Get friction velocity*/
 	Ustar = GetBasalforcingsFrictionVelocity(element);
 
+    /*Start looping on the number of gaussian points: */
+	Gauss* gauss=element->NewGauss(1);
+	/*Retrieve input value */
+	gauss->GaussPoint(0); /*Maybe element value*/
+
 	/*Calculate exchange coefficient for temperature*/
-	pgammaT = Ustar/(2.12*log10(Ustar/D)
+	*pgammaT = Ustar/(2.12*log10(Ustar*D/nu0) + 12.5*pow(Pr,2/3) - 8.68);
+    *pgammaS = Ustar/(2.12*log10(Ustar*D/nu0) + 12.5*pow(Sc,2/3) - 8.68);
+}/*}}}*/
+
+IssmDouble GetEffectiveGravitationDensity(Element *element, IssmDouble Ta, IssmDouble Sa, IssmDouble T, IssmDouble S){/*{{{*/
+    /*
+    Explain
+    Calculate the effective gravitational density due to density difference in seawater.
+
+    Inputs
+    * Ta: ambient ocean temperature [degC]
+    * Sa: ambient ocean salinity [psu]
+    * T: ocean temprature in mixed layer [degC]
+    * S: ocean salinity in mixed layer [psu]
+    
+    Outputs
+    * g_e: effective gravitational acceleration (m s-2)
+
+    See also Eq. 6 and Eq. 7 in Lambert et al. (2023).
+    */
+    IssmDouble g; /*Gravitational acceleration*/
+    IssmDouble g_e; /*Effective gravitational acceleration*/
+    IssmDouble rho0; /*Initial density*/
+    IssmDouble drho; /*Density difference between the layer and the ambient water below the layer*/
+    IssmDouble alpha=3.733e-5; /*thermal expansion coefficient [degC-1]*/
+    IssmDouble beta=7.843e-4; /*haline contraction coefficient [psu-1]*/
+
+    /*Get parameters*/
+    element->FindParam(&g,ConstantsGEnum); /*Get gravitational acceleration*/
+
+    /*Calculate densitify difference*/
+    drho = rho0*(-alpha*(Ta-T) + beta*(Sa-S));
+
+    /*Calculate effective gravitational density*/
+    g_e = g * drho/rho0;
+
+    return g_e;
 }/*}}}*/
