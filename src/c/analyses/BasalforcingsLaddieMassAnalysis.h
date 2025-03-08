@@ -26,6 +26,13 @@
          ElementMatrix* CreateJacobianMatrix(Element* element);
          ElementMatrix* CreateKMatrix(Element* element);
          ElementVector* CreatePVector(Element* element);
+
+			/*Mass balance special*/
+			ElementMatrix* CreateKMatrixMassbalance(Element* element);
+			ElementMatrix* CreateKMatrixMassbalanceCG(Element* element);
+			ElementVector* CreatePVectorMassbalance(Element* element);
+			ElementVector* CreatePVectorMassbalanceCG(Element* element);
+
          void           GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element);
          void           GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index);
          void           InputUpdateFromSolution(IssmDouble* solution,Element* element);
@@ -33,5 +40,9 @@
  };
  #endif
  
- void GetHeatExchangeCoefficient(Element *element, IssmDouble *pgammaT, IssmDouble *pgammaS);
- IssmDouble GetBasalforcingsFrictionVelocity(Element *element);
+/*External functions*/
+IssmDouble GetBasalforcingsFrictionVelocity(IssmDouble Cd_top, IssmDouble vx, IssmDouble vy, IssmDouble Utide);
+void GetHeatExchangeCoefficient(IssmDouble *pgammaT, IssmDouble *pgammaS, IssmDouble Ustar, IssmDouble D);
+IssmDouble GetEffectiveGravitationDensity(IssmDouble g, IssmDouble Ta, IssmDouble Sa, IssmDouble T, IssmDouble S);
+
+IssmDouble GetEntrainmentRate(IssmDouble isentrainment, IssmDouble ga, IssmDouble gb, IssmDouble depth, IssmDouble vx, IssmDouble vy, IssmDouble meltrate);
