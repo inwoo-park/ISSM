@@ -415,6 +415,20 @@ fi
 AM_CONDITIONAL([L2PROJECTIONEPL], [test x$HAVE_L2PROJECTIONEPL = xyes])
 AC_MSG_RESULT($HAVE_L2PROJECTIONEPL)
 dnl }}}
+dnl with-Laddie{{{
+AC_ARG_WITH([Laddie],
+	AS_HELP_STRING([--with-Laddie= YES], [compile with Laddie capabilities (default is yes)]),
+	[LADDIE=$withval],[LADDIE=yes])
+AC_MSG_CHECKING(for Love capability compilation)
+
+HAVE_LADDIE=no 
+if test "x$LADDIE" = "xyes"; then
+	HAVE_LADDIE=yes
+	AC_DEFINE([_HAVE_LADDIE_],[1],[with Laddie capability])
+fi
+AM_CONDITIONAL([LADDIE], [test x$HAVE_LADDIE = xyes])
+AC_MSG_RESULT($HAVE_LADDIE)
+dnl }}}
 dnl with-Levelset{{{
 AC_ARG_WITH([Levelset],
 	AS_HELP_STRING([--with-Levelset = YES], [compile with Levelset capabilities (default is yes)]),

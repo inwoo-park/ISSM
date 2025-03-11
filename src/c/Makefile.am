@@ -235,6 +235,7 @@ issm_sources += \
 	./modules/GetVectorFromInputsx/GetVectorFromInputsx.cpp \
 	./modules/InputUpdateFromVectorx/InputUpdateFromVectorx.cpp \
 	./modules/FloatingiceMeltingRatex/FloatingiceMeltingRatex.cpp \
+	./modules/FloatingiceMeltingRateLaddiex/FloatingiceMeltingRateLaddiex.cpp \
 	./modules/FloatingiceMeltingRatePicox/FloatingiceMeltingRatePicox.cpp \
 	./modules/FrontalForcingsx/FrontalForcingsx.cpp \
 	./modules/ConfigureObjectsx/ConfigureObjectsx.cpp \
@@ -536,6 +537,12 @@ issm_sources += ./modules/KillIcebergsx/KillIcebergsx.cpp
 endif
 if EXTRAPOLATION
 issm_sources += ./analyses/ExtrapolationAnalysis.cpp
+endif
+if LADDIE
+issm_sources += ./analyses/BasalforcingsLaddieMassAnalysis.cpp
+#issm_sources += ./analyses/BasalforcingsLaddieMomentumAnalysis.cpp
+#issm_sources += ./analyses/BasalforcingsLaddieHeatAnalysis.cpp
+#issm_sources += ./analyses/BasalforcingsLaddieSaltAnalysis.cpp
 endif
 #}}}
 # Love sources (only if have Fortran) {{{

@@ -237,6 +237,37 @@ void MasstransportAnalysis::UpdateElements(Elements* elements,Inputs* inputs,IoM
 			iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.basin_id",BasalforcingsLinearBasinIdEnum);
 			if(isstochastic) iomodel->FetchDataToInput(inputs,elements,"md.stochasticforcing.default_id",StochasticForcingDefaultIdEnum);
 			break;
+		case BasalforcingsLaddieEnum:{
+			/*Deal with forcing fields: temperature and salinity*/
+			IssmDouble* array2d_T=NULL;
+			IssmDouble* array2d_S=NULL;
+			IssmDouble* temp=NULL;
+			int M,N;
+			int num_depths;
+
+			iomodel->FetchData(&temp,&M,&num_depths,"md.basalforcings.forcing_depth");
+			xDelete<IssmDouble>(temp);
+			_assert_(M==1); _assert_(num_depths>=1);
+
+			for (int kk=0;kk<num_depths;kk++){
+
+				/*Fetch forcing temperature and salinity*/
+				iomodel->FetchData(&array2d_T, &M, &N, kk, "md.basalforcings.forcing_temperature");
+				if(!array2d_T) _error_("md.basalforcings.forcing_temperature not found in binary file");
+				iomodel->FetchData(&array2d_S, &M, &N, kk, "md.basalforcings.forcing_salinity");
+				if(!array2d_S) _error_("md.basalforcings.forcing_salinity not found in binary file");
+
+				for(Object* & object : elements->objects){
+					Element* element = xDynamicCast<Element*>(object);
+					if(iomodel->domaintype!=Domain2DhorizontalEnum && !element->IsOnBase()) continue;
+					element->DatasetInputAdd(BasalforcingsLaddieForcingTemperatureEnum,array2d_T,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingTemperatureEnum,kk);
+					element->DatasetInputAdd(BasalforcingsLaddieForcingTemperatureEnum,array2d_T,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingSalinityEnum,kk);
+				}
+			}
+			xDelete<IssmDouble>(array2d_T);
+			xDelete<IssmDouble>(array2d_S);
+			break;
+			}
 		default:
 			_error_("Basal forcing model "<<EnumToStringx(basalforcing_model)<<" not supported yet");
 	}

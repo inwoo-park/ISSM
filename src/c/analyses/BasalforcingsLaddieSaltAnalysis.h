@@ -1,14 +1,14 @@
-/*! \file BasalforcingsLaddieMassAnalysis.h 
+/*! \file BasalforcingsLaddieSaltAnalysis.h 
  *  \brief: header file for generic external result object
  */
 
-#ifndef _BasalforcingsLaddieMassAnalysis_
-#define _BasalforcingsLaddieMassAnalysis_
+#ifndef _BasalforcingsLaddieSaltAnalysis_
+#define _BasalforcingsLaddieSaltAnalysis_
 
 /*Headers*/
 #include "./Analysis.h"
 
-class BasalforcingsLaddieMassAnalysis: public Analysis{
+class BasalforcingsLaddieSaltAnalysis: public Analysis{
 
 	public:
 		/*Model processing*/
@@ -27,13 +27,13 @@ class BasalforcingsLaddieMassAnalysis: public Analysis{
       ElementMatrix* CreateKMatrix(Element* element);
       ElementVector* CreatePVector(Element* element);
 
-		/*Mass balance special*/
+		/*Salt balance special*/
 		ElementMatrix* CreateKMatrixCG(Element* element);
 		ElementVector* CreatePVectorCG(Element* element);
 
-      //void           GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element);
-      //void           GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index);
-      //void           InputUpdateFromSolution(IssmDouble* solution,Element* element);
-      //void           UpdateConstraints(FemModel* femmodel);
+      void           GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element);
+      void           GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index);
+      void           InputUpdateFromSolution(IssmDouble* solution,Element* element);
+      void           UpdateConstraints(FemModel* femmodel);
 };
 #endif

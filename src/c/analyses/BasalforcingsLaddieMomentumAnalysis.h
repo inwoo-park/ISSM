@@ -1,14 +1,14 @@
-/*! \file BasalforcingsLaddieMassAnalysis.h 
+/*! \file BasalforcingsLaddieMomentumAnalysis.h 
  *  \brief: header file for generic external result object
  */
 
-#ifndef _BasalforcingsLaddieMassAnalysis_
-#define _BasalforcingsLaddieMassAnalysis_
+#ifndef _BasalforcingsLaddieMomentumAnalysis_
+#define _BasalforcingsLaddieMomentumAnalysis_
 
 /*Headers*/
 #include "./Analysis.h"
 
-class BasalforcingsLaddieMassAnalysis: public Analysis{
+class BasalforcingsLaddieMomentumAnalysis: public Analysis{
 
 	public:
 		/*Model processing*/
@@ -31,9 +31,9 @@ class BasalforcingsLaddieMassAnalysis: public Analysis{
 		ElementMatrix* CreateKMatrixCG(Element* element);
 		ElementVector* CreatePVectorCG(Element* element);
 
-      //void           GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element);
-      //void           GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index);
-      //void           InputUpdateFromSolution(IssmDouble* solution,Element* element);
-      //void           UpdateConstraints(FemModel* femmodel);
+      void           GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element);
+      void           GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index);
+      void           InputUpdateFromSolution(IssmDouble* solution,Element* element);
+      void           UpdateConstraints(FemModel* femmodel);
 };
 #endif

@@ -60,6 +60,7 @@
 #include "./Kml2Expx/Kml2Expx.h"
 #include "./Krigingx/Krigingx.h"
 #include "./FloatingiceMeltingRatex/FloatingiceMeltingRatex.h"
+#include "./FloatingiceMeltingRateLaddiex/FloatingiceMeltingRateLaddiex.h"
 #include "./FloatingiceMeltingRatePicox/FloatingiceMeltingRatePicox.h"
 #include "./Mergesolutionfromftogx/Mergesolutionfromftogx.h"
 #include "./MeshPartitionx/MeshPartitionx.h"

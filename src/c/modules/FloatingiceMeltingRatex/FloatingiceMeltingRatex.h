@@ -7,6 +7,7 @@
 
 #include "../../classes/classes.h"
 #include "../FloatingiceMeltingRatePicox/FloatingiceMeltingRatePicox.h"
+#include "../FloatingiceMeltingRateLaddiex/FloatingiceMeltingRateLaddiex.h"
 
 /* local prototypes: */
 void FloatingiceMeltingRatex(FemModel* femmodel);

@@ -31,6 +31,21 @@ void bmb_core(FemModel* femmodel){
 			solutionsequence_linear(femmodel);
 		}
 	}
+	else if(basalforcing_model==BasalforcingsLaddieEnum){
+		/*Sub-ice shelf melting with LADDIE simulation*/
+		IssmDouble subtimestep;
+		femmodel->parameters->FindParam(&subtimestep,BasalforcingsLaddieSubTimestepEnum);
+
+		/*First, initiali guess sub-ice shelf melting and entrainment rate.*/
+		if(VerboseSolution()) _printf0_("   computing melting rate and entrainment rate\n");
+		FloatingiceMeltingRateLaddiex(femmodel);	
+		UpdateLaddieEntrainmentRatex(femmodel);
+
+		/*Step#1: Calculate mass transport model of Laddie*/
+		if(VerboseSolution()) _printf0_("   computing Laddie mass transport\n");
+		femmodel->SetCurrentConfiguration(BasalforcingsLaddieMassAnalysisEnum);
+		solutionsequence_linear(femmodel);
+	}
 
 	/*Call module now*/
 	FloatingiceMeltingRatex(femmodel);

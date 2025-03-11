@@ -58,6 +58,10 @@ void FloatingiceMeltingRatex(FemModel* femmodel){/*{{{*/
 			if(VerboseSolution())_printf0_("        call Linear Floating melting rate ARMA module\n");
 			LinearFloatingiceMeltingRatearmax(femmodel);
 			break;
+		case BasalforcingsLaddieEnum:
+			if(VerboseSolution())_printf0_("        call LADDIE 2D plume module\n");
+			FloatingiceMeltingRateLaddiex(femmodel);
+			break;
 		default:
 			_error_("Basal forcing model "<<EnumToStringx(basalforcing_model)<<" not supported yet");
 	}
