@@ -794,6 +794,7 @@ enum definitions{
 	BasalforcingsLaddieVxEnum,
 	BasalforcingsLaddieVyEnum,
 	BasalforcingsLaddieTEnum,
+	BasalforcingsLaddieTbEnum,
 	BasalforcingsLaddieSEnum,
 	BasalforcingsLaddieDRhoEnum,
 	BasalforcingsLaddieForcingDepthEnum,

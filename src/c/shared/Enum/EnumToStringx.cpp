@@ -120,8 +120,11 @@ const char* EnumToStringx(int en){
 		case BasalforcingsUpperwaterMeltingRateEnum : return "BasalforcingsUpperwaterMeltingRate";
 		case BasalforcingsLaddieCdEnum : return "BasalforcingsLaddieCd";
 		case BasalforcingsLaddieCdTopEnum : return "BasalforcingsLaddieCdTop";
+		case BasalforcingsLaddieHorizontalDiffusivityEnum : return "BasalforcingsLaddieHorizontalDiffusivity";
+		case BasalforcingsLaddieHorizontalViscosityEnum : return "BasalforcingsLaddieHorizontalViscosity";
 		case BasalforcingsLaddieIsEntrainmentEnum : return "BasalforcingsLaddieIsEntrainment";
 		case BasalforcingsLaddieIsMeltEnum : return "BasalforcingsLaddieIsMelt";
+		case BasalforcingsLaddieKparamEnum : return "BasalforcingsLaddieKparam";
 		case BasalforcingsLaddieSubTimestepEnum : return "BasalforcingsLaddieSubTimestep";
 		case BasalforcingsLaddieThicknessMinEnum : return "BasalforcingsLaddieThicknessMin";
 		case CalvingADStressThresholdFloatingiceEnum : return "CalvingADStressThresholdFloatingice";
@@ -797,6 +800,7 @@ const char* EnumToStringx(int en){
 		case BasalforcingsLaddieVxEnum : return "BasalforcingsLaddieVx";
 		case BasalforcingsLaddieVyEnum : return "BasalforcingsLaddieVy";
 		case BasalforcingsLaddieTEnum : return "BasalforcingsLaddieT";
+		case BasalforcingsLaddieTbEnum : return "BasalforcingsLaddieTb";
 		case BasalforcingsLaddieSEnum : return "BasalforcingsLaddieS";
 		case BasalforcingsLaddieDRhoEnum : return "BasalforcingsLaddieDRho";
 		case BasalforcingsLaddieForcingDepthEnum : return "BasalforcingsLaddieForcingDepth";
@@ -810,8 +814,6 @@ const char* EnumToStringx(int en){
 		case BasalforcingsLaddieGammaTEnum : return "BasalforcingsLaddieGammaT";
 		case BasalforcingsLaddieGammaSEnum : return "BasalforcingsLaddieGammaS";
 		case BasalforcingsLaddieCoriolisFrequencyEnum : return "BasalforcingsLaddieCoriolisFrequency";
-		case BasalforcingsLaddieHorizontalDiffusivityEnum : return "BasalforcingsLaddieHorizontalDiffusivity";
-		case BasalforcingsLaddieHorizontalViscosityEnum : return "BasalforcingsLaddieHorizontalViscosity";
 		case BasalforcingsLaddieVelTideEnum : return "BasalforcingsLaddieVelTide";
 		case BasalforcingsLaddieVelFrictionEnum : return "BasalforcingsLaddieVelFriction";
 		case BasalforcingsLaddieDiagnosticFrequencyEnum : return "BasalforcingsLaddieDiagnosticFrequency";

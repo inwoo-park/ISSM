@@ -440,6 +440,7 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 		if (!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
 			IssmDouble* value = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsFloatingiceMeltingRateEnum,value,P1DGEnum);
+			element->AddInput(BasalforcingsLaddieTbEnum,value,P1DGEnum);
 			xDelete<IssmDouble>(value);
 			continue;
 		}
@@ -453,6 +454,7 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 		Input* base_input = element->GetInput(BaseEnum);                     _assert_(base_input);
 
 		IssmDouble* melt = xNew<IssmDouble>(numvertices);
+		IssmDouble* Tb   = xNew<IssmDouble>(numvertices); /* freezing temperature at ice shelf base*/
 		IssmDouble  D, vx, vy, T, S, zb;
 		IssmDouble  That, Chat, Ctil;
 		IssmDouble  AA;
@@ -489,10 +491,18 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 
 			/*Melt rate*/
 			melt[iv]=0.5*(-b + sqrt(pow(b,2.0) - 4*c));
+
+			/*Temperature at ice shelf base*/
+			Tb[iv] = (Chat*gammaT*T - melt[iv])/(Chat*gammaT + Chat*Ctil*melt[iv]);
 		}
 
+		/*Assigne value*/
 		element->AddInput(BasalforcingsFloatingiceMeltingRateEnum,melt,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieTbEnum,Tb,P1DGEnum);
+
+		/*Clear memory*/
 		xDelete<IssmDouble>(melt);
+		xDelete<IssmDouble>(Tb);
 		delete gauss;
 	}
 }/*}}}*/
@@ -523,7 +533,7 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 		IssmDouble* entr=xNew<IssmDouble>(numvertices);
 
 		switch(isentrainment){
-			case 0:
+			case 0:{
 
 				/*Initialize inputs: */
 				Input* vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
@@ -543,12 +553,14 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 					ga_input->GetInputValue(&ga,gauss);
 					D_input->GetInputValue(&D,gauss);
 					
-					entr[iv]=GetEntrainmentRateHollandx(Kparm, ga, D, vx, vy);
+					entr[iv]=GetEntrainmentRateHollandx(Kparam, ga, D, vx, vy);
 				}
 				break;
-			case 1:
+			}
+			case 1:{
 				_error_("Given md.basalforcings.isentrainement=1 is not implemented yet!");
 				break;
+			}
 			default:
 				_error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
 		}

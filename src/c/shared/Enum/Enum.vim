@@ -118,8 +118,11 @@ syn keyword cConstant BasalforcingsUpperwaterElevationEnum
 syn keyword cConstant BasalforcingsUpperwaterMeltingRateEnum
 syn keyword cConstant BasalforcingsLaddieCdEnum
 syn keyword cConstant BasalforcingsLaddieCdTopEnum
+syn keyword cConstant BasalforcingsLaddieHorizontalDiffusivityEnum
+syn keyword cConstant BasalforcingsLaddieHorizontalViscosityEnum
 syn keyword cConstant BasalforcingsLaddieIsEntrainmentEnum
 syn keyword cConstant BasalforcingsLaddieIsMeltEnum
+syn keyword cConstant BasalforcingsLaddieKparamEnum
 syn keyword cConstant BasalforcingsLaddieSubTimestepEnum
 syn keyword cConstant BasalforcingsLaddieThicknessMinEnum
 syn keyword cConstant CalvingADStressThresholdFloatingiceEnum
@@ -795,6 +798,7 @@ syn keyword cConstant BasalforcingsLaddieThicknessResidualEnum
 syn keyword cConstant BasalforcingsLaddieVxEnum
 syn keyword cConstant BasalforcingsLaddieVyEnum
 syn keyword cConstant BasalforcingsLaddieTEnum
+syn keyword cConstant BasalforcingsLaddieTbEnum
 syn keyword cConstant BasalforcingsLaddieSEnum
 syn keyword cConstant BasalforcingsLaddieDRhoEnum
 syn keyword cConstant BasalforcingsLaddieForcingDepthEnum
@@ -808,8 +812,6 @@ syn keyword cConstant BasalforcingsLaddieEntrainmentRateEnum
 syn keyword cConstant BasalforcingsLaddieGammaTEnum
 syn keyword cConstant BasalforcingsLaddieGammaSEnum
 syn keyword cConstant BasalforcingsLaddieCoriolisFrequencyEnum
-syn keyword cConstant BasalforcingsLaddieHorizontalDiffusivityEnum
-syn keyword cConstant BasalforcingsLaddieHorizontalViscosityEnum
 syn keyword cConstant BasalforcingsLaddieVelTideEnum
 syn keyword cConstant BasalforcingsLaddieVelFrictionEnum
 syn keyword cConstant BasalforcingsLaddieDiagnosticFrequencyEnum
