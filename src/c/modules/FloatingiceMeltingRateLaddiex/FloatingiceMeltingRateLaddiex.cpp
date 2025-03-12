@@ -549,7 +549,8 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 			case 1:
 				_error_("Given md.basalforcings.isentrainement=1 is not implemented yet!");
 				break;
-			default: _error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
+			default:
+				_error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
 		}
 
 		/*Assign input*/
