@@ -288,17 +288,20 @@ void CreateParameters(Parameters* parameters,IoModel* iomodel,char* rootpath,FIL
 			break;
 		case BasalforcingsLaddieEnum:
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Dmin",BasalforcingsLaddieThicknessMinEnum));
-         parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Utide",BasalforcingsLaddieTideVelocityEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Kh",BasalforcingsLaddieHorizontalDiffusivityEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Ah",BasalforcingsLaddieHorizontalViscosityEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd",BasalforcingsLaddieCdEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd_top",BasalforcingsLaddieCdTopEnum));
+         parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Kparam",BasalforcingsLaddieKparamEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isentrainment",BasalforcingsLaddieIsEntrainmentEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismelt",BasalforcingsLaddieIsMeltEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepEnum));
 			iomodel->FetchData(&transparam,&M,&N,"md.basalforcings.forcing_depth");
 			parameters->AddObject(new DoubleVecParam(BasalforcingsLaddieForcingDepthEnum,transparam,N));
 			xDelete<IssmDouble>(transparam);
+			iomodel->FetchData(&transparam,&M,&N,"md.basalforcings.Utide");
+         parameters->AddObject(new DoubleVecParam(BasalforcingsLaddieVelTideEnum,transparam,N));
+         xDelete<IssmDouble>(transparam);
 			break;
 		default:
 			_error_("Basal forcing model "<<EnumToStringx(basalforcing_model)<<" not supported yet");
