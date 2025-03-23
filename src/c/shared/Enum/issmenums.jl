@@ -113,6 +113,7 @@
 	BasalforcingsLaddieIsMeltEnum
 	BasalforcingsLaddieKparamEnum
 	BasalforcingsLaddieSubTimestepEnum
+	BasalforcingsLaddieSubTimestepDummyEnum
 	BasalforcingsLaddieThicknessMinEnum
 	CalvingADStressThresholdFloatingiceEnum
 	CalvingADStressThresholdGroundediceEnum
@@ -786,6 +787,7 @@
 	BasalforcingsLaddieThicknessResidualEnum
 	BasalforcingsLaddieVxEnum
 	BasalforcingsLaddieVyEnum
+	BasalforcingsLaddieVelEnum
 	BasalforcingsLaddieTEnum
 	BasalforcingsLaddieTbEnum
 	BasalforcingsLaddieSEnum
@@ -1998,6 +2000,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieIsMeltEnum) return "BasalforcingsLaddieIsMelt" end
 	if(enum==BasalforcingsLaddieKparamEnum) return "BasalforcingsLaddieKparam" end
 	if(enum==BasalforcingsLaddieSubTimestepEnum) return "BasalforcingsLaddieSubTimestep" end
+	if(enum==BasalforcingsLaddieSubTimestepDummyEnum) return "BasalforcingsLaddieSubTimestepDummy" end
 	if(enum==BasalforcingsLaddieThicknessMinEnum) return "BasalforcingsLaddieThicknessMin" end
 	if(enum==CalvingADStressThresholdFloatingiceEnum) return "CalvingADStressThresholdFloatingice" end
 	if(enum==CalvingADStressThresholdGroundediceEnum) return "CalvingADStressThresholdGroundedice" end
@@ -2671,6 +2674,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieThicknessResidualEnum) return "BasalforcingsLaddieThicknessResidual" end
 	if(enum==BasalforcingsLaddieVxEnum) return "BasalforcingsLaddieVx" end
 	if(enum==BasalforcingsLaddieVyEnum) return "BasalforcingsLaddieVy" end
+	if(enum==BasalforcingsLaddieVelEnum) return "BasalforcingsLaddieVel" end
 	if(enum==BasalforcingsLaddieTEnum) return "BasalforcingsLaddieT" end
 	if(enum==BasalforcingsLaddieTbEnum) return "BasalforcingsLaddieTb" end
 	if(enum==BasalforcingsLaddieSEnum) return "BasalforcingsLaddieS" end
@@ -3883,6 +3887,7 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieIsMelt") return BasalforcingsLaddieIsMeltEnum  end
 	if(name=="BasalforcingsLaddieKparam") return BasalforcingsLaddieKparamEnum  end
 	if(name=="BasalforcingsLaddieSubTimestep") return BasalforcingsLaddieSubTimestepEnum  end
+	if(name=="BasalforcingsLaddieSubTimestepDummy") return BasalforcingsLaddieSubTimestepDummyEnum  end
 	if(name=="BasalforcingsLaddieThicknessMin") return BasalforcingsLaddieThicknessMinEnum  end
 	if(name=="CalvingADStressThresholdFloatingice") return CalvingADStressThresholdFloatingiceEnum  end
 	if(name=="CalvingADStressThresholdGroundedice") return CalvingADStressThresholdGroundediceEnum  end
@@ -4556,6 +4561,7 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieThicknessResidual") return BasalforcingsLaddieThicknessResidualEnum  end
 	if(name=="BasalforcingsLaddieVx") return BasalforcingsLaddieVxEnum  end
 	if(name=="BasalforcingsLaddieVy") return BasalforcingsLaddieVyEnum  end
+	if(name=="BasalforcingsLaddieVel") return BasalforcingsLaddieVelEnum  end
 	if(name=="BasalforcingsLaddieT") return BasalforcingsLaddieTEnum  end
 	if(name=="BasalforcingsLaddieTb") return BasalforcingsLaddieTbEnum  end
 	if(name=="BasalforcingsLaddieS") return BasalforcingsLaddieSEnum  end

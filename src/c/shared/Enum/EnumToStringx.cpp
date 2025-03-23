@@ -126,6 +126,7 @@ const char* EnumToStringx(int en){
 		case BasalforcingsLaddieIsMeltEnum : return "BasalforcingsLaddieIsMelt";
 		case BasalforcingsLaddieKparamEnum : return "BasalforcingsLaddieKparam";
 		case BasalforcingsLaddieSubTimestepEnum : return "BasalforcingsLaddieSubTimestep";
+		case BasalforcingsLaddieSubTimestepDummyEnum : return "BasalforcingsLaddieSubTimestepDummy";
 		case BasalforcingsLaddieThicknessMinEnum : return "BasalforcingsLaddieThicknessMin";
 		case CalvingADStressThresholdFloatingiceEnum : return "CalvingADStressThresholdFloatingice";
 		case CalvingADStressThresholdGroundediceEnum : return "CalvingADStressThresholdGroundedice";
@@ -799,6 +800,7 @@ const char* EnumToStringx(int en){
 		case BasalforcingsLaddieThicknessResidualEnum : return "BasalforcingsLaddieThicknessResidual";
 		case BasalforcingsLaddieVxEnum : return "BasalforcingsLaddieVx";
 		case BasalforcingsLaddieVyEnum : return "BasalforcingsLaddieVy";
+		case BasalforcingsLaddieVelEnum : return "BasalforcingsLaddieVel";
 		case BasalforcingsLaddieTEnum : return "BasalforcingsLaddieT";
 		case BasalforcingsLaddieTbEnum : return "BasalforcingsLaddieTb";
 		case BasalforcingsLaddieSEnum : return "BasalforcingsLaddieS";

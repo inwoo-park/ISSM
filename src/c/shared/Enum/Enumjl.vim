@@ -117,6 +117,7 @@ syn keyword juliaConstC BasalforcingsLaddieIsEntrainmentEnum
 syn keyword juliaConstC BasalforcingsLaddieIsMeltEnum
 syn keyword juliaConstC BasalforcingsLaddieKparamEnum
 syn keyword juliaConstC BasalforcingsLaddieSubTimestepEnum
+syn keyword juliaConstC BasalforcingsLaddieSubTimestepDummyEnum
 syn keyword juliaConstC BasalforcingsLaddieThicknessMinEnum
 syn keyword juliaConstC CalvingADStressThresholdFloatingiceEnum
 syn keyword juliaConstC CalvingADStressThresholdGroundediceEnum
@@ -790,6 +791,7 @@ syn keyword juliaConstC BasalforcingsLaddieThicknessEnum
 syn keyword juliaConstC BasalforcingsLaddieThicknessResidualEnum
 syn keyword juliaConstC BasalforcingsLaddieVxEnum
 syn keyword juliaConstC BasalforcingsLaddieVyEnum
+syn keyword juliaConstC BasalforcingsLaddieVelEnum
 syn keyword juliaConstC BasalforcingsLaddieTEnum
 syn keyword juliaConstC BasalforcingsLaddieTbEnum
 syn keyword juliaConstC BasalforcingsLaddieSEnum
