@@ -102,9 +102,13 @@ void FloatingiceMeltingRateLaddiex(FemModel* femmodel){/*{{{*/
 
 void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 	/*
-	Update ambient ocean temperature and salinity from forcing fields.
+	Make 3D ambient ocean temperature/salinity to 2D ambient ocean temperature/salinity considering ice base elevation and plume thickness.
 
-	Make 3D ambient ocean temperature/salinity to 2D ambient ocean temperature/salinity considering ice base elevation.
+	* zb: base elevation of ice shelf.
+	* D: plume thickness.
+
+	See also
+	laddie/src/physics.py > "def update_ambientfields"
 	 */
 	
 	IssmDouble* forcing_depth=NULL;
@@ -127,9 +131,10 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		}
 		
 		/*Get ambient ocean temeprature and salinity on all vertices*/
-		IssmDouble* Ttmp           = xNew<IssmDouble>(numvertices);
-		IssmDouble* Stmp           = xNew<IssmDouble>(numvertices);
-		IssmDouble* depth_vertices = xNew<IssmDouble>(numvertices);
+		IssmDouble *Ttmp           = xNew<IssmDouble>(numvertices);
+		IssmDouble *Stmp           = xNew<IssmDouble>(numvertices);
+		IssmDouble *depth_vertices = xNew<IssmDouble>(numvertices);
+		IssmDouble *thickness_verticess = xNew<IssmDouble>(numvertices);
 		/*
 		 * tf: temperature forcing
 		 * sf: salinity forcing
@@ -138,12 +143,13 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		DatasetInput* sf_input = element->GetDatasetInput(BasalforcingsLaddieForcingTemperatureEnum); _assert_(tf_input);
 
 		element->GetInputListOnVertices(&depth_vertices[0],BaseEnum);
+		element->GetInputListOnVertices(&thickness_verticess[0],BasalforcingsLaddieThicknessEnum);
 
 		Gauss* gauss=element->NewGauss();
 		for(int iv=0;iv<numvertices;iv++){
 			gauss->GaussVertex(iv);
 
-			IssmDouble depth=-depth_vertices[iv];
+			IssmDouble depth=-(depth_vertices[iv]-thickness_vertices[iv]);
 			int offset;
 			int found=binary_search(&offset,depth,forcing_depth,num_depths);
 			if(!found) _error_("depth not found");
@@ -176,14 +182,16 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 				sf_input->GetInputValue(&sf2,gauss,offset+1);
 				Stmp[iv] = alpha1*sf1 + alpha2*sf2;
 			}
-
-			element->AddInput(BasalforcingsLaddieAmbientTemperatureEnum,Ttmp,P1DGEnum);
-			element->AddInput(BasalforcingsLaddieAmbientSalinityEnum,Stmp,P1DGEnum);
-			xDelete<IssmDouble>(Ttmp);
-			xDelete<IssmDouble>(Stmp);
-			xDelete<IssmDouble>(depth_vertices);
-			delete gauss;
 		}
+
+		/*Clear memory: */
+		element->AddInput(BasalforcingsLaddieAmbientTemperatureEnum,Ttmp,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieAmbientSalinityEnum,Stmp,P1DGEnum);
+		xDelete<IssmDouble>(Ttmp);
+		xDelete<IssmDouble>(Stmp);
+		xDelete<IssmDouble>(depth_vertices);
+		xDelete<IssmDouble>(thickness_verticess);
+		delete gauss;
 	}
 }/*}}}*/
 void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
@@ -246,7 +254,7 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 
 		/*Assign value in: */
 		element->AddInput(BasalforcingsLaddieDRhoEnum,drho,P1DGEnum);
-		element->AddInput(BasalforcingsLaddieAmbientGEnum,drho,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieAmbientGEnum,ga,P1DGEnum);
 		
 		/*Clear memory*/
 		xDelete<IssmDouble>(ga);
@@ -534,17 +542,18 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 
 		switch(isentrainment){
 			case 0:{
+				/*Update entrainment rate with Holland et al. (2006): doi:10.1175/JPO2970.1*/
 
 				/*Initialize inputs: */
-				Input* vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
-				Input* vy_input=element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
-				Input* ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
-				Input* D_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
+				Input *vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
+				Input *vy_input=element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
+				Input *ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+				Input *D_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
 
 				/*Initialize input values*/
 				IssmDouble vx, vy, ga, D;
 
-				Gauss* gauss=element->NewGauss();
+				Gauss *gauss=element->NewGauss();
 				for (int iv=0;iv<numvertices;iv++){
 					gauss->GaussVertex(iv);
 
@@ -558,7 +567,11 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 				break;
 			}
 			case 1:{
+				/*Update entrainment rate with Gaspar et al. (2012): doi:10.3189/2012JoG12J003*/
 				_error_("Given md.basalforcings.isentrainement=1 is not implemented yet!");
+
+				/*Initialize inputs: */
+				Input *ustar=element->GetInput(BasalforcingsLaddieVelFrictionEnum); _assert_(ustar_input);
 				break;
 			}
 			default:
