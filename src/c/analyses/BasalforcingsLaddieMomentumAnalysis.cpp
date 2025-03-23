@@ -97,99 +97,552 @@ void BasalforcingsLaddieMomentumAnalysis::CreateNodes(Nodes* nodes,IoModel* iomo
 	/*Create Nodes either DG or CG depending on stabilization*/
 	if(iomodel->domaintype!=Domain2DhorizontalEnum && iomodel->domaintype!=Domain3DsurfaceEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
 	if(stabilization!=3){
-		::CreateNodes(nodes,iomodel,BasalforcingsPlumeAnalysisEnum,FINITEELEMENT,isamr);
+		::CreateNodes(nodes,iomodel,BasalforcingsLaddieMomentumAnalysisEnum,FINITEELEMENT,isamr);
 	}
 	else{
-		::CreateNodes(nodes,iomodel,BasalforcingsPlumeAnalysisEnum,P1DGEnum,isamr);
+		::CreateNodes(nodes,iomodel,BasalforcingsLaddieMomentumAnalysisEnum,P1DGEnum,isamr);
 	}
 	iomodel->DeleteData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
 }/*}}}*/
 int  BasalforcingsLaddieMomentumAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
-	return 1;
+	/*
+	NOTE:This script follows the StressbalanceAnalysis::DofsPerNode
+
+	Number of dofs for vx and vy = 2
+	*/
+
+	return 2;
 }/*}}}*/
 void BasalforcingsLaddieMomentumAnalysis::UpdateElements(Elements* elements,Inputs* inputs,IoModel* iomodel,int analysis_counter,int analysis_type){/*{{{*/
+	/*
+	NOTE: Nothing to do in this part. See "UpdateElements" in "BasalforcingsLaddieMassAnalay.cpp"
+	*/
+}/*}}}*/
+void BasalforcingsLaddieMomentumAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
+	/*
+	NOTE: Nothing to do in this part. See "UpdateParameters" in "BasalforcingsLaddieMassAnalay.cpp"
+	*/ 
+}/*}}}*/
 
-	int    stabilization,finiteelement;
-	int    grdmodel;
+void           BasalforcingsLaddieMomentumAnalysis::Core(FemModel* femmodel){/*{{{*/
+	_error_("not implemented");
+}/*}}}*/
+void           BasalforcingsLaddieMomentumAnalysis::PreCore(FemModel* femmodel){/*{{{*/
+	_error_("not implemented");
+}/*}}}*/
+ElementVector* BasalforcingsLaddieMomentumAnalysis::CreateDVector(Element* element){/*{{{*/
+	/*Default, return NULL*/
+	return NULL;
+}/*}}}*/
+ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateJacobianMatrix(Element* element){/*{{{*/
+_error_("Not implemented");
+}/*}}}*/
+ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrix(Element* element){/*{{{*/
 
-	/*Fetch data needed: */
-	iomodel->FindConstant(&stabilization,"md.basalforcings.stabilization");
+	/* Check if ice in element */
+	if(!element->IsIceInElement()) return NULL;
 
-	/*Finite element type*/
-	finiteelement = FINITEELEMENT;
-	if(stabilization==3){
-		finiteelement = P1DGEnum;
-		//finiteelement = P0DGEnum;
+	if(!element->IsOceanInElement()) return NULL;
+	Element* basalelement = element->SpawnBasalElement();
+
+	ElementMatrix* Ke = NULL;
+	switch(element->FiniteElement()){
+		case P1Enum: case P2Enum:
+			Ke = CreateKMatrixCG(basalelement);
+			break;
+		case P0DGEnum:
+		case P1DGEnum:
+			//Ke = CreateKMatrixDG(basalelement);
+			_error_("Not implemented yet.");
+			break;
+		default:
+			_error_("Element type " << EnumToStringx(element->FiniteElement()) << " not supported yet");
 	}
 
-	/*Update elements: */
-	int counter=0;
-	for(int i=0;i<iomodel->numberofelements;i++){
-		if(iomodel->my_elements[i]){
-			Element* element=(Element*)elements->GetObjectByOffset(counter);
-			element->Update(inputs,i,iomodel,analysis_counter,analysis_type,finiteelement);
-			counter++;
+	int domaintype;
+	element->FindParam(&domaintype,DomainTypeEnum);
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+	return Ke;
+}/*}}}*/
+ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVector(Element* element){/*{{{*/
+
+	/* Check if ice in element */
+	if(!element->IsIceInElement()) return NULL;
+
+	if(!element->IsOnBase()) return NULL;
+	Element* basalelement = element->SpawnBasalElement();
+
+	ElementVector* pe = NULL;
+	switch(element->FiniteElement()){
+		case P1Enum: case P2Enum:
+			pe = CreatePVectorCG(basalelement);
+			break;
+		case P0DGEnum:
+		case P1DGEnum:
+			//pe = CreatePVectorDG(basalelement);
+			_error_("Not implemented yet");
+			break;
+		default:
+			_error_("Element type " << EnumToStringx(element->FiniteElement()) << " not supported yet");
+	}
+
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+	return pe;
+}/*}}}*/
+void           BasalforcingsLaddieMomentumAnalysis::GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element){/*{{{*/
+	/*
+	 Look up "GetSolutionFromInputsHoriz" in "StressbalanceAnalysis.cpp".
+	 */
+
+	IssmDouble vx, vy;
+	int        domaintype, dim, approximation, dofpernode;
+	int*       doflist = NULL;
+
+	/*Get some parameters*/
+	element->FindParam(&domaintype,DomainTypeEnum);
+	switch(domaintype){
+		case Domain2DhorizontalEnum: dim = 2; dofpernode = 2; break;
+		case Domain3DEnum:           dim = 3; dofpernode = 2; break;
+		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
+	}
+
+	/*Fetch number of nodes and dof for this finite element*/
+	int numnodes = element->GetNumberOfNodes();
+	int numdof   = numnodes*dofpernode;
+
+	/*Fetch dof list and allocate solution vector*/
+	element->GetDofList(&doflist,NoneApproximationEnum,GsetEnum);
+	IssmDouble* values = xNew<IssmDouble>(numdof);
+
+	/*Get inputs*/
+	Input* vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
+	Input* vy_input=element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
+
+	/*Ok, we have vx and vy in values, fill in vx and vy arrays: */
+	Gauss* gauss=element->NewGauss();
+	for(int i=0;i<numnodes;i++){
+		gauss->GaussNode(element->FiniteElement(),i);
+
+		/*Recover vx and vy*/
+		vx_input->GetInputValue(&vx,gauss);
+		values[i*dofpernode+0]=vx;
+
+		vy_input->GetInputValue(&vy,gauss);
+		values[i*dofpernode+1]=vy;
+	}
+
+	solution->SetValues(numdof,doflist,values,INS_VAL);
+
+	/*Free resources:*/
+	delete gauss;
+	xDelete<IssmDouble>(values);
+	xDelete<int>(doflist);
+}/*}}}*/
+void           BasalforcingsLaddieMomentumAnalysis::GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index){/*{{{*/
+	_error_("Not implemented yet");
+}/*}}}*/
+void           BasalforcingsLaddieMomentumAnalysis::InputUpdateFromSolution(IssmDouble* solution,Element* element){/*{{{*/
+
+	int         i,dim,domaintype;
+	IssmDouble  rho_ice,g;
+	int*        doflist=NULL;
+	IssmDouble* xyz_list=NULL;
+	Element*    basalelement=NULL;
+
+	/*Deal with pressure first*/
+	int numvertices = element->GetNumberOfVertices();
+
+	element->FindParam(&domaintype,DomainTypeEnum);
+	rho_ice =element->FindParam(MaterialsRhoIceEnum);
+	g       =element->FindParam(ConstantsGEnum);
+
+	/*Get basal element*/
+	switch(domaintype){
+		case Domain2DhorizontalEnum:
+			basalelement = element;
+			break;
+		case Domain3DEnum: case Domain2DverticalEnum:
+			if(!element->IsOnBase()){xDelete<IssmDouble>(xyz_list); return;}
+			basalelement=element->SpawnBasalElement();
+			break;
+		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
+	}
+
+	/*Fetch number of nodes and dof for this finite element*/
+	int numnodes = basalelement->GetNumberOfNodes();
+	int numdof   = numnodes*dim;
+
+	/*Fetch dof list and allocate solution vectors*/
+	basalelement->GetDofListLocal(&doflist,SSAApproximationEnum,GsetEnum);
+	IssmDouble* values = xNew<IssmDouble>(numdof);
+	IssmDouble* vx     = xNew<IssmDouble>(numnodes);
+	IssmDouble* vy     = xNew<IssmDouble>(numnodes);
+	IssmDouble* vel    = xNew<IssmDouble>(numnodes);
+
+	/*Use the dof list to index into the solution vector: */
+	for(i=0;i<numdof;i++) values[i]=solution[doflist[i]];
+
+	/*Transform solution in Cartesian Space*/
+	if(dim==2) basalelement->TransformSolutionCoord(&values[0],XYEnum);
+
+	/*Ok, we have vx and vy in values, fill in vx and vy arrays: */
+	for(i=0;i<numnodes;i++){
+		vx[i]=values[i*dim+0];
+		if(xIsNan<IssmDouble>(vx[i])) _error_("NaN found in solution vector");
+		if(xIsInf<IssmDouble>(vx[i])) _error_("Inf found in solution vector");
+
+		vy[i]=values[i*dim+1];
+		if(xIsNan<IssmDouble>(vy[i])) _error_("NaN found in solution vector");
+		if(xIsInf<IssmDouble>(vy[i])) _error_("Inf found in solution vector");
+	}
+
+	/*Update plume velocity:  */
+	for(i=0;i<numnodes;i++){
+		vel[i]=sqrt(pow(vx[i],2.0) + pow(vy[i],2.0));
+	}
+
+	/*Add vx and vy as inputs to the tria element: */
+	/*Also add surface vx and vy for the misfit, and base vx and vy for friction*/
+	element->AddBasalInput(BasalforcingsLaddieVxEnum,vx,element->GetElementType());
+	element->AddBasalInput(BasalforcingsLaddieVyEnum,vy,element->GetElementType());
+	element->AddBasalInput(BasalforcingsLaddieVelEnum,vel,element->GetElementType());
+
+	/*Free resources:*/
+	xDelete<IssmDouble>(vel);
+	xDelete<IssmDouble>(vy);
+	xDelete<IssmDouble>(vx);
+	xDelete<IssmDouble>(values);
+	xDelete<IssmDouble>(xyz_list);
+	xDelete<int>(doflist);
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+}/*}}}*/
+void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* femmodel){/*{{{*/
+	SetActiveNodesLSMx(femmodel);
+}/*}}}*/
+
+/*CG method*/
+ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* element){/*{{{*/
+
+	/* Check if ice in element */
+	if(!element->IsOceanInElement()) return NULL;
+
+	/*Intermediaries */
+	int         stabilization;
+	int         domaintype,dim;
+	IssmDouble  Jdet,D_scalar,dt,h,factor;
+	IssmDouble  vel,vx,vy,dvxdx,dvydy;
+	IssmDouble  melt, entrain; /*unit m s-1*/
+	IssmDouble  xi,tau;
+	IssmDouble  dvx[2],dvy[2];
+	IssmDouble  D[4];
+	IssmDouble *xyz_list = NULL;
+	IssmDouble  g; /*gravitational acceleration [m s-2]*/
+
+	IssmDouble rho0; /*Sea water density [kg m-3]*/
+	IssmDouble Kh; /*horizontal viscosity*/
+	IssmDouble Ah; /*horizontal diffusivity*/
+
+	/*Get problem dimension*/
+	element->FindParam(&domaintype,DomainTypeEnum);
+	switch(domaintype){
+		//case Domain2DverticalEnum:   dim = 1; break;
+		case Domain2DhorizontalEnum: dim = 2; break;
+		//case Domain3DEnum:           dim = 2; break;
+		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
+	}
+
+	/*Fetch number of nodes and dof for this finite element*/
+	int numnodes = element->GetNumberOfNodes();
+
+	/*Initialize Element vector and other vectors*/
+	ElementMatrix* Ke     = element->NewElementMatrix();
+	IssmDouble*    basis  = xNew<IssmDouble>(numnodes);
+	IssmDouble*		dbasis = xNew<IssmDouble>(dim*numnodes);
+
+	/*Retrieve all inputs and parameters*/
+	element->GetVerticesCoordinates(&xyz_list);
+	element->FindParam(&dt,TimesteppingTimeStepEnum);
+	element->FindParam(&domaintype,DomainTypeEnum);
+	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationEnum);
+	element->FindParam(&Kh,BasalforcingsLaddieHorizontalViscosityEnum);
+	element->FindParam(&Ah,BasalforcingsLaddieHorizontalDiffusivityEnum);
+	element->FindParam(&rho0,MaterialsRhoSeawaterEnum);
+	element->FindParam(&g,ConstantsGEnum);
+
+	/*Plume thickness D and depth averaged horizontal velocity*/
+	Input* thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
+	Input* vx_input        = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
+	Input* vy_input        = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
+	Input* base_input      = element->GetInput(BaseEnum); _assert_(base_input);
+	Input* rhoa_input      = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(rhoa_input);
+	Input* ga_input        = element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+
+	h = element->CharacteristicLength();
+
+	/* Start looping on the number of gaussian points: */
+	Gauss* gauss=element->NewGauss(2);
+	while(gauss->next()){
+
+		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
+		element->NodalFunctions(basis,gauss);
+		element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
+
+		/*Transient term*/
+		D_scalar=gauss->weight*Jdet;
+		for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j];
+
+		/*Advection terms*/
+		vx_input->GetInputValue(&vx,gauss);
+		vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
+
+		vy_input->GetInputValue(&vy,gauss);
+		vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
+
+		vel = sqrt(pow(vx,2.0) + pow(vy,2.0));;
+
+		D_scalar=dt*gauss->weight*Jdet;
+		dvxdx=dvx[0];
+		dvydy=dvy[1];
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				/*\phi_i \phi_j \nabla\cdot v*/
+				Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j]*(dvxdx+dvydy);
+				/*\phi_i v\cdot\nabla\phi_j*/
+				Ke->values[i*numnodes+j] += D_scalar*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
+			}
 		}
 	}
 
-	iomodel->FetchDataToInput(inputs,elements,"md.geometry.base",BaseEnum);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.D",BasalforcingsPlumeDepthEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vx",BasalforcingsPlumeVyEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vy",BasalforcingsPlumeVxEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.temperature",BasalforcingsPlumeTEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.salinity",BasalforcingsPlumeSEnum,0);
-
-	if(isgroundingline) 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.bed",BedEnum);
-	/*Initialize ThicknessResidual input*/
-	InputUpdateFromConstantx(inputs,elements,0.,ThicknessResidualEnum);
-
-	/*Get what we need for ocean-induced basal melting*/
-	bool isstochastic;
-	int basalforcing_model;
-	int melt_parameterization;
-	iomodel->FindConstant(&basalforcing_model,"md.basalforcings.model");
-	iomodel->FindConstant(&isstochastic,"md.stochasticforcing.isstochasticforcing");
-	iomodel->FindConstant(&melt_parameterization,"md.frontalforcings.parameterization");
-
-	if(stabilization==3){
-		iomodel->FetchDataToInput(inputs,elements,"md.masstransport.spcthickness",MasstransportSpcthicknessEnum); //for DG, we need the spc in the element
+	for(int i=0;i<4;i++) D[i]=0.;
+	switch(stabilization){
+		case 0:
+			/*Nothing to be done*/
+			break;
+		case 1:
+			/*SSA*/
+			vx_input->GetInputAverage(&vx);
+			if(dim==2) vy_input->GetInputAverage(&vy);
+			D[0*dim+0]=h/2.0*fabs(vx);
+			if(dim==2) D[1*dim+1]=h/2.0*fabs(vy);
+			break;
+		case 2:
+			/*Streamline upwinding*/
+			vx_input->GetInputAverage(&vx);
+			if(dim==1){
+				vel=fabs(vx)+1.e-8;
+			}
+			else{
+				vy_input->GetInputAverage(&vy);
+				vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			}
+			tau=h/(2*vel);
+			break;
+		case 5:
+			/*SUPG*/
+			if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			//xi=0.3130;
+			xi=1;
+			tau=xi*h/(2*vel);
+			//tau=dt/6; // as implemented in Ua
+			break;
+		default:
+			_error_("Stabilization "<<stabilization<<" not supported yet");
 	}
-	if(stabilization==4){
-		iomodel->FetchDataToInput(inputs,elements,"md.masstransport.spcthickness",MasstransportSpcthicknessEnum); //for FCT, we need the spc in the element (penlaties)
-	}
 
-	if(iomodel->domaintype!=Domain2DhorizontalEnum && iomodel->domaintype!=Domain3DsurfaceEnum){
-		iomodel->FetchDataToInput(inputs,elements,"md.mesh.vertexonbase",MeshVertexonbaseEnum);
-		iomodel->FetchDataToInput(inputs,elements,"md.mesh.vertexonsurface",MeshVertexonsurfaceEnum);
-	}
+	if(stabilization==1){/*{{{*/
+		/*SSA*/
+		if(dim==1) D[0]=D_scalar*D[0];
+		else{
+			D[0*dim+0]=D_scalar*D[0*dim+0];
+			D[1*dim+0]=D_scalar*D[1*dim+0];
+			D[0*dim+1]=D_scalar*D[0*dim+1];
+			D[1*dim+1]=D_scalar*D[1*dim+1];
+		}
 
-	/*Initialize sea level cumulated sea level loads :*/
-	iomodel->ConstantToInput(inputs,elements,0,AccumulatedDeltaIceThicknessEnum,P1Enum);
-	iomodel->ConstantToInput(inputs,elements,0,OldAccumulatedDeltaIceThicknessEnum,P1Enum);
+		if(dim==2){
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j] += (
+								dbasis[0*numnodes+i] *(D[0*dim+0]*dbasis[0*numnodes+j] + D[0*dim+1]*dbasis[1*numnodes+j]) +
+								dbasis[1*numnodes+i] *(D[1*dim+0]*dbasis[0*numnodes+j] + D[1*dim+1]*dbasis[1*numnodes+j])
+								);
+				}
+			}
+		}
+		else{
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j] += dbasis[0*numnodes+i]*D[0]*dbasis[0*numnodes+j];
+				}
+			}
+		}
+	}/*}}}*/
+	if(stabilization==2){/*{{{*/
+		/*Streamline upwind*/
+		_assert_(dim==2);
+		factor = dt*gauss->weight*Jdet*tau;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i])*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]);
+			}
+		}
+	}/*}}}*/
+	if(stabilization==5){/*{{{*/
+		/*Momentum matrix - part 2*/
+		factor = gauss->weight*Jdet*tau;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j]+=factor*basis[j]*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+			}
+		}
+		/*Momentum matrix - part 3*/
+		factor = gauss->weight*Jdet*tau;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j]+=factor*basis[j]*(basis[i]*dvxdx+basis[i]*dvydy);
+			}
+		}
 
-	/*for Ivins deformation model, initialize history of ice thickness changes:*/
-	iomodel->FindConstant(&grdmodel,"md.solidearth.settings.grdmodel");
-	if(grdmodel==IvinsEnum) inputs->SetTransientInput(TransientAccumulatedDeltaIceThicknessEnum,NULL,0);
+		/*Advection matrix - part 2, A*/
+		factor = dt*gauss->weight*Jdet*tau;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+			}
+		}
+		/*Advection matrix - part 3, A*/
+		factor = dt*gauss->weight*Jdet*tau;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(basis[i]*dvxdx+basis[i]*dvydy);
+			}
+		}
 
+		/*Advection matrix - part 2, B*/
+		factor = dt*gauss->weight*Jdet*tau;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+			}
+		}
+		/*Advection matrix - part 3, B*/
+		factor = dt*gauss->weight*Jdet*tau;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(basis[i]*dvxdx+basis[i]*dvydy);
+			}
+		}
+	}/*}}}*/
+
+	/*Clean up and return*/
+	xDelete<IssmDouble>(xyz_list);
+	xDelete<IssmDouble>(basis);
+	xDelete<IssmDouble>(dbasis);
+	delete gauss;
+	return Ke;
 }/*}}}*/
-void BasalforcingsLaddieMomentumAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
+ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* element){/*{{{*/
 
-	int     numoutputs;
-	char**  requestedoutputs = NULL;
+	/* Check if ice in element */
+	if(!element->IsIceInElement()) return NULL;
 
-	/*Basalforcing plume model specials*/
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Kh",BasalforcingsLaddieHorizontalDiffusivityEnum));
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Ah",BasalforcingsLaddieHorizontalViscosityEnum));
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Dmin",BasalforcingsLaddieDepthMinEnum));
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Utide",BasalforcingsLddieTideVelocityEnum));
+	/*Intermediaries */
+	int			stabilization,dim,domaintype;
+	int         melt_style,point1;
+	int         isentrainment;
+	bool        mainlyfloating;
+	IssmDouble  fraction1,fraction2;
+	IssmDouble  Jdet,dt,intrusiondist;
+	IssmDouble  vx,vy,vel,dvxdx,dvydy,xi,h,tau;
+	IssmDouble  thickness; /*Plume thickness (or depth) [m]*/
+	IssmDouble  dthk[2];
+	IssmDouble  dthkdx, dthkdy;
+	IssmDouble  dzb[2];
+	IssmDouble  dzbdx, dzbdy;
+	IssmDouble  g; /* gravitational acceleration [m s-2]*/
+	IssmDouble  rho0; /*seawater density [kg m-3]*/
+	IssmDouble  ga; /*ambient gravitational acceleration [m s-2*/
+	IssmDouble  ddrhoa[2];
+	IssmDouble  ddrhoadx, ddrhoady;
+	IssmDouble  gllevelset,phi=1.;
+	IssmDouble* xyz_list = NULL;
+	Gauss*      gauss     = NULL;
 
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isentrainment",BasalforcingsLaddieIsEntrainmentEnum));
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd_mon",BasalforcingsLaddieCdMomentumEnum));
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.f_cori",BasalforcingsLaddieCoriolisFrequencyEnum));
+	/*Get problem dimension*/
+	element->FindParam(&domaintype,DomainTypeEnum);
+	element->FindParam(&isentrainment,BasalforcingsLaddieIsEntrainmentEnum);
+	switch(domaintype){
+		//case Domain2DverticalEnum:   dim = 1; break;
+		case Domain2DhorizontalEnum: dim = 2; break;
+		//case Domain3DEnum:           dim = 2; break;
+		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
+	}
 
-	//iomodel->FindConstant(&requestedoutputs,&numoutputs,"md.basal.requested_outputs");
-	//parameters->AddObject(new IntParam(MasstransportNumRequestedOutputsEnum,numoutputs));
-	//if(numoutputs)parameters->AddObject(new StringArrayParam(MasstransportRequestedOutputsEnum,requestedoutputs,numoutputs));
-	//iomodel->DeleteData(&requestedoutputs,numoutputs,"md.masstransport.requested_outputs");
+	/*Fetch number of nodes and dof for this finite element*/
+	int numnodes = element->GetNumberOfNodes();
 
+	/*Initialize Element vector and other vectors*/
+	ElementVector* pe    = element->NewElementVector();
+	IssmDouble*    basis = xNew<IssmDouble>(numnodes);
+	IssmDouble*    dbasis= xNew<IssmDouble>(dim*numnodes);
+
+	/*Retrieve all inputs and parameters*/
+	element->GetVerticesCoordinates(&xyz_list);
+	element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
+	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationEnum);
+	element->FindParam(&g,ConstantsGEnum);
+	element->FindParam(&rho0,MaterialsRhoSeawaterEnum);
+
+	Input* thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
+	Input* zb_input        = element->GetInput(BaseEnum); _assert_(zb_input);
+	Input* vx_input        = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
+	Input* vy_input        = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
+	Input* drhoa_input      = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drhoa_input);
+	Input* ga_input        = element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+	h=element->CharacteristicLength();
+
+	/* Start looping on the number of gaussian points: */
+	while(gauss->next()){
+
+		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
+		element->NodalFunctions(basis,gauss);
+
+		/*Get input values*/
+		thickness_input->GetInputValue(&thickness,gauss);
+		ga_input->GetInputValue(&ga,gauss);
+
+		drhoa_input->GetInputDerivativeValue(&ddrhoa[0],xyz_list,gauss);
+		thickness_input->GetInputDerivativeValue(&dthk[0],xyz_list,gauss);
+		zb_input->GetInputDerivativeValue(&dzb[0],xyz_list,gauss);
+
+		ddrhoadx=ddrhoa[0];
+		ddrhoady=ddrhoa[1];
+
+		dthkdx=dthk[0];
+		dthkdy=dthk[1];
+
+		dzbdx=dzb[0];
+		dzbdy=dzb[1];
+
+		IssmDouble factor_buoyancy;
+		IssmDouble factor_pgradient;
+
+		factor_buoyancy = Jdet*gauss->weight*dt*(-g*thickness*thickness/2/rho0);
+		factor_pgradient= Jdet*gauss->weight*dt*(ga*thickness);
+
+		for(int i=0;i<numnodes;i++){
+			pe->values[i*2+0]+=(factor_buoyancy*ddrhoadx + factor_pgradient*(dzbdx-dthkdx))*basis[i];
+			pe->values[i*2+1]+=(factor_buoyancy*ddrhoady + factor_pgradient*(dzbdy-dthkdy))*basis[i];
+		}
+	}
+
+	/*Clean up and return*/
+	xDelete<IssmDouble>(xyz_list);
+	xDelete<IssmDouble>(basis);
+	xDelete<IssmDouble>(dbasis);
+	delete gauss;
+	return pe;
 }/*}}}*/

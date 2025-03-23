@@ -540,9 +540,9 @@ issm_sources += ./analyses/ExtrapolationAnalysis.cpp
 endif
 if LADDIE
 issm_sources += ./analyses/BasalforcingsLaddieMassAnalysis.cpp
-#issm_sources += ./analyses/BasalforcingsLaddieMomentumAnalysis.cpp
-#issm_sources += ./analyses/BasalforcingsLaddieHeatAnalysis.cpp
-#issm_sources += ./analyses/BasalforcingsLaddieSaltAnalysis.cpp
+issm_sources += ./analyses/BasalforcingsLaddieMomentumAnalysis.cpp
+issm_sources += ./analyses/BasalforcingsLaddieHeatAnalysis.cpp
+issm_sources += ./analyses/BasalforcingsLaddieSaltAnalysis.cpp
 endif
 #}}}
 # Love sources (only if have Fortran) {{{

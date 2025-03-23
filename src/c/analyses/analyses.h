@@ -53,7 +53,7 @@
 #include "./ThermalAnalysis.h"
 #include "./EnumToAnalysis.h"
 #include "./BasalforcingsLaddieMassAnalysis.h"
-//#include "./BasalforcingsLaddieMomentumAnalysis.h"
-//#include "./BasalforcingsLaddieHeatAnalysis.h"
-//#include "./BasalforcingsLaddieSaltAnalysis.h"
+#include "./BasalforcingsLaddieMomentumAnalysis.h"
+#include "./BasalforcingsLaddieHeatAnalysis.h"
+#include "./BasalforcingsLaddieSaltAnalysis.h"
 #endif

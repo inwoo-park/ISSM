@@ -26,14 +26,13 @@ class BasalforcingsLaddieMomentumAnalysis: public Analysis{
       ElementMatrix* CreateJacobianMatrix(Element* element);
       ElementMatrix* CreateKMatrix(Element* element);
       ElementVector* CreatePVector(Element* element);
-
-		/*Mass balance special*/
-		ElementMatrix* CreateKMatrixCG(Element* element);
-		ElementVector* CreatePVectorCG(Element* element);
-
       void           GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element);
       void           GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index);
       void           InputUpdateFromSolution(IssmDouble* solution,Element* element);
       void           UpdateConstraints(FemModel* femmodel);
+
+		/*Momentum: CG method*/
+		ElementMatrix* CreateKMatrixCG(Element* element);
+		ElementVector* CreatePVectorCG(Element* element);
 };
 #endif

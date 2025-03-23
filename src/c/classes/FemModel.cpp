@@ -905,6 +905,12 @@ void FemModel::SolutionAnalysesList(int** panalyses,int* pnumanalyses,IoModel* i
 						analyses_temp[numanalyses++]=GLheightadvectionAnalysisEnum;
 					}
 				}
+				else if(basalforcing_model==BasalforcingsLaddieEnum){
+					analyses_temp[numanalyses++]=BasalforcingsLaddieMassAnalysisEnum;
+					analyses_temp[numanalyses++]=BasalforcingsLaddieMomentumAnalysisEnum;
+					analyses_temp[numanalyses++]=BasalforcingsLaddieHeatAnalysisEnum;
+					analyses_temp[numanalyses++]=BasalforcingsLaddieSaltAnalysisEnum;
+				}
 			}
 			if(issmb) analyses_temp[numanalyses++]=SmbAnalysisEnum;
 			if(ismovingfront){

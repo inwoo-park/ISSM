@@ -147,9 +147,9 @@ Analysis* EnumToAnalysis(int analysis_enum){
 		#endif
 		#ifdef _HAVE_LADDIE_
 		case BasalforcingsLaddieMassAnalysisEnum: return new BasalforcingsLaddieMassAnalysis();
-		//case BasalforcingsLaddieMomentumAnalysisEnum: return new BasalforcingsLaddieMomentumAnalysis();
-		//case BasalforcingsLaddieHeatAnalysisEnum: return new BasalforcingsLaddieHeatAnalysis();
-		//case BasalforcingsLaddieSaltAnalysisEnum: return new BasalforcingsLaddieHeatAnalysis();
+		case BasalforcingsLaddieMomentumAnalysisEnum: return new BasalforcingsLaddieMomentumAnalysis();
+		case BasalforcingsLaddieHeatAnalysisEnum: return new BasalforcingsLaddieHeatAnalysis();
+		case BasalforcingsLaddieSaltAnalysisEnum: return new BasalforcingsLaddieSaltAnalysis();
 		#endif
 		default : _error_("enum provided not supported ("<<EnumToStringx(analysis_enum)<<")");
 	}
