@@ -296,6 +296,7 @@ void CreateParameters(Parameters* parameters,IoModel* iomodel,char* rootpath,FIL
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isentrainment",BasalforcingsLaddieIsEntrainmentEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismelt",BasalforcingsLaddieIsMeltEnum));
          parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepEnum));
+         parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepDummyEnum));
 			iomodel->FetchData(&transparam,&M,&N,"md.basalforcings.forcing_depth");
 			parameters->AddObject(new DoubleVecParam(BasalforcingsLaddieForcingDepthEnum,transparam,N));
 			xDelete<IssmDouble>(transparam);
