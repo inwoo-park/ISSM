@@ -87,17 +87,7 @@ IssmDouble GetEffectiveGravitationAccelerationx(IssmDouble g, IssmDouble rho0, I
     return g_e;
 }/*}}}*/
 void FloatingiceMeltingRateLaddiex(FemModel* femmodel){/*{{{*/
-	int ismelt;
-	femmodel->parameters->FindParam(&ismelt, BasalforcingsLaddieVelTideEnum);
-
-	switch(ismelt){
-		case 0: /*Two equation formulation*/
-			_error_("Two equation formulation (ismelt = 0) is not implemented yet.");
-			break;
-		case 1: /*Three equation formulation*/
-			LaddieMeltrateThreeEquationx(femmodel);
-			break;
-	}
+	UpdateLaddieMeltratex(femmodel);
 }/*}}}*/
 
 void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
@@ -134,7 +124,7 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		IssmDouble *Ttmp           = xNew<IssmDouble>(numvertices);
 		IssmDouble *Stmp           = xNew<IssmDouble>(numvertices);
 		IssmDouble *depth_vertices = xNew<IssmDouble>(numvertices);
-		IssmDouble *thickness_verticess = xNew<IssmDouble>(numvertices);
+		IssmDouble *thickness_vertices = xNew<IssmDouble>(numvertices);
 		/*
 		 * tf: temperature forcing
 		 * sf: salinity forcing
@@ -143,7 +133,7 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		DatasetInput* sf_input = element->GetDatasetInput(BasalforcingsLaddieForcingTemperatureEnum); _assert_(tf_input);
 
 		element->GetInputListOnVertices(&depth_vertices[0],BaseEnum);
-		element->GetInputListOnVertices(&thickness_verticess[0],BasalforcingsLaddieThicknessEnum);
+		element->GetInputListOnVertices(&thickness_vertices[0],BasalforcingsLaddieThicknessEnum);
 
 		Gauss* gauss=element->NewGauss();
 		for(int iv=0;iv<numvertices;iv++){
@@ -190,7 +180,7 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		xDelete<IssmDouble>(Ttmp);
 		xDelete<IssmDouble>(Stmp);
 		xDelete<IssmDouble>(depth_vertices);
-		xDelete<IssmDouble>(thickness_verticess);
+		xDelete<IssmDouble>(thickness_vertices);
 		delete gauss;
 	}
 }/*}}}*/
