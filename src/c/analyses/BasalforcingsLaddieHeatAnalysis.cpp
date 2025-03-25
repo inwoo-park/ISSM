@@ -189,26 +189,20 @@ void           BasalforcingsLaddieHeatAnalysis::InputUpdateFromSolution(IssmDoub
 	/*Only update if on base*/
 	if(!element->IsOnBase()) return;
 
-	/*deal with logic of accumulating thickness if we are coupled to a 
-	 * sea level core:*/
-	int frequency,count,isgrd;
-	element->FindParam(&isgrd,SolidearthSettingsGRDEnum);
-	if(isgrd){
-		element->FindParam(&frequency,SolidearthSettingsRunFrequencyEnum);
-		element->FindParam(&count,SealevelchangeRunCountEnum);
-	}
-
 	/*Fetch dof list and allocate solution vector*/
 	int *doflist = NULL;
 	element->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
 
 	int numnodes = element->GetNumberOfNodes();
+	IssmDouble  thickness;
+	IssmDouble *Tnew = xNew<IssmDouble>(numnodes);
+
 	Input *thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
-	IssmDouble* Tnew = xNew<IssmDouble>(numnodes);
 
 	/*Use the dof list to index into the solution vector: */
+	thickness_input->GetInputAverage(&thickness);
 	for(int i=0;i<numnodes;i++){
-		Tnew[i]=solution[doflist[i]];
+		Tnew[i]=solution[doflist[i]]/thickness;
 		/*Check solution*/
 		if(xIsNan<IssmDouble>(Tnew[i])) _error_("NaN found in solution vector");
 		if(xIsInf<IssmDouble>(Tnew[i])) _error_("Inf found in solution vector");
@@ -220,6 +214,31 @@ void           BasalforcingsLaddieHeatAnalysis::InputUpdateFromSolution(IssmDoub
 }/*}}}*/
 void           BasalforcingsLaddieHeatAnalysis::UpdateConstraints(FemModel* femmodel){/*{{{*/
 	SetActiveNodesLSMx(femmodel);
+
+	/*Constrain all nodes that are grounded and unconstrain the ones that float*/
+	for(Object* & object : femmodel->elements->objects){
+		Element    *element  = xDynamicCast<Element*>(object);
+		int         numnodes  = element->GetNumberOfNodes();
+		IssmDouble *mask      = xNew<IssmDouble>(numnodes);
+		IssmDouble *ls_active = xNew<IssmDouble>(numnodes);
+
+		element->GetInputListOnNodes(&mask[0],MaskOceanLevelsetEnum);
+		element->GetInputListOnNodes(&ls_active[0],IceMaskNodeActivationEnum);
+
+		for(int in=0;in<numnodes;in++){
+			Node* node=element->GetNode(in);
+			if(mask[in]<0. && ls_active[in]==1.){
+				node->Activate();
+			}
+			else{
+				/*Apply plume salt as zero value along grounding line*/
+				node->Deactivate();
+				node->ApplyConstraint(0,0.0);
+			}
+		}
+		xDelete<IssmDouble>(mask);
+		xDelete<IssmDouble>(ls_active);
+	}
 }/*}}}*/
 
 /*Heat tranport analysis*/
@@ -283,22 +302,28 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 		element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
 
 		/*Prepare inputs: */
+		thickness_input->GetInputValue(&thickness,gauss);
+
 		vx_input->GetInputValue(&vx,gauss);
 		vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
 
 		vy_input->GetInputValue(&vy,gauss);
 		vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
 
-		thickness_input->GetInputValue(&thickness,gauss);
 		dvxdx=dvx[0];
 		dvydy=dvy[1];
 
 		/*Transient term*/
 		D_scalar=gauss->weight*Jdet;
-		for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) Ke->values[i*numnodes+j] += D_scalar*thickness*basis[i]*basis[j];
+		factor=D_scalar*thickness;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				Ke->values[i*numnodes+j] += factor*basis[i]*basis[j];
+			}
+		}
 
 		/*Diffusion term: */
-		factor = D_scalar*Kh*thickness;
+		factor=D_scalar*dt*Kh*thickness;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				Ke->values[i*numnodes+j] += factor*(
@@ -309,140 +334,141 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 
 
 		/*Advection term: */
-		D_scalar=dt*gauss->weight*Jdet;
+		factor=D_scalar*dt*thickness;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				/*\phi_i \phi_j \nabla\cdot v*/
-				Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j]*(dvxdx+dvydy);
+				Ke->values[i*numnodes+j] += factor*basis[i]*basis[j]*(dvxdx+dvydy);
 				/*\phi_i v\cdot\nabla\phi_j*/
-				Ke->values[i*numnodes+j] += D_scalar*basis[i]*(vx*thickness*dbasis[0*numnodes+j] + vy*thickness*dbasis[1*numnodes+j]);
+				Ke->values[i*numnodes+j] += factor*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
 			}
 		}
-	}
 
-	for(int i=0;i<4;i++) D[i]=0.;
-	switch(stabilization){
-		case 0:
-			/*Nothing to be done*/
-			break;
-		case 1:
-			/*SSA*/
-			vx_input->GetInputAverage(&vx);
-			if(dim==2) vy_input->GetInputAverage(&vy);
-			D[0*dim+0]=h/2.0*fabs(vx);
-			if(dim==2) D[1*dim+1]=h/2.0*fabs(vy);
-			break;
-		case 2:
-			/*Streamline upwinding*/
-			vx_input->GetInputAverage(&vx);
-			if(dim==1){
-				vel=fabs(vx)+1.e-8;
-			}
-			else{
+		/*Prepare parameters for advection stabilization scheme*/
+		for(int i=0;i<4;i++) D[i]=0.;
+		switch(stabilization){
+			case 0:
+				/*Nothing to be done*/
+				break;
+			case 1:
+				/*SSA*/
+				vx_input->GetInputAverage(&vx);
+				if(dim==2) vy_input->GetInputAverage(&vy);
+				D[0*dim+0]=h/2.0*fabs(vx);
+				if(dim==2) D[1*dim+1]=h/2.0*fabs(vy);
+				break;
+			case 2:
+				/*Streamline upwinding*/
+				vx_input->GetInputAverage(&vx);
+				if(dim==1){
+					vel=fabs(vx)+1.e-8;
+				}
+				else{
+					vy_input->GetInputAverage(&vy);
+					vel=sqrt(vx*vx+vy*vy)+1.e-8;
+				}
+				tau=h/(2*vel);
+				break;
+			case 5:
+				/*SUPG*/
+				if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
+				vx_input->GetInputAverage(&vx);
 				vy_input->GetInputAverage(&vy);
 				vel=sqrt(vx*vx+vy*vy)+1.e-8;
+				//xi=0.3130;
+				xi=1;
+				tau=xi*h/(2*vel);
+				//tau=dt/6; // as implemented in Ua
+				break;
+			default:
+				_error_("Stabilization "<<stabilization<<" not supported yet");
+		}
+
+		if(stabilization==1){/*{{{*/
+			/*SSA*/
+			if(dim==1) D[0]=D_scalar*D[0];
+			else{
+				D[0*dim+0]=D_scalar*D[0*dim+0];
+				D[1*dim+0]=D_scalar*D[1*dim+0];
+				D[0*dim+1]=D_scalar*D[0*dim+1];
+				D[1*dim+1]=D_scalar*D[1*dim+1];
 			}
-			tau=h/(2*vel);
-			break;
-		case 5:
-			/*SUPG*/
-			if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
-			vx_input->GetInputAverage(&vx);
-			vy_input->GetInputAverage(&vy);
-			vel=sqrt(vx*vx+vy*vy)+1.e-8;
-			//xi=0.3130;
-			xi=1;
-			tau=xi*h/(2*vel);
-			//tau=dt/6; // as implemented in Ua
-			break;
-		default:
-			_error_("Stabilization "<<stabilization<<" not supported yet");
+
+			if(dim==2){
+				for(int i=0;i<numnodes;i++){
+					for(int j=0;j<numnodes;j++){
+						Ke->values[i*numnodes+j] += (
+									dbasis[0*numnodes+i] *(D[0*dim+0]*dbasis[0*numnodes+j] + D[0*dim+1]*dbasis[1*numnodes+j]) +
+									dbasis[1*numnodes+i] *(D[1*dim+0]*dbasis[0*numnodes+j] + D[1*dim+1]*dbasis[1*numnodes+j])
+									);
+					}
+				}
+			}
+			else{
+				for(int i=0;i<numnodes;i++){
+					for(int j=0;j<numnodes;j++){
+						Ke->values[i*numnodes+j] += dbasis[0*numnodes+i]*D[0]*dbasis[0*numnodes+j];
+					}
+				}
+			}
+		}/*}}}*/
+		if(stabilization==2){/*{{{*/
+			/*Streamline upwind*/
+			_assert_(dim==2);
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i])*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]);
+				}
+			}
+		}/*}}}*/
+		if(stabilization==5){/*{{{*/
+			/*Mass matrix - part 2*/
+			factor = gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*basis[j]*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+				}
+			}
+			/*Mass matrix - part 3*/
+			factor = gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*basis[j]*(basis[i]*dvxdx+basis[i]*dvydy);
+				}
+			}
+
+			/*Advection matrix - part 2, A*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+				}
+			}
+			/*Advection matrix - part 3, A*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(basis[i]*dvxdx+basis[i]*dvydy);
+				}
+			}
+
+			/*Advection matrix - part 2, B*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+				}
+			}
+			/*Advection matrix - part 3, B*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(basis[i]*dvxdx+basis[i]*dvydy);
+				}
+			}
+		}/*}}}*/
 	}
-
-	if(stabilization==1){/*{{{*/
-		/*SSA*/
-		if(dim==1) D[0]=D_scalar*D[0];
-		else{
-			D[0*dim+0]=D_scalar*D[0*dim+0];
-			D[1*dim+0]=D_scalar*D[1*dim+0];
-			D[0*dim+1]=D_scalar*D[0*dim+1];
-			D[1*dim+1]=D_scalar*D[1*dim+1];
-		}
-
-		if(dim==2){
-			for(int i=0;i<numnodes;i++){
-				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j] += (
-								dbasis[0*numnodes+i] *(D[0*dim+0]*dbasis[0*numnodes+j] + D[0*dim+1]*dbasis[1*numnodes+j]) +
-								dbasis[1*numnodes+i] *(D[1*dim+0]*dbasis[0*numnodes+j] + D[1*dim+1]*dbasis[1*numnodes+j])
-								);
-				}
-			}
-		}
-		else{
-			for(int i=0;i<numnodes;i++){
-				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j] += dbasis[0*numnodes+i]*D[0]*dbasis[0*numnodes+j];
-				}
-			}
-		}
-	}/*}}}*/
-	if(stabilization==2){/*{{{*/
-		/*Streamline upwind*/
-		_assert_(dim==2);
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i])*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]);
-			}
-		}
-	}/*}}}*/
-	if(stabilization==5){/*{{{*/
-		/*Mass matrix - part 2*/
-		factor = gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*basis[j]*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
-			}
-		}
-		/*Mass matrix - part 3*/
-		factor = gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*basis[j]*(basis[i]*dvxdx+basis[i]*dvydy);
-			}
-		}
-
-		/*Advection matrix - part 2, A*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
-			}
-		}
-		/*Advection matrix - part 3, A*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(basis[i]*dvxdx+basis[i]*dvydy);
-			}
-		}
-
-		/*Advection matrix - part 2, B*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
-			}
-		}
-		/*Advection matrix - part 3, B*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(basis[i]*dvxdx+basis[i]*dvydy);
-			}
-		}
-	}/*}}}*/
 
 	/*Clean up and return*/
 	xDelete<IssmDouble>(xyz_list);
@@ -496,7 +522,6 @@ ElementVector* BasalforcingsLaddieHeatAnalysis::CreatePVectorCG(Element* element
 
 	/*Retrieve all inputs and parameters*/
 	element->GetVerticesCoordinates(&xyz_list);
-	//element->FindParam(&melt_style,GroundinglineMeltInterpolationEnum);
 	element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
 	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationEnum);
 
@@ -513,6 +538,7 @@ ElementVector* BasalforcingsLaddieHeatAnalysis::CreatePVectorCG(Element* element
 	h=element->CharacteristicLength();
 
 	/* Start  looping on the number of gaussian points: */
+	gauss = element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
@@ -527,8 +553,35 @@ ElementVector* BasalforcingsLaddieHeatAnalysis::CreatePVectorCG(Element* element
 		entr_input->GetInputValue(&entr_rate,gauss);
 		gammaT_input->GetInputValue(&gammaT,gauss);
 
-		IssmDouble factor = Jdet*gauss->weight*(T+dt*(entr_rate*gammaT + melt_rate*Tb - gammaT*(T-Tb)));
-		for(int i=0;i<numnodes;i++) pe->values[i]+=factor*basis[i];
+		IssmDouble factor = Jdet*gauss->weight*(thickness*T+dt*(entr_rate*gammaT + melt_rate*Tb - gammaT*(T-Tb)));
+		for(int i=0;i<numnodes;i++){
+			pe->values[i]+=factor*basis[i];
+		}
+
+		if(stabilization==5){ //SUPG {{{
+			element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
+			vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			dvxdx=dvx[0];
+			dvydy=dvy[1];
+			//xi=0.3130;
+			xi=1;
+			tau=xi*h/(2*vel);
+			//tau=dt/6; // as implemented in Ua
+
+			/*Force vector - part 2*/
+			factor = Jdet*gauss->weight*(thickness*T+dt*(entr_rate*gammaT + melt_rate*Tb - gammaT*(T-Tb)));
+			for(int i=0;i<numnodes;i++){
+				pe->values[i]+=factor*(tau*vx*dbasis[0*numnodes+i]+tau*vy*dbasis[1*numnodes+i]);
+			}
+			/*Force vector - part 3*/
+			for(int i=0;i<numnodes;i++){
+				pe->values[i]+=factor*(tau*basis[i]*dvxdx+tau*basis[i]*dvydy);
+			}
+		} //}}}
 	}
 
 	/*Clean up and return*/

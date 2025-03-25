@@ -126,7 +126,8 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 
 	/*
 	!!NOTE: Parameters for LADDIE are updated through "CreateParameters.cpp"
-	Skip this part.
+	Skip this part?!
+	Recheck this part in further.
 	 */
 
 	/*Basalforcing plume model specials*/
@@ -139,10 +140,12 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd_mon",BasalforcingsLaddieCdEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.f_cori",BasalforcingsLaddieCoriolisFrequencyEnum));
 
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.stabilization",BasalforcingsLaddieStabilizationEnum));
+
 	iomodel->FindConstant(&requestedoutputs,&numoutputs,"md.basalforcings.requested_outputs");
 	parameters->AddObject(new IntParam(MasstransportNumRequestedOutputsEnum,numoutputs));
 	if(numoutputs)parameters->AddObject(new StringArrayParam(MasstransportRequestedOutputsEnum,requestedoutputs,numoutputs));
-	iomodel->DeleteData(&requestedoutputs,numoutputs,"md.masstransport.requested_outputs");
+	iomodel->DeleteData(&requestedoutputs,numoutputs,"md.basalforcings.requested_outputs");
 }/*}}}*/
 
 /*Finite Element Analysis*/
@@ -332,9 +335,8 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 	element->FindParam(&domaintype,DomainTypeEnum);
 	element->FindParam(&stabilization,MasstransportStabilizationEnum);
 	/*Plume thickness D and depth averaged horizontal velocity*/
-	Input* D_input  =element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
-	Input* vx_input =element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
-	Input* vy_input =element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
+	Input* vx_input        = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
+	Input* vy_input        = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
 
 	h = element->CharacteristicLength();
 
@@ -368,131 +370,132 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 				Ke->values[i*numnodes+j] += D_scalar*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
 			}
 		}
-	}
 
-	for(int i=0;i<4;i++) D[i]=0.;
-	switch(stabilization){
-		case 0:
-			/*Nothing to be done*/
-			break;
-		case 1:
-			/*SSA*/
-			vx_input->GetInputAverage(&vx);
-			if(dim==2) vy_input->GetInputAverage(&vy);
-			D[0*dim+0]=h/2.0*fabs(vx);
-			if(dim==2) D[1*dim+1]=h/2.0*fabs(vy);
-			break;
-		case 2:
-			/*Streamline upwinding*/
-			vx_input->GetInputAverage(&vx);
-			if(dim==1){
-				vel=fabs(vx)+1.e-8;
-			}
-			else{
+		/*Prepare parameters for advection stabilization scheme*/
+		for(int i=0;i<4;i++) D[i]=0.;
+		switch(stabilization){
+			case 0:
+				/*Nothing to be done*/
+				break;
+			case 1:
+				/*SSA*/
+				vx_input->GetInputAverage(&vx);
+				if(dim==2) vy_input->GetInputAverage(&vy);
+				D[0*dim+0]=h/2.0*fabs(vx);
+				if(dim==2) D[1*dim+1]=h/2.0*fabs(vy);
+				break;
+			case 2:
+				/*Streamline upwinding*/
+				vx_input->GetInputAverage(&vx);
+				if(dim==1){
+					vel=fabs(vx)+1.e-8;
+				}
+				else{
+					vy_input->GetInputAverage(&vy);
+					vel=sqrt(vx*vx+vy*vy)+1.e-8;
+				}
+				tau=h/(2*vel);
+				break;
+			case 5:
+				/*SUPG*/
+				if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
+				vx_input->GetInputAverage(&vx);
 				vy_input->GetInputAverage(&vy);
 				vel=sqrt(vx*vx+vy*vy)+1.e-8;
+				//xi=0.3130;
+				xi=1;
+				tau=xi*h/(2*vel);
+				//tau=dt/6; // as implemented in Ua
+				break;
+			default:
+				_error_("Stabilization "<<stabilization<<" not supported yet");
+		}
+
+		if(stabilization==1){/*{{{*/
+			/*SSA*/
+			if(dim==1) D[0]=D_scalar*D[0];
+			else{
+				D[0*dim+0]=D_scalar*D[0*dim+0];
+				D[1*dim+0]=D_scalar*D[1*dim+0];
+				D[0*dim+1]=D_scalar*D[0*dim+1];
+				D[1*dim+1]=D_scalar*D[1*dim+1];
 			}
-			tau=h/(2*vel);
-			break;
-		case 5:
-			/*SUPG*/
-			if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
-			vx_input->GetInputAverage(&vx);
-			vy_input->GetInputAverage(&vy);
-			vel=sqrt(vx*vx+vy*vy)+1.e-8;
-			//xi=0.3130;
-			xi=1;
-			tau=xi*h/(2*vel);
-			//tau=dt/6; // as implemented in Ua
-			break;
-		default:
-			_error_("Stabilization "<<stabilization<<" not supported yet");
+
+			if(dim==2){
+				for(int i=0;i<numnodes;i++){
+					for(int j=0;j<numnodes;j++){
+						Ke->values[i*numnodes+j] += (
+									dbasis[0*numnodes+i] *(D[0*dim+0]*dbasis[0*numnodes+j] + D[0*dim+1]*dbasis[1*numnodes+j]) +
+									dbasis[1*numnodes+i] *(D[1*dim+0]*dbasis[0*numnodes+j] + D[1*dim+1]*dbasis[1*numnodes+j])
+									);
+					}
+				}
+			}
+			else{
+				for(int i=0;i<numnodes;i++){
+					for(int j=0;j<numnodes;j++){
+						Ke->values[i*numnodes+j] += dbasis[0*numnodes+i]*D[0]*dbasis[0*numnodes+j];
+					}
+				}
+			}
+		}/*}}}*/
+		if(stabilization==2){/*{{{*/
+			/*Streamline upwind*/
+			_assert_(dim==2);
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i])*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]);
+				}
+			}
+		}/*}}}*/
+		if(stabilization==5){/*{{{*/
+			/*Mass matrix - part 2*/
+			factor = gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*basis[j]*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+				}
+			}
+			/*Mass matrix - part 3*/
+			factor = gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*basis[j]*(basis[i]*dvxdx+basis[i]*dvydy);
+				}
+			}
+
+			/*Advection matrix - part 2, A*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+				}
+			}
+			/*Advection matrix - part 3, A*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(basis[i]*dvxdx+basis[i]*dvydy);
+				}
+			}
+
+			/*Advection matrix - part 2, B*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
+				}
+			}
+			/*Advection matrix - part 3, B*/
+			factor = dt*gauss->weight*Jdet*tau;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(basis[i]*dvxdx+basis[i]*dvydy);
+				}
+			}
+		}/*}}}*/
 	}
-
-	if(stabilization==1){/*{{{*/
-		/*SSA*/
-		if(dim==1) D[0]=D_scalar*D[0];
-		else{
-			D[0*dim+0]=D_scalar*D[0*dim+0];
-			D[1*dim+0]=D_scalar*D[1*dim+0];
-			D[0*dim+1]=D_scalar*D[0*dim+1];
-			D[1*dim+1]=D_scalar*D[1*dim+1];
-		}
-
-		if(dim==2){
-			for(int i=0;i<numnodes;i++){
-				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j] += (
-								dbasis[0*numnodes+i] *(D[0*dim+0]*dbasis[0*numnodes+j] + D[0*dim+1]*dbasis[1*numnodes+j]) +
-								dbasis[1*numnodes+i] *(D[1*dim+0]*dbasis[0*numnodes+j] + D[1*dim+1]*dbasis[1*numnodes+j])
-								);
-				}
-			}
-		}
-		else{
-			for(int i=0;i<numnodes;i++){
-				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j] += dbasis[0*numnodes+i]*D[0]*dbasis[0*numnodes+j];
-				}
-			}
-		}
-	}/*}}}*/
-	if(stabilization==2){/*{{{*/
-		/*Streamline upwind*/
-		_assert_(dim==2);
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i])*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]);
-			}
-		}
-	}/*}}}*/
-	if(stabilization==5){/*{{{*/
-		/*Mass matrix - part 2*/
-		factor = gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*basis[j]*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
-			}
-		}
-		/*Mass matrix - part 3*/
-		factor = gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*basis[j]*(basis[i]*dvxdx+basis[i]*dvydy);
-			}
-		}
-
-		/*Advection matrix - part 2, A*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
-			}
-		}
-		/*Advection matrix - part 3, A*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j])*(basis[i]*dvxdx+basis[i]*dvydy);
-			}
-		}
-
-		/*Advection matrix - part 2, B*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]);
-			}
-		}
-		/*Advection matrix - part 3, B*/
-		factor = dt*gauss->weight*Jdet*tau;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(basis[i]*dvxdx+basis[i]*dvydy);
-			}
-		}
-	}/*}}}*/
 
 	/*Clean up and return*/
 	xDelete<IssmDouble>(xyz_list);
@@ -513,9 +516,9 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 	bool        mainlyfloating;
 	IssmDouble  fraction1,fraction2;
 	IssmDouble  Jdet,dt,intrusiondist;
-	IssmDouble  ms,mb,gmb,fmb,thickness,fmb_pert,gldistance;
+	IssmDouble  ms,mb,gmb,fmb,fmb_pert,gldistance;
 	IssmDouble  vx,vy,vel,dvxdx,dvydy,xi,h,tau;
-	IssmDouble  D; /*Plume thickness (or depth) [m]*/
+	IssmDouble  thickness; /*Plume thickness (or depth) [m]*/
 	IssmDouble  melt_rate, entr_rate; /*melting rate and entrainment rate [unit: m s-1]*/
 	IssmDouble  g; /* gravitational acceleration [m s-1]*/
 	IssmDouble  dvx[2],dvy[2];
@@ -547,8 +550,7 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationEnum);
 	element->FindParam(&g,ConstantsGEnum);
 
-	Input* gllevelset_input = element->GetInput(MaskOceanLevelsetEnum); _assert_(gllevelset_input);
-	Input* D_input       = element->GetInput(BasalforcingsLaddieThicknessEnum);   _assert_(D_input);
+	Input* thickness_input  = element->GetInput(BasalforcingsLaddieThicknessEnum);   _assert_(thickness_input);
 	Input* vx_input      = element->GetInput(BasalforcingsLaddieVxEnum);		  _assert_(vx_input);
 	Input* vy_input      = element->GetInput(BasalforcingsLaddieVyEnum);	     _assert_(vy_input);
 	Input* melt_input    = element->GetInput(BasalforcingsLaddieMeltingRateEnum); _assert_(melt_input);
@@ -576,50 +578,11 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 		element->NodalFunctions(basis,gauss);
 
 		/*Get input values*/
-		D_input->GetInputValue(&D,gauss);
+		thickness_input->GetInputValue(&thickness,gauss);
 		melt_input->GetInputValue(&melt_rate,gauss);
 		entr_input->GetInputValue(&entr_rate,gauss);
 
-		//if(melt_style==SubelementMelt1Enum){
-		//	if (phi>0.999999999) mb=gmb;
-		//	else mb=(1-phi)*fmb+phi*gmb; // phi is the fraction of grounded ice so (1-phi) is floating
-		//}
-		//else if(melt_style==SubelementMelt2Enum){
-		//	if(gllevelset>0.) mb=gmb;
-		//	else mb=fmb;
-		//}
-		//else if(melt_style==NoMeltOnPartiallyFloatingEnum){
-		//	if (phi<0.00000001){
-		//		mb=fmb;//+fmb_pert;
-		//	}
-		//	else mb=gmb;
-		//}
-		//else if(melt_style==FullMeltOnPartiallyFloatingEnum){
-		//	if (phi<0.99999999) mb=fmb;
-		//	else mb=gmb;
-		//}
-		//else if(melt_style==IntrusionMeltEnum){
-		//	Input* gldistance_input = element->GetInput(DistanceToGroundinglineEnum); _assert_(gldistance_input); 
-		//	gldistance_input->GetInputValue(&gldistance,gauss);
-		//	if(intrusiondist==0){
-		//		if(gllevelset>0.) mb=gmb;
-		//		else mb=fmb;
-		//	}
-		//	else if(gldistance>intrusiondist) {
-		//		mb=gmb;
-		//	}
-		//	else if(gldistance<=intrusiondist && gldistance>0) {
-		//		mb=fmb*(1-gldistance/intrusiondist); 
-		//	}
-		//	else{
-		//		mb=fmb;
-		//	}
-		//}
-		//else{
-		//	_error_("melt interpolation "<<EnumToStringx(melt_style)<<" not implemented yet");
-		//}
-
-		IssmDouble factor = Jdet*gauss->weight*(D+dt*(melt_rate+entr_rate));
+		IssmDouble factor = Jdet*gauss->weight*(thickness+dt*(melt_rate+entr_rate));
 		for(int i=0;i<numnodes;i++) pe->values[i]+=factor*basis[i];
 
 		if(stabilization==5){ //SUPG
@@ -637,7 +600,7 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 			//tau=dt/6; // as implemented in Ua
 
 			/*Force vector - part 2*/
-			factor = Jdet*gauss->weight*(thickness+dt*(ms-mb));
+			factor = Jdet*gauss->weight*(thickness+dt*(melt_rate+entr_rate));
 			for(int i=0;i<numnodes;i++){
 				pe->values[i]+=factor*(tau*vx*dbasis[0*numnodes+i]+tau*vy*dbasis[1*numnodes+i]);
 			}
