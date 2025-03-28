@@ -101,10 +101,11 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 	laddie/src/physics.py > "def update_ambientfields"
 	 */
 	
-	IssmDouble* forcing_depth=NULL;
+	IssmDouble *values;
+	IssmDouble *forcing_depth=NULL;
 	int num_depths;
 
-	femmodel->parameters->FindParam(&forcing_depth,&num_depths,BasalforcingsLaddieForcingDepthEnum); _assert_(depths);
+	femmodel->parameters->FindParam(&forcing_depth,&num_depths,BasalforcingsLaddieForcingDepthEnum); _assert_(forcing_depth);
 
 	/*Get ambient ocean temperature and salinity at each ice shelf point - linearly interpolate in depth and time*/
 	for(Object* & object : femmodel->elements->objects){
@@ -113,8 +114,11 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 
 		/*Set melt to 0 if non floating*/
 		if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
-			IssmDouble* values = xNewZeroInit<IssmDouble>(numvertices);
+			values = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsLaddieAmbientTemperatureEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsLaddieAmbientSalinityEnum,values,P1DGEnum);
 			xDelete<IssmDouble>(values);
 			continue;
@@ -130,7 +134,7 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		 * sf: salinity forcing
 		 */
 		DatasetInput* tf_input = element->GetDatasetInput(BasalforcingsLaddieForcingTemperatureEnum); _assert_(tf_input);
-		DatasetInput* sf_input = element->GetDatasetInput(BasalforcingsLaddieForcingTemperatureEnum); _assert_(tf_input);
+		DatasetInput* sf_input = element->GetDatasetInput(BasalforcingsLaddieForcingSalinityEnum); _assert_(sf_input);
 
 		element->GetInputListOnVertices(&depth_vertices[0],BaseEnum);
 		element->GetInputListOnVertices(&thickness_vertices[0],BasalforcingsLaddieThicknessEnum);
@@ -139,7 +143,7 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		for(int iv=0;iv<numvertices;iv++){
 			gauss->GaussVertex(iv);
 
-			IssmDouble depth=-(depth_vertices[iv]-thickness_vertices[iv]);
+			IssmDouble depth=(depth_vertices[iv]-thickness_vertices[iv]);
 			int offset;
 			int found=binary_search(&offset,depth,forcing_depth,num_depths);
 			if(!found) _error_("depth not found");
@@ -174,15 +178,19 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 			}
 		}
 
-		/*Clear memory: */
 		element->AddInput(BasalforcingsLaddieAmbientTemperatureEnum,Ttmp,P1DGEnum);
 		element->AddInput(BasalforcingsLaddieAmbientSalinityEnum,Stmp,P1DGEnum);
+
+		/*Clear memory: */
 		xDelete<IssmDouble>(Ttmp);
 		xDelete<IssmDouble>(Stmp);
 		xDelete<IssmDouble>(depth_vertices);
 		xDelete<IssmDouble>(thickness_vertices);
 		delete gauss;
 	}
+
+	/*Clear memory: */
+	xDelete<IssmDouble>(forcing_depth);
 }/*}}}*/
 void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 	/*
@@ -199,6 +207,8 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 	IssmDouble alpha=3.733e-5; /*thermal expansion coefficient [degC -1]*/
 	IssmDouble beta=7.843e-4; /*haline contraction coefficient [psu-1]*/
 
+	IssmDouble *values;
+
 	femmodel->parameters->FindParam(&rho0,MaterialsRhoSeawaterEnum);
 	femmodel->parameters->FindParam(&g,ConstantsGEnum);
 
@@ -209,8 +219,12 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 
 		/*Set melt to 0 if non floating*/
 		if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
-			IssmDouble* values = xNewZeroInit<IssmDouble>(numvertices);
-			element->AddInput(BasalforcingsLaddieDRhoEnum,values,P1DGEnum);
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieDRhoEnum,&values[0],P1DGEnum);
+			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieAmbientGEnum,&values[0],P1DGEnum);
 			xDelete<IssmDouble>(values);
 			continue;
 		}
@@ -221,7 +235,7 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 		Input* S_input = element->GetInput(BasalforcingsLaddieSEnum); _assert_(S_input);
 		/*Ambient ocean temperature and salinity*/
 		Input* Ta_input = element->GetInput(BasalforcingsLaddieAmbientTemperatureEnum); _assert_(Ta_input);
-		Input* Sa_input = element->GetInput(BasalforcingsLaddieAmbientTemperatureEnum); _assert_(Sa_input);
+		Input* Sa_input = element->GetInput(BasalforcingsLaddieAmbientSalinityEnum); _assert_(Sa_input);
 
 		/*Initialize variable*/
 		IssmDouble* ga=xNew<IssmDouble>(numvertices);
@@ -243,8 +257,8 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 		}
 
 		/*Assign value in: */
-		element->AddInput(BasalforcingsLaddieDRhoEnum,drho,P1DGEnum);
-		element->AddInput(BasalforcingsLaddieAmbientGEnum,ga,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieDRhoEnum,&drho[0],P1DGEnum);
+		element->AddInput(BasalforcingsLaddieAmbientGEnum,&ga[0],P1DGEnum);
 		
 		/*Clear memory*/
 		xDelete<IssmDouble>(ga);
@@ -264,6 +278,7 @@ void UpdateLaddieFrictionVelocityx(FemModel* femmodel){/*{{{*/
 	IssmDouble utide; /*tide velocity*/
 
 	femmodel->parameters->FindParam(&Cdtop, BasalforcingsLaddieCdTopEnum);
+	femmodel->parameters->FindParam(&utide, BasalforcingsLaddieVelTideEnum);
 
 	/*Get basal friction coefficient*/
 	for(Object* & object : femmodel->elements->objects){
@@ -280,7 +295,6 @@ void UpdateLaddieFrictionVelocityx(FemModel* femmodel){/*{{{*/
 
 		Input* vx_input    = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
 		Input* vy_input    = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
-		Input* utide_input = element->GetInput(BasalforcingsLaddieVelTideEnum); _assert_(utide_input);
 
 		/*friction velocity*/
 		IssmDouble* ustar=xNew<IssmDouble>(numvertices);
@@ -292,7 +306,6 @@ void UpdateLaddieFrictionVelocityx(FemModel* femmodel){/*{{{*/
 			/*Prepare value*/
 			vx_input->GetInputValue(&vx, gauss);
 			vy_input->GetInputValue(&vy, gauss);
-			utide_input->GetInputValue(&utide, gauss);
 
 			/*Calculate friction velocity*/
 			ustar[iv] = GetLaddieFrictionVelocityx(Cdtop, vx, vy, utide);
@@ -333,7 +346,6 @@ void UpdateLaddieHeatAndSaltExchangeCoefficientx(FemModel* femmodel){/*{{{*/
 		Element* element = xDynamicCast<Element*>(object);
 		int      numvertices = element->GetNumberOfVertices();
 
-
 		/*Set melt to 0 if non floating*/
 		if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
 			IssmDouble* values = xNewZeroInit<IssmDouble>(numvertices);
@@ -344,7 +356,7 @@ void UpdateLaddieHeatAndSaltExchangeCoefficientx(FemModel* femmodel){/*{{{*/
 		}
 
 		Input* D_input     = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
-		Input* ustar_input = element->GetInput(BasalforcingsLaddieVelFrictionEnum); _assert_(ustart_input);
+		Input* ustar_input = element->GetInput(BasalforcingsLaddieVelFrictionEnum); _assert_(ustar_input);
 
 		IssmDouble* gammaT=xNew<IssmDouble>(numvertices);
 		IssmDouble* gammaS=xNew<IssmDouble>(numvertices);
@@ -382,8 +394,10 @@ void UpdateLaddieMeltratex(FemModel* femmodel){/*{{{*/
 	switch(ismelt){
 		case 0: /*two equation formulation*/
 			_error_("Given md.basalforcings.ismelt=0 is not implemented yet.");
+			break;
 		case 1: /*three equation formulation*/
 			LaddieMeltrateThreeEquationx(femmodel);
+			break;
 		default:
 			_error_("Not implemented yet.");
 	}
@@ -405,6 +419,15 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 	 laddie > src > physics.py > def update_melt(object)
 	 */
 
+	/*Initialize input values: */
+	int numvertices;
+	IssmDouble  D, vx, vy, T, S, zb;
+	IssmDouble  That, Chat, Ctil;
+	IssmDouble  AA;
+	IssmDouble  b, c;
+	IssmDouble  gammaT, gammaS; /*Heat exchange coefficient for three equation*/
+
+	/*Initialize constant values: */
 	IssmDouble Utide; /*Tidal velocity [m s-1]*/
 	IssmDouble Ustar; /*Friction velocity [m s-1]*/
    IssmDouble nu0=1.95e-6; /*Kinematic viscosity = mu / rho*/
@@ -412,7 +435,6 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 	IssmDouble Sc=2432; /*Schmidt number*/
 	IssmDouble Cd_top; /*top drag coefficient*/
 
-	IssmDouble That, Chat, Ctil;
 	IssmDouble Ci; /*Heat capacity of ice*/
 	IssmDouble Cp; /*Heat capacity of seawater*/
 	IssmDouble L; /*Latent heat of fusion*/
@@ -423,6 +445,12 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 
 	IssmDouble Ti=-20; /*basal ice temperature on ice shelf [degC]*/
 
+	IssmDouble *values; /*value for assigning value*/
+	IssmDouble *melt, *Tb;
+	Input   *D_input, *vx_input, *vy_input, *T_input, *S_input, *base_input;
+	Element *element;
+	Gauss   *gauss;
+
 	/*Get parameters*/
 	femmodel->parameters->FindParam(&Utide,  BasalforcingsLaddieVelTideEnum);
 	femmodel->parameters->FindParam(&Cd_top, BasalforcingsLaddieCdTopEnum);
@@ -432,34 +460,32 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 
 	/*Update sub-ice shelf melting rate using three equation formulatoin*/
 	for(Object* & object : femmodel->elements->objects){
-		Element* element = xDynamicCast<Element*>(object);
-		int numvertices=element->GetNumberOfVertices();
+		element = xDynamicCast<Element*>(object);
+		numvertices=element->GetNumberOfVertices();
 
 		if (!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
-			IssmDouble* value = xNewZeroInit<IssmDouble>(numvertices);
-			element->AddInput(BasalforcingsFloatingiceMeltingRateEnum,value,P1DGEnum);
-			element->AddInput(BasalforcingsLaddieTbEnum,value,P1DGEnum);
-			xDelete<IssmDouble>(value);
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsFloatingiceMeltingRateEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieTbEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
 			continue;
 		}
 		
 		/*Get all input*/
-		Input* D_input    = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
-		Input* vx_input   = element->GetInput(BasalforcingsLaddieVxEnum);    _assert_(vx_input);
-		Input* vy_input   = element->GetInput(BasalforcingsLaddieVyEnum);    _assert_(vy_input);
-		Input* T_input    = element->GetInput(BasalforcingsLaddieTEnum);     _assert_(T_input);
-		Input* S_input    = element->GetInput(BasalforcingsLaddieSEnum);     _assert_(S_input);
-		Input* base_input = element->GetInput(BaseEnum);                     _assert_(base_input);
+		D_input    = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
+		vx_input   = element->GetInput(BasalforcingsLaddieVxEnum);    _assert_(vx_input);
+		vy_input   = element->GetInput(BasalforcingsLaddieVyEnum);    _assert_(vy_input);
+		T_input    = element->GetInput(BasalforcingsLaddieTEnum);     _assert_(T_input);
+		S_input    = element->GetInput(BasalforcingsLaddieSEnum);     _assert_(S_input);
+		base_input = element->GetInput(BaseEnum);                     _assert_(base_input);
 
-		IssmDouble* melt = xNew<IssmDouble>(numvertices);
-		IssmDouble* Tb   = xNew<IssmDouble>(numvertices); /* freezing temperature at ice shelf base*/
-		IssmDouble  D, vx, vy, T, S, zb;
-		IssmDouble  That, Chat, Ctil;
-		IssmDouble  AA;
-		IssmDouble  b, c;
-		IssmDouble  gammaT, gammaS; /*Heat exchange coefficient for three equation*/
+		melt = xNew<IssmDouble>(numvertices);
+		Tb   = xNew<IssmDouble>(numvertices); /* freezing temperature at ice shelf base*/
 
-		Gauss* gauss=element->NewGauss();
+		gauss=element->NewGauss();
 		for (int iv=0;iv<numvertices;iv++){
 			gauss->GaussVertex(iv);
 			
@@ -509,63 +535,60 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 	/*
 	 Calculate entrainment rate!
 	 */
-	IssmDouble Kparam; /*Kparam: Kochergin entrainment rate*/
+	int numvertices;
 	int isentrainment;
 
-	femmodel->parameters->FindParam(&isentrainment, BasalforcingsLaddieIsEntrainmentEnum);
+	IssmDouble  Kparam; /*Kparam: Kochergin entrainment rate*/
+	/*Initialize input values*/
+	IssmDouble  vx, vy, ga, D;
+	IssmDouble *values;
+	IssmDouble *entr;
 
-	/*Update sub-ice shelf melting rate using three equation formulatoin*/
+	Element *element;
+	Gauss   *gauss;
+
+	femmodel->parameters->FindParam(&isentrainment, BasalforcingsLaddieIsEntrainmentEnum);
+	femmodel->parameters->FindParam(&Kparam, BasalforcingsLaddieKparamEnum);
+
+	/*Update entrainment rate*/
 	for(Object* & object : femmodel->elements->objects){
-		Element* element = xDynamicCast<Element*>(object);
-		int numvertices=element->GetNumberOfVertices();
+		element = xDynamicCast<Element*>(object);
+		numvertices=element->GetNumberOfVertices();
 
 		/*Set melt to 0 if non floating*/
 		if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
-			IssmDouble* values = xNewZeroInit<IssmDouble>(numvertices);
+			values = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsLaddieEntrainmentRateEnum,values,P1DGEnum);
 			xDelete<IssmDouble>(values);
 			continue;
 		}
+		
+		Input *vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
+		Input *vy_input=element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
+		Input *D_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
+		Input *ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+		entr = xNew<IssmDouble>(numvertices);
 
-		/*Initialize array*/
-		IssmDouble* entr=xNew<IssmDouble>(numvertices);
+		gauss=element->NewGauss();
+		for (int iv=0;iv<numvertices;iv++){
+			gauss->GaussVertex(iv);
 
-		switch(isentrainment){
-			case 0:{
+			if(isentrainment==0){
 				/*Update entrainment rate with Holland et al. (2006): doi:10.1175/JPO2970.1*/
-
-				/*Initialize inputs: */
-				Input *vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
-				Input *vy_input=element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
-				Input *ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
-				Input *D_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
-
-				/*Initialize input values*/
-				IssmDouble vx, vy, ga, D;
-
-				Gauss *gauss=element->NewGauss();
-				for (int iv=0;iv<numvertices;iv++){
-					gauss->GaussVertex(iv);
-
-					vx_input->GetInputValue(&vx,gauss);
-					vy_input->GetInputValue(&vy,gauss);
-					ga_input->GetInputValue(&ga,gauss);
-					D_input->GetInputValue(&D,gauss);
-					
-					entr[iv]=GetEntrainmentRateHollandx(Kparam, ga, D, vx, vy);
-				}
-				break;
+				vx_input->GetInputValue(&vx,gauss);
+				vy_input->GetInputValue(&vy,gauss);
+				D_input->GetInputValue(&D,gauss);
+				ga_input->GetInputValue(&ga,gauss);
+				
+				entr[iv]=GetEntrainmentRateHollandx(Kparam, ga, D, vx, vy);
 			}
-			case 1:{
+			else if(isentrainment==1){
 				/*Update entrainment rate with Gaspar et al. (2012): doi:10.3189/2012JoG12J003*/
 				_error_("Given md.basalforcings.isentrainement=1 is not implemented yet!");
-
-				/*Initialize inputs: */
-				Input *ustar=element->GetInput(BasalforcingsLaddieVelFrictionEnum); _assert_(ustar_input);
-				break;
 			}
-			default:
+			else{
 				_error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
+			}
 		}
 
 		/*Assign input*/
@@ -573,6 +596,7 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 
 		/*Clear memory*/
 		xDelete<IssmDouble>(entr);
+		delete gauss;
 	}
 }/*}}}*/
 IssmDouble GetEntrainmentRateHollandx(IssmDouble Kparam, IssmDouble ga, IssmDouble thickness, IssmDouble vx, IssmDouble vy){/*{{{*/
@@ -595,11 +619,14 @@ IssmDouble GetEntrainmentRateHollandx(IssmDouble Kparam, IssmDouble ga, IssmDoub
 
 	/*Calculate Richardson and Schmidt number*/
 	Ri = ga*thickness/(pow(vx,2.0) + pow(vy,2.0));
-	Sc = Ri/(0.725*(Ri + 0.186 - pow(pow(Ri,2.0) - 0.316*Ri + 0.0346, 0.5)));
+	Sc = Ri/(0.725*(Ri + 0.186 - pow(Ri*Ri - 0.316*Ri + 0.0346, 0.5)));
+	
+	entrainment = pow(Kparam,2.0)/Sc*pow((vx*vx + vy*vy)*(1 + Ri/Sc), 0.5);
 
-	entrainment = pow(Kparam,2.0)/Sc*pow((pow(vx,2.0) + pow(vy,2.0))*(1 + Ri/Sc), 0.5);
-
-	return entrainment;
+	if(isnan(entrainment))
+		return 0.0;
+	else
+		return entrainment;
 }/*}}}*/
 IssmDouble GetEntrainmentRateGasparx(IssmDouble g, IssmDouble rho0, IssmDouble D, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa, IssmDouble Ustar, IssmDouble melt_rate){/*{{{*/
 	/*
