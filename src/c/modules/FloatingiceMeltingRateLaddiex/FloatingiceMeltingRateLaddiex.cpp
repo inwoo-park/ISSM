@@ -316,6 +316,7 @@ void UpdateLaddieFrictionVelocityx(FemModel* femmodel){/*{{{*/
 
 		/*Clear memory*/
 		xDelete<IssmDouble>(ustar);
+		delete gauss;
 	}
 }/*}}}*/
 void UpdateLaddieHeatAndSaltExchangeCoefficientx(FemModel* femmodel){/*{{{*/
@@ -380,6 +381,7 @@ void UpdateLaddieHeatAndSaltExchangeCoefficientx(FemModel* femmodel){/*{{{*/
 		/*Clear memory*/
 		xDelete<IssmDouble>(gammaT);
 		xDelete<IssmDouble>(gammaS);
+		delete gauss;
 	}
 }/*}}}*/
 
@@ -425,11 +427,9 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 	IssmDouble  That, Chat, Ctil;
 	IssmDouble  AA;
 	IssmDouble  b, c;
-	IssmDouble  gammaT, gammaS; /*Heat exchange coefficient for three equation*/
 
 	/*Initialize constant values: */
 	IssmDouble Utide; /*Tidal velocity [m s-1]*/
-	IssmDouble Ustar; /*Friction velocity [m s-1]*/
    IssmDouble nu0=1.95e-6; /*Kinematic viscosity = mu / rho*/
 	IssmDouble Pr=13.8; /*Prandtl number*/
 	IssmDouble Sc=2432; /*Schmidt number*/
@@ -447,6 +447,8 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 
 	IssmDouble *values; /*value for assigning value*/
 	IssmDouble *melt, *Tb;
+	IssmDouble *ustar;
+	IssmDouble *gammaT, *gammaS;
 	Input   *D_input, *vx_input, *vy_input, *T_input, *S_input, *base_input;
 	Element *element;
 	Gauss   *gauss;
@@ -471,6 +473,18 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 			values = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsLaddieTbEnum,values,P1DGEnum);
 			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieVelFrictionEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieGammaTEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieGammaSEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
 			continue;
 		}
 		
@@ -482,8 +496,11 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 		S_input    = element->GetInput(BasalforcingsLaddieSEnum);     _assert_(S_input);
 		base_input = element->GetInput(BaseEnum);                     _assert_(base_input);
 
-		melt = xNew<IssmDouble>(numvertices);
-		Tb   = xNew<IssmDouble>(numvertices); /* freezing temperature at ice shelf base*/
+		melt  = xNew<IssmDouble>(numvertices);
+		Tb    = xNew<IssmDouble>(numvertices); /* freezing temperature at ice shelf base*/
+		ustar = xNew<IssmDouble>(numvertices);
+		gammaT= xNew<IssmDouble>(numvertices);
+		gammaS= xNew<IssmDouble>(numvertices);
 
 		gauss=element->NewGauss();
 		for (int iv=0;iv<numvertices;iv++){
@@ -498,35 +515,41 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 			base_input->GetInputValue(&zb, gauss);
 
 			/*Calculate friction velocity*/
-			Ustar = GetLaddieFrictionVelocityx(Cd_top, vx, vy, Utide);
+			ustar[iv] = GetLaddieFrictionVelocityx(Cd_top, vx, vy, Utide);
 
 			/*Calculate effective gammaT and gammaS*/
-			AA = 2.12*log(Ustar*D/nu0+1e-12); 
-			gammaT = Ustar/(AA + 12.5*pow(Pr,2/3) - 8.68);
-			gammaS = Ustar/(AA + 12.5*pow(Sc,2/3) - 8.68);
+			AA = 2.12*log(ustar[iv]*D/nu0+1e-12); 
+			gammaT[iv] = ustar[iv]/(AA + 12.5*pow(Pr,2/3) - 8.68);
+			gammaS[iv] = ustar[iv]/(AA + 12.5*pow(Sc,2/3) - 8.68);
 
 			/*Solve three equation*/
 			That = (l2 + l3*zb);
 			Chat = Cp/(L - Ci*Ti);
 			Ctil = Ci/Cp;
 
-			b = Chat*gammaT*(That - T) + gammaS*(1+Chat*Ctil*(That + l1*S));
-			c = Chat*gammaT*gammaS*(That-T+l1*S);
+			b = Chat*gammaT[iv]*(That - T) + gammaS[iv]*(1+Chat*Ctil*(That + l1*S));
+			c = Chat*gammaT[iv]*gammaS[iv]*(That-T+l1*S);
 
 			/*Melt rate*/
 			melt[iv]=0.5*(-b + sqrt(pow(b,2.0) - 4*c));
 
 			/*Temperature at ice shelf base*/
-			Tb[iv] = (Chat*gammaT*T - melt[iv])/(Chat*gammaT + Chat*Ctil*melt[iv]);
+			Tb[iv] = (Chat*gammaT[iv]*T - melt[iv])/(Chat*gammaT[iv] + Chat*Ctil*melt[iv]);
 		}
 
 		/*Assigne value*/
 		element->AddInput(BasalforcingsFloatingiceMeltingRateEnum,melt,P1DGEnum);
 		element->AddInput(BasalforcingsLaddieTbEnum,Tb,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieVelFrictionEnum,ustar,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieGammaTEnum,gammaT,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieGammaSEnum,gammaS,P1DGEnum);
 
 		/*Clear memory*/
 		xDelete<IssmDouble>(melt);
 		xDelete<IssmDouble>(Tb);
+		xDelete<IssmDouble>(ustar);
+		xDelete<IssmDouble>(gammaT);
+		xDelete<IssmDouble>(gammaS);
 		delete gauss;
 	}
 }/*}}}*/
