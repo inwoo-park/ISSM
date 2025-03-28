@@ -16,13 +16,13 @@ classdef basalforcingsladdie
 
 		%Ocean forcing values
 		forcing_depth = NaN;
-		forcing_temeprature = NaN;
+		forcing_temperature = NaN;
 		forcing_salinity = NaN;
 
 		%Dirichlet boundary
-		spcD  = NaN;
-		spcvx = NaN;
-		spcvy = NaN;
+		%spcD  = NaN;
+		%spcvx = NaN;
+		%spcvy = NaN;
 		%spctemperature = NaN;
 		%spcsalinity    = NaN;
 
@@ -38,6 +38,7 @@ classdef basalforcingsladdie
 		Kparam=0;
 		isentrainment = 0;
 		ismelt=0;
+		f_cori=0;
 
 		%Timestepping
 		subtimestep=0;
@@ -52,7 +53,7 @@ classdef basalforcingsladdie
 				case 0
 					self=setdefaultparameters(self);
 				case 1
-					self =structtoobj(basalforcings(),varargin{1});
+					self =structtoobj(basalforcingsladdie(),varargin{1});
 				otherwise
 					error('constructor not supported');
 			end
@@ -133,7 +134,6 @@ classdef basalforcingsladdie
 
 			if ismember('MasstransportAnalysis',analyses) & ~(strcmp(solution,'TransientSolution') & md.transient.ismasstransport==0),
 				md = checkfield(md,'fieldname','basalforcings.groundedice_melting_rate','NaN',1,'Inf',1,'timeseries',1);
-				md = checkfield(md,'fieldname','basalforcings.floatingice_melting_rate','NaN',1,'Inf',1,'timeseries',1);
 			end
 			if ismember('BalancethicknessAnalysis',analyses),
 				md = checkfield(md,'fieldname','basalforcings.groundedice_melting_rate','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices 1]);
@@ -141,40 +141,44 @@ classdef basalforcingsladdie
 			end
 			if ismember('ThermalAnalysis',analyses) & ~(strcmp(solution,'TransientSolution') & md.transient.isthermal==0),
 				md = checkfield(md,'fieldname','basalforcings.groundedice_melting_rate','NaN',1,'Inf',1,'timeseries',1);
-				md = checkfield(md,'fieldname','basalforcings.floatingice_melting_rate','NaN',1,'Inf',1,'timeseries',1);
 				md = checkfield(md,'fieldname','basalforcings.geothermalflux','NaN',1,'Inf',1,'timeseries',1,'>=',0);
 			end
 
 			%Check consistency for initial state of D, T, S, vx, vy
-			md = checkfield(md,'fieldname','basalforcings.D','size','NaN',1,'Inf',1,'size','[d.mesh.numberofvertices, 1]);
-			md = checkfield(md,'fieldname','basalforcings.vx','size','NaN',1,'Inf',1,'size','[d.mesh.numberofvertices, 1]);
-			md = checkfield(md,'fieldname','basalforcings.vy','size','NaN',1,'Inf',1,'size','[d.mesh.numberofvertices, 1]);
-			md = checkfield(md,'fieldname','basalforcings.T','size','NaN',1,'Inf',1,'size','[d.mesh.numberofvertices, 1]);
-			md = checkfield(md,'fieldname','basalforcings.S','size','NaN',1,'Inf',1,'size','[d.mesh.numberofvertices, 1]);
+			md = checkfield(md,'fieldname','basalforcings.D','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
+			md = checkfield(md,'fieldname','basalforcings.vx','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
+			md = checkfield(md,'fieldname','basalforcings.vy','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
+			md = checkfield(md,'fieldname','basalforcings.temperature','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
+			md = checkfield(md,'fieldname','basalforcings.salinity','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
 
 			%Check consistency for forcing values
 			md = checkfield(md,'fieldname','basalforcings.forcing_depth','NaN',1,'Inf',1,'size',[1,NaN],'<=',0);
 			md = checkfield(md,'fieldname','basalforcings.forcing_temperature','size',[1,1,numel(md.basalforcings.forcing_depth)]);
 			md = checkfield(md,'fieldname','basalforcings.forcing_salinity','size',[1,1,numel(md.basalforcings.forcing_depth)]);
 			for i=1:numel(md.basalforcings.forcing_depth)
-				md = checkfield(md,'fieldname',['basalforcings.forcing_temperature{' num2str(i) '}'],'field',md.basalforcings.forcing_temperature{i},'size',[md.mesh.numberofvertices+1 NaN],'NaN',1,'Inf',1,'>=',0,'timeseries',1);
+				md = checkfield(md,'fieldname',['basalforcings.forcing_temperature{' num2str(i) '}'],'field',md.basalforcings.forcing_temperature{i},'size',[md.mesh.numberofvertices+1 NaN],'NaN',1,'Inf',1,'timeseries',1);
 				md = checkfield(md,'fieldname',['basalforcings.forcing_salinity{' num2str(i) '}'],'field',md.basalforcings.forcing_salinity{i},'size',[md.mesh.numberofvertices+1 NaN],'NaN',1,'Inf',1,'>=',0,'timeseries',1);
 			end
 
 			%Check consistency for parameters
-			md = checkfield(md,'fieldname','Kh','numel',1,'NaN',1,'Inf',1);
-			md = checkfield(md,'fieldname','Ah','numel',1,'NaN',1,'Inf',1);
-			md = checkfield(md,'fieldname','Dmin','numel',1,'NaN',1,'Inf',1);
-			md = checkfield(md,'fieldname','Utide','numel',1,'NaN',1,'Inf',1);
+			md = checkfield(md,'fieldname','basalforcings.Kh','numel',1,'NaN',1,'Inf',1);
+			md = checkfield(md,'fieldname','basalforcings.Ah','numel',1,'NaN',1,'Inf',1);
+			md = checkfield(md,'fieldname','basalforcings.Dmin','numel',1,'NaN',1,'Inf',1);
+			md = checkfield(md,'fieldname','basalforcings.Utide','numel',1,'NaN',1,'Inf',1);
 
-			md = checkfield(md,'fieldname','isentrainment','numel',1,'NaN',1,'Inf',1,'values',[0,1]);
-			md = checkfield(md,'fieldname','ismelt','numel',1,'NaN',1,'Inf',1,'values',[0,1]);
-			md = checkfield(md,'fieldname','Cd','numel',1,'NaN',1,'Inf',1,'>',0);
-			md = checkfield(md,'fieldname','Cd_top','numel',1,'NaN',1,'Inf',1,'>',0);
-			md = checkfield(md,'fieldname','Kparam','numel',1,'NaN',1,'Inf',1,'>',0);
-			md = checkfield(md,'fieldname','f_cori','numel',1,'NaN',1,'Inf',1);
-			md = checkfield(md,'fieldname','subtimestep','numel',1,'NaN',1,'Inf',1,'>',0);
-			md = checkfield(md,'fieldname','diagnostic_frequency','numel',1,'NaN',1,'Inf',1,'>',0);
+			md = checkfield(md,'fieldname','basalforcings.isentrainment','numel',1,'NaN',1,'Inf',1,'values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.ismelt','numel',1,'NaN',1,'Inf',1,'values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.Cd','numel',1,'NaN',1,'Inf',1,'>',0);
+			md = checkfield(md,'fieldname','basalforcings.Cd_top','numel',1,'NaN',1,'Inf',1,'>',0);
+			md = checkfield(md,'fieldname','basalforcings.Kparam','numel',1,'NaN',1,'Inf',1,'>',0);
+			md = checkfield(md,'fieldname','basalforcings.f_cori','numel',1,'NaN',1,'Inf',1);
+			if isa(md.timestepping,'timesteppingadaptive')
+				error('ERROR: md.timestepping with "timesteppingadaptive" is not yet supported. Use "timetsepping".');
+			end
+			md = checkfield(md,'fieldname','basalforcings.subtimestep','numel',1,'NaN',1,'Inf',1,'>',0,'<=',md.timestepping.time_step*md.constants.yts);
+			md = checkfield(md,'fieldname','basalforcings.diagnostic_frequency','numel',1,'NaN',1,'Inf',1,'>',0);
+
+			md = checkfield(md,'fieldname','basalforcings.stabilization','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,3,4,5]);
 		end % }}}
 		function marshall(self,prefix,md,fid) % {{{
 
@@ -203,7 +207,6 @@ classdef basalforcingsladdie
 
 			WriteData(fid,prefix,'object',self,'fieldname','isentrainment','format','Integer');
 			WriteData(fid,prefix,'object',self,'fieldname','ismelt','format','Integer');
-			WriteData(fid,prefix,'object',self,'fieldname','ismelt','format','Integer');
 			WriteData(fid,prefix,'object',self,'fieldname','Cd','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Cd_top','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Kparam','format','Double');
@@ -211,6 +214,8 @@ classdef basalforcingsladdie
 
 			WriteData(fid,prefix,'object',self,'fieldname','subtimestep','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','diagnostic_frequency','format','Integer');
+
+			WriteData(fid,prefix,'object',self,'fieldname','stabilization','format','Integer');
 		end % }}}
 		function savemodeljs(self,fid,modelname) % {{{
 		
