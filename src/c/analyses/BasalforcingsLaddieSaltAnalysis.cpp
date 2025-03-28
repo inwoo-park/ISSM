@@ -109,9 +109,27 @@ int  BasalforcingsLaddieSaltAnalysis::DofsPerNode(int** doflist,int domaintype,i
 }/*}}}*/
 void BasalforcingsLaddieSaltAnalysis::UpdateElements(Elements* elements,Inputs* inputs,IoModel* iomodel,int analysis_counter,int analysis_type){/*{{{*/
 
-	/*
-	NOTE: Nothing to do. 
-	 */
+	int    stabilization;
+	int    finiteelement;
+
+	/*Fetch data needed: */
+	iomodel->FindConstant(&stabilization,"md.basalforcings.stabilization");
+
+	/*Finite element type*/
+	finiteelement = FINITEELEMENT;
+	if(stabilization==3){
+		finiteelement = P1DGEnum;
+	}
+
+	/*Update elements: */
+	int counter=0;
+	for(int i=0;i<iomodel->numberofelements;i++){
+		if(iomodel->my_elements[i]){
+			Element* element=(Element*)elements->GetObjectByOffset(counter);
+			element->Update(inputs,i,iomodel,analysis_counter,analysis_type,finiteelement);
+			counter++;
+		}
+	}
 }/*}}}*/
 void BasalforcingsLaddieSaltAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 	/*
@@ -193,18 +211,19 @@ void           BasalforcingsLaddieSaltAnalysis::GradientJ(Vector<IssmDouble>* gr
 }/*}}}*/
 void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDouble* solution,Element* element){/*{{{*/
 
-	IssmDouble thickness;
 
 	/*Only update if on base*/
-	if(!element->IsOnBase()) return;
+	if(!element->IsOnBase() || !element->IsIceInElement() || !element->IsOceanInElement()) return;
 
 	/*Fetch dof list and allocate solution vector*/
 	int *doflist = NULL;
 	element->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
 
 	int numnodes = element->GetNumberOfNodes();
-	Input *thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
-	IssmDouble* Snew = xNew<IssmDouble>(numnodes);
+	IssmDouble *Snew = xNew<IssmDouble>(numnodes);
+	IssmDouble  thickness;
+
+	Input      *thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
 
 	/*Use the dof list to index into the solution vector: */
 	thickness_input->GetInputAverage(&thickness);
@@ -228,9 +247,11 @@ void           BasalforcingsLaddieSaltAnalysis::UpdateConstraints(FemModel* femm
 		int         numnodes  = element->GetNumberOfNodes();
 		IssmDouble *mask      = xNew<IssmDouble>(numnodes);
 		IssmDouble *ls_active = xNew<IssmDouble>(numnodes);
+		IssmDouble *Sa        = xNew<IssmDouble>(numnodes);
 
 		element->GetInputListOnNodes(&mask[0],MaskOceanLevelsetEnum);
 		element->GetInputListOnNodes(&ls_active[0],IceMaskNodeActivationEnum);
+		element->GetInputListOnNodes(&Sa[0],BasalforcingsLaddieAmbientSalinityEnum);
 
 		for(int in=0;in<numnodes;in++){
 			Node* node=element->GetNode(in);
@@ -240,11 +261,12 @@ void           BasalforcingsLaddieSaltAnalysis::UpdateConstraints(FemModel* femm
 			else{
 				/*Apply plume salt as zero value along grounding line*/
 				node->Deactivate();
-				node->ApplyConstraint(0,0.0);
+				node->ApplyConstraint(0,Sa[in]);
 			}
 		}
 		xDelete<IssmDouble>(mask);
 		xDelete<IssmDouble>(ls_active);
+		xDelete<IssmDouble>(Sa);
 	}
 }/*}}}*/
 

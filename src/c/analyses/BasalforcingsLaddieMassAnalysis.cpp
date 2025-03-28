@@ -24,7 +24,7 @@ void BasalforcingsLaddieMassAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,
 
 	/*Check in 3d*/
 	if(iomodel->domaintype==Domain3DEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
-	::CreateNodes(nodes,iomodel,BasalforcingsLaddieMassAnalysisEnum,FINITEELEMENT);
+	::CreateNodes(nodes,iomodel,BasalforcingsLaddieMassAnalysisEnum,FINITEELEMENT,isamr);
 	iomodel->DeleteData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
 }/*}}}*/
 int  BasalforcingsLaddieMassAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
@@ -223,7 +223,7 @@ void           BasalforcingsLaddieMassAnalysis::GradientJ(Vector<IssmDouble>* gr
 void           BasalforcingsLaddieMassAnalysis::InputUpdateFromSolution(IssmDouble* solution,Element* element){/*{{{*/
 
 	/*Only update if on base*/
-	if(!element->IsOnBase()) return;
+	if(!element->IsOnBase() || !element->IsIceInElement() || !element->IsOceanInElement()) return;
 
 	/*Fetch dof list and allocate solution vector*/
 	int *doflist = NULL;

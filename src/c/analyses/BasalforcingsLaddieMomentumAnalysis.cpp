@@ -89,20 +89,30 @@ void BasalforcingsLaddieMomentumAnalysis::CreateNodes(Nodes* nodes,IoModel* iomo
 
 	/*Fetch parameters: */
 	int  stabilization;
-	iomodel->FindConstant(&stabilization,"md.masstransport.stabilization");
+	int  approximation;
+	iomodel->FindConstant(&stabilization,"md.basalforcings.stabilization");
 
 	/*Check in 3d*/
 	if(stabilization==3 && iomodel->domaintype==Domain3DEnum) _error_("DG 3d not implemented yet");
 
 	/*Create Nodes either DG or CG depending on stabilization*/
 	if(iomodel->domaintype!=Domain2DhorizontalEnum && iomodel->domaintype!=Domain3DsurfaceEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
+
+	/* Create 2 nodes for vx and vy*/
+	int *approximations = xNew<int>(iomodel->numberofvertices);
+	for(int i=0;i<iomodel->numberofvertices;i++){
+	 approximations[i] = IoCodeToEnumVertexEquation(2);
+	}
+
 	if(stabilization!=3){
-		::CreateNodes(nodes,iomodel,BasalforcingsLaddieMomentumAnalysisEnum,FINITEELEMENT,isamr);
+		::CreateNodes(nodes,iomodel,BasalforcingsLaddieMomentumAnalysisEnum,FINITEELEMENT,isamr,0,approximations);
 	}
 	else{
-		::CreateNodes(nodes,iomodel,BasalforcingsLaddieMomentumAnalysisEnum,P1DGEnum,isamr);
+		::CreateNodes(nodes,iomodel,BasalforcingsLaddieMomentumAnalysisEnum,P1DGEnum,isamr,0,approximations);
 	}
 	iomodel->DeleteData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
+
+	delete approximations;
 }/*}}}*/
 int  BasalforcingsLaddieMomentumAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
 	/*
@@ -114,9 +124,36 @@ int  BasalforcingsLaddieMomentumAnalysis::DofsPerNode(int** doflist,int domainty
 	return 2;
 }/*}}}*/
 void BasalforcingsLaddieMomentumAnalysis::UpdateElements(Elements* elements,Inputs* inputs,IoModel* iomodel,int analysis_counter,int analysis_type){/*{{{*/
-	/*
-	NOTE: Nothing to do in this part. See "UpdateElements" in "BasalforcingsLaddieMassAnalay.cpp"
-	*/
+
+	int    stabilization;
+	int    finiteelement;
+	int   *finiteelement_list;
+
+	/*Fetch data needed: */
+	iomodel->FindConstant(&stabilization,"md.basalforcings.stabilization");
+	finiteelement_list=xNewZeroInit<int>(iomodel->numberofelements);
+
+	/*Finite element type*/
+	finiteelement = FINITEELEMENT;
+	if(stabilization==3){
+		finiteelement = P1DGEnum;
+	}
+	for(int i=0;i<iomodel->numberofelements;i++){
+		finiteelement_list[i]=finiteelement;
+	}
+
+	/*Update elements: */
+	int counter=0;
+	for(int i=0;i<iomodel->numberofelements;i++){
+		if(iomodel->my_elements[i]){
+			Element* element=(Element*)elements->GetObjectByOffset(counter);
+			element->Update(inputs,i,iomodel,analysis_counter,analysis_type,finiteelement_list[i]);
+			counter++;
+		}
+	}
+
+	/*Clear memory: */
+	xDelete<int>(finiteelement_list);
 }/*}}}*/
 void BasalforcingsLaddieMomentumAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 	/*
@@ -330,6 +367,7 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 		int         numnodes  = element->GetNumberOfNodes();
 		IssmDouble *mask      = xNew<IssmDouble>(numnodes);
 		IssmDouble *ls_active = xNew<IssmDouble>(numnodes);
+		IssmDouble  spcvx=0.0, spcvy=0.0;
 
 		element->GetInputListOnNodes(&mask[0],MaskOceanLevelsetEnum);
 		element->GetInputListOnNodes(&ls_active[0],IceMaskNodeActivationEnum);
@@ -340,9 +378,10 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 				node->Activate();
 			}
 			else{
-				/*Apply plume salt as zero value along grounding line*/
+				/*Apply plume vector (vx, vy) as zero value along grounding line*/
 				node->Deactivate();
-				node->ApplyConstraint(0,0.0);
+				node->ApplyConstraint(0,spcvx); /*for vx*/
+				node->ApplyConstraint(1,spcvy); /*for vy*/
 			}
 		}
 		xDelete<IssmDouble>(mask);
@@ -354,7 +393,7 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsOceanInElement()) return NULL;
+	if(!element->IsOceanInElement() || !element->IsIceInElement()) return NULL;
 
 	/*Intermediaries */
 	int         stabilization;
@@ -414,9 +453,8 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	h = element->CharacteristicLength();
 
 	/* Start looping on the number of gaussian points: */
-	Gauss* gauss=element->NewGauss(2);
+	Gauss* gauss=element->NewGauss(3);
 	while(gauss->next()){
-		IssmDouble factor;
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
 		element->NodalFunctions(basis,gauss);
@@ -445,13 +483,31 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 
 		/*Convection term: */
-		//D_scalar=dt*gauss->weight*Jdet;
-		//dvxdx=dvx[0];
-		//dvydy=dvy[1];
-		//for(int i=0;i<numnodes;i++){
-		//	for(int j=0;j<numnodes;j++){
-		//	}
-		//}
+		D_scalar=dt*gauss->weight*Jdet*thickness;
+		dvxdx=dvx[0];
+		dvydy=dvy[1];
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				/*term: 2u dudx + u dvdy + v dudy -> 2u dudx + v dudy*/
+				Ke->values[2*i*2*numnodes+2*j] += factor*(
+							2*basis[j]*basis[i]*vx*dbasis[0*numnodes+i] + basis[j]*basis[i]*vy*dbasis[1*numnodes+i]
+							);
+				/*term: 2u dudx + u dvdy + v dudy -> u dvdy*/
+				Ke->values[2*i*2*numnodes+2*j+1] += factor*(
+							basis[j]*basis[i]*vx*dbasis[1*numnodes+i] 
+							);
+
+				/*term: u dvdx + v dudx + 2v dvdy -> v dudx */
+				Ke->values[(2*i+1)*2*numnodes+2*j] += factor*(
+							basis[j]*basis[i]*vy*dbasis[0*numnodes+i] 
+							);
+				/*term: u dvdx + v dudx + 2v dvdy -> u dvdx + 2v dvdy*/
+				Ke->values[(2*i+1)*2*numnodes+2*j+1] += factor*(
+							basis[j]*basis[i]*vy*dbasis[0*numnodes+i]
+							+2*basis[j]*basis[i]*vy*dbasis[1*numnodes+i]
+							);
+			}
+		}
 
 		/*Diffusion term: */
 		factor = gauss->weight*Jdet*Kh*thickness*dt;
@@ -505,7 +561,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsIceInElement()) return NULL;
+	if(!element->IsOceanInElement() || !element->IsIceInElement()) return NULL;
 
 	/*Intermediaries */
 	int			stabilization,dim,domaintype;
@@ -563,6 +619,7 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 	h=element->CharacteristicLength();
 
 	/* Start looping on the number of gaussian points: */
+	gauss=element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
