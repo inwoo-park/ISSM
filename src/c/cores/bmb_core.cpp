@@ -32,6 +32,7 @@ void bmb_core(FemModel* femmodel){
 		}
 	}
 	else if(basalforcing_model==BasalforcingsLaddieEnum){
+		if(VerboseSolution()) _printf0_("============ Catch BasalforcingsEnum\n");
 		/*Sub-ice shelf melting with LADDIE simulation*/
 		int        timestepping; /*check TimeSteppingEnum*/
 		int        step=0;
@@ -59,16 +60,24 @@ void bmb_core(FemModel* femmodel){
 		}
 
 		/*Step#1: prepare ambient temperature and salinity*/
+		if(VerboseSolution()) _printf0_("      step1: Preapre ambient temperature and salinity\n");
 		UpdateLaddieAmbientFieldx(femmodel);
 
-		/*Step#2: update density and effective gravity*/
+		if(VerboseSolution()) _printf0_("      step2: Prepare frictinon velocity\n");
+		UpdateLaddieFrictionVelocityx(femmodel);
+
+		/*Update density and effective gravity: */
+		if(VerboseSolution()) _printf0_("      step3: Prepare density and effective gravity\n");
 		UpdateLaddieDensityAndEffectiveGravityx(femmodel);
 
 		/*First, initialize guess sub-ice shelf melting and entrainment rate.*/
-		if(VerboseSolution()) _printf0_("   computing melting rate and entrainment rate\n");
+		if(VerboseSolution()) _printf0_("   computing melting rate\n");
 		FloatingiceMeltingRateLaddiex(femmodel);	
+
+		if(VerboseSolution()) _printf0_("   computing entrainment rate\n");
 		UpdateLaddieEntrainmentRatex(femmodel);
 
+		_printf0_("Go to solve LADDIE!\n");
 		while(time < subfinaltime - (yts*DBL_EPSILON)){
 			/*Do not exceed final time of dt ISSM*/
 			if(time+dt>subfinaltime - (yts*DBL_EPSILON)){
@@ -79,6 +88,8 @@ void bmb_core(FemModel* femmodel){
 			step+=1;
 			time+=dt;
 			femmodel->parameters->SetParam(dt,BasalforcingsLaddieSubTimestepEnum);
+			_printf0_("   Laddie time: "<<time/24/3600<<" days\n");
+			//if(VerboseSolution()) _printf0_("   Laddie time: "<<time/24/3600<<" days\n");
 
 			/*Step#1: Calculate mass transport model of Laddie*/
 			if(VerboseSolution()) _printf0_("   computing Laddie mass transport\n");
@@ -100,7 +111,7 @@ void bmb_core(FemModel* femmodel){
 			femmodel->SetCurrentConfiguration(BasalforcingsLaddieSaltAnalysisEnum);
 			solutionsequence_linear(femmodel);
 
-			/*Step#2: update density and effective gravity*/
+			/*Update density and effective gravity*/
 			UpdateLaddieDensityAndEffectiveGravityx(femmodel);
 
 			/*First, initialize guess sub-ice shelf melting and entrainment rate.*/
