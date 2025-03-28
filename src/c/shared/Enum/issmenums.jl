@@ -107,14 +107,19 @@
 	BasalforcingsUpperwaterMeltingRateEnum
 	BasalforcingsLaddieCdEnum
 	BasalforcingsLaddieCdTopEnum
+	BasalforcingsLaddieCoriolisFrequencyEnum
+	BasalforcingsLaddieForcingDepthEnum
 	BasalforcingsLaddieHorizontalDiffusivityEnum
 	BasalforcingsLaddieHorizontalViscosityEnum
 	BasalforcingsLaddieIsEntrainmentEnum
 	BasalforcingsLaddieIsMeltEnum
 	BasalforcingsLaddieKparamEnum
+	BasalforcingsLaddieStabilizationEnum
 	BasalforcingsLaddieSubTimestepEnum
 	BasalforcingsLaddieSubTimestepDummyEnum
+	BasalforcingsLaddieDiagnosticFrequencyEnum
 	BasalforcingsLaddieThicknessMinEnum
+	BasalforcingsLaddieVelTideEnum
 	CalvingADStressThresholdFloatingiceEnum
 	CalvingADStressThresholdGroundediceEnum
 	CalvingCrevasseDepthEnum
@@ -792,21 +797,16 @@
 	BasalforcingsLaddieTbEnum
 	BasalforcingsLaddieSEnum
 	BasalforcingsLaddieDRhoEnum
-	BasalforcingsLaddieForcingDepthEnum
-	BasalforcingsLaddieForcingTemperatureEnum
-	BasalforcingsLaddieForcingSalinityEnum
 	BasalforcingsLaddieAmbientTemperatureEnum
 	BasalforcingsLaddieAmbientSalinityEnum
 	BasalforcingsLaddieAmbientGEnum
+	BasalforcingsLaddieForcingTemperatureEnum
+	BasalforcingsLaddieForcingSalinityEnum
 	BasalforcingsLaddieMeltingRateEnum
 	BasalforcingsLaddieEntrainmentRateEnum
 	BasalforcingsLaddieGammaTEnum
 	BasalforcingsLaddieGammaSEnum
-	BasalforcingsLaddieCoriolisFrequencyEnum
-	BasalforcingsLaddieVelTideEnum
 	BasalforcingsLaddieVelFrictionEnum
-	BasalforcingsLaddieDiagnosticFrequencyEnum
-	BasalforcingsLaddieStabilizationEnum
 	BasalStressxEnum
 	BasalStressyEnum
 	BasalStressEnum
@@ -1994,14 +1994,19 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsUpperwaterMeltingRateEnum) return "BasalforcingsUpperwaterMeltingRate" end
 	if(enum==BasalforcingsLaddieCdEnum) return "BasalforcingsLaddieCd" end
 	if(enum==BasalforcingsLaddieCdTopEnum) return "BasalforcingsLaddieCdTop" end
+	if(enum==BasalforcingsLaddieCoriolisFrequencyEnum) return "BasalforcingsLaddieCoriolisFrequency" end
+	if(enum==BasalforcingsLaddieForcingDepthEnum) return "BasalforcingsLaddieForcingDepth" end
 	if(enum==BasalforcingsLaddieHorizontalDiffusivityEnum) return "BasalforcingsLaddieHorizontalDiffusivity" end
 	if(enum==BasalforcingsLaddieHorizontalViscosityEnum) return "BasalforcingsLaddieHorizontalViscosity" end
 	if(enum==BasalforcingsLaddieIsEntrainmentEnum) return "BasalforcingsLaddieIsEntrainment" end
 	if(enum==BasalforcingsLaddieIsMeltEnum) return "BasalforcingsLaddieIsMelt" end
 	if(enum==BasalforcingsLaddieKparamEnum) return "BasalforcingsLaddieKparam" end
+	if(enum==BasalforcingsLaddieStabilizationEnum) return "BasalforcingsLaddieStabilization" end
 	if(enum==BasalforcingsLaddieSubTimestepEnum) return "BasalforcingsLaddieSubTimestep" end
 	if(enum==BasalforcingsLaddieSubTimestepDummyEnum) return "BasalforcingsLaddieSubTimestepDummy" end
+	if(enum==BasalforcingsLaddieDiagnosticFrequencyEnum) return "BasalforcingsLaddieDiagnosticFrequency" end
 	if(enum==BasalforcingsLaddieThicknessMinEnum) return "BasalforcingsLaddieThicknessMin" end
+	if(enum==BasalforcingsLaddieVelTideEnum) return "BasalforcingsLaddieVelTide" end
 	if(enum==CalvingADStressThresholdFloatingiceEnum) return "CalvingADStressThresholdFloatingice" end
 	if(enum==CalvingADStressThresholdGroundediceEnum) return "CalvingADStressThresholdGroundedice" end
 	if(enum==CalvingCrevasseDepthEnum) return "CalvingCrevasseDepth" end
@@ -2679,21 +2684,16 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieTbEnum) return "BasalforcingsLaddieTb" end
 	if(enum==BasalforcingsLaddieSEnum) return "BasalforcingsLaddieS" end
 	if(enum==BasalforcingsLaddieDRhoEnum) return "BasalforcingsLaddieDRho" end
-	if(enum==BasalforcingsLaddieForcingDepthEnum) return "BasalforcingsLaddieForcingDepth" end
-	if(enum==BasalforcingsLaddieForcingTemperatureEnum) return "BasalforcingsLaddieForcingTemperature" end
-	if(enum==BasalforcingsLaddieForcingSalinityEnum) return "BasalforcingsLaddieForcingSalinity" end
 	if(enum==BasalforcingsLaddieAmbientTemperatureEnum) return "BasalforcingsLaddieAmbientTemperature" end
 	if(enum==BasalforcingsLaddieAmbientSalinityEnum) return "BasalforcingsLaddieAmbientSalinity" end
 	if(enum==BasalforcingsLaddieAmbientGEnum) return "BasalforcingsLaddieAmbientG" end
+	if(enum==BasalforcingsLaddieForcingTemperatureEnum) return "BasalforcingsLaddieForcingTemperature" end
+	if(enum==BasalforcingsLaddieForcingSalinityEnum) return "BasalforcingsLaddieForcingSalinity" end
 	if(enum==BasalforcingsLaddieMeltingRateEnum) return "BasalforcingsLaddieMeltingRate" end
 	if(enum==BasalforcingsLaddieEntrainmentRateEnum) return "BasalforcingsLaddieEntrainmentRate" end
 	if(enum==BasalforcingsLaddieGammaTEnum) return "BasalforcingsLaddieGammaT" end
 	if(enum==BasalforcingsLaddieGammaSEnum) return "BasalforcingsLaddieGammaS" end
-	if(enum==BasalforcingsLaddieCoriolisFrequencyEnum) return "BasalforcingsLaddieCoriolisFrequency" end
-	if(enum==BasalforcingsLaddieVelTideEnum) return "BasalforcingsLaddieVelTide" end
 	if(enum==BasalforcingsLaddieVelFrictionEnum) return "BasalforcingsLaddieVelFriction" end
-	if(enum==BasalforcingsLaddieDiagnosticFrequencyEnum) return "BasalforcingsLaddieDiagnosticFrequency" end
-	if(enum==BasalforcingsLaddieStabilizationEnum) return "BasalforcingsLaddieStabilization" end
 	if(enum==BasalStressxEnum) return "BasalStressx" end
 	if(enum==BasalStressyEnum) return "BasalStressy" end
 	if(enum==BasalStressEnum) return "BasalStress" end
@@ -3881,14 +3881,19 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsUpperwaterMeltingRate") return BasalforcingsUpperwaterMeltingRateEnum  end
 	if(name=="BasalforcingsLaddieCd") return BasalforcingsLaddieCdEnum  end
 	if(name=="BasalforcingsLaddieCdTop") return BasalforcingsLaddieCdTopEnum  end
+	if(name=="BasalforcingsLaddieCoriolisFrequency") return BasalforcingsLaddieCoriolisFrequencyEnum  end
+	if(name=="BasalforcingsLaddieForcingDepth") return BasalforcingsLaddieForcingDepthEnum  end
 	if(name=="BasalforcingsLaddieHorizontalDiffusivity") return BasalforcingsLaddieHorizontalDiffusivityEnum  end
 	if(name=="BasalforcingsLaddieHorizontalViscosity") return BasalforcingsLaddieHorizontalViscosityEnum  end
 	if(name=="BasalforcingsLaddieIsEntrainment") return BasalforcingsLaddieIsEntrainmentEnum  end
 	if(name=="BasalforcingsLaddieIsMelt") return BasalforcingsLaddieIsMeltEnum  end
 	if(name=="BasalforcingsLaddieKparam") return BasalforcingsLaddieKparamEnum  end
+	if(name=="BasalforcingsLaddieStabilization") return BasalforcingsLaddieStabilizationEnum  end
 	if(name=="BasalforcingsLaddieSubTimestep") return BasalforcingsLaddieSubTimestepEnum  end
 	if(name=="BasalforcingsLaddieSubTimestepDummy") return BasalforcingsLaddieSubTimestepDummyEnum  end
+	if(name=="BasalforcingsLaddieDiagnosticFrequency") return BasalforcingsLaddieDiagnosticFrequencyEnum  end
 	if(name=="BasalforcingsLaddieThicknessMin") return BasalforcingsLaddieThicknessMinEnum  end
+	if(name=="BasalforcingsLaddieVelTide") return BasalforcingsLaddieVelTideEnum  end
 	if(name=="CalvingADStressThresholdFloatingice") return CalvingADStressThresholdFloatingiceEnum  end
 	if(name=="CalvingADStressThresholdGroundedice") return CalvingADStressThresholdGroundediceEnum  end
 	if(name=="CalvingCrevasseDepth") return CalvingCrevasseDepthEnum  end
@@ -4566,21 +4571,16 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieTb") return BasalforcingsLaddieTbEnum  end
 	if(name=="BasalforcingsLaddieS") return BasalforcingsLaddieSEnum  end
 	if(name=="BasalforcingsLaddieDRho") return BasalforcingsLaddieDRhoEnum  end
-	if(name=="BasalforcingsLaddieForcingDepth") return BasalforcingsLaddieForcingDepthEnum  end
-	if(name=="BasalforcingsLaddieForcingTemperature") return BasalforcingsLaddieForcingTemperatureEnum  end
-	if(name=="BasalforcingsLaddieForcingSalinity") return BasalforcingsLaddieForcingSalinityEnum  end
 	if(name=="BasalforcingsLaddieAmbientTemperature") return BasalforcingsLaddieAmbientTemperatureEnum  end
 	if(name=="BasalforcingsLaddieAmbientSalinity") return BasalforcingsLaddieAmbientSalinityEnum  end
 	if(name=="BasalforcingsLaddieAmbientG") return BasalforcingsLaddieAmbientGEnum  end
+	if(name=="BasalforcingsLaddieForcingTemperature") return BasalforcingsLaddieForcingTemperatureEnum  end
+	if(name=="BasalforcingsLaddieForcingSalinity") return BasalforcingsLaddieForcingSalinityEnum  end
 	if(name=="BasalforcingsLaddieMeltingRate") return BasalforcingsLaddieMeltingRateEnum  end
 	if(name=="BasalforcingsLaddieEntrainmentRate") return BasalforcingsLaddieEntrainmentRateEnum  end
 	if(name=="BasalforcingsLaddieGammaT") return BasalforcingsLaddieGammaTEnum  end
 	if(name=="BasalforcingsLaddieGammaS") return BasalforcingsLaddieGammaSEnum  end
-	if(name=="BasalforcingsLaddieCoriolisFrequency") return BasalforcingsLaddieCoriolisFrequencyEnum  end
-	if(name=="BasalforcingsLaddieVelTide") return BasalforcingsLaddieVelTideEnum  end
 	if(name=="BasalforcingsLaddieVelFriction") return BasalforcingsLaddieVelFrictionEnum  end
-	if(name=="BasalforcingsLaddieDiagnosticFrequency") return BasalforcingsLaddieDiagnosticFrequencyEnum  end
-	if(name=="BasalforcingsLaddieStabilization") return BasalforcingsLaddieStabilizationEnum  end
 	if(name=="BasalStressx") return BasalStressxEnum  end
 	if(name=="BasalStressy") return BasalStressyEnum  end
 	if(name=="BasalStress") return BasalStressEnum  end
