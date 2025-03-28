@@ -528,7 +528,7 @@ ElementVector* BasalforcingsLaddieSaltAnalysis::CreatePVectorCG(Element* element
 
 	Input* thickness_input= element->GetInput(BasalforcingsLaddieThicknessEnum);   _assert_(thickness_input);
 	Input* S_input        = element->GetInput(BasalforcingsLaddieSEnum); _assert_(S_input);
-	Input* entr_input     = element->GetInput(BasalforcingsLaddieEntrainmentRateEnum); _assert_(melt_input);
+	Input* entr_input     = element->GetInput(BasalforcingsLaddieEntrainmentRateEnum); _assert_(entr_input);
 	/*Ambient temperature*/
 	Input* Sa_input       = element->GetInput(BasalforcingsLaddieAmbientSalinityEnum); _assert_(Sa_input);
 	Input* vx_input       = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
