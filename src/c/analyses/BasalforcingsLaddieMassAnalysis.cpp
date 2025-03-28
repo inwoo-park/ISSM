@@ -11,24 +11,9 @@
 void BasalforcingsLaddieMassAnalysis::CreateConstraints(Constraints* constraints,IoModel* iomodel){/*{{{*/
 
 	/*No constraints for now*/
-
-	///*Fetch parameters: */
-	//int stabilization;
-	//IssmDouble Dmin; /*minimum plume thickenss*/
-	//int numberofvertices;
-
-	//numberofvertices=iomodel->numberofvertices;
-	//iomodel->FindConstant(&Dmin,"md.basalforcings.Dmin");
-	//iomodel->FindConstant(&stabilization,"md.basalforcings.stabilization");
-
-	///*Initialize specific plume thickness*/
-	//IssmDouble* spcD = xNew<IssmDouble>(numberofvertices);
-
-	///*!!NOTE: To do!*/
-	//_error_("Implement this part in further.");
-	//xDelete<IssmDouble>(spcD);
 }/*}}}*/
 void BasalforcingsLaddieMassAnalysis::CreateLoads(Loads* loads, IoModel* iomodel){/*{{{*/
+
 	/*No loads*/
 }/*}}}*/
 void BasalforcingsLaddieMassAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,bool isamr){/*{{{*/
@@ -39,7 +24,7 @@ void BasalforcingsLaddieMassAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,
 
 	/*Check in 3d*/
 	if(iomodel->domaintype==Domain3DEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
-	::CreateNodes(nodes,iomodel,GLheightadvectionAnalysisEnum,P1Enum);
+	::CreateNodes(nodes,iomodel,BasalforcingsLaddieMassAnalysisEnum,FINITEELEMENT);
 	iomodel->DeleteData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
 }/*}}}*/
 int  BasalforcingsLaddieMassAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
@@ -73,11 +58,11 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 
 	/*Create Inptus: */
 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.base",BaseEnum);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.D",BasalforcingsLaddieThicknessEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vx",BasalforcingsLaddieVyEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vy",BasalforcingsLaddieVxEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.temperature",BasalforcingsLaddieTEnum,0);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.salinity",BasalforcingsLaddieSEnum,0);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.D",BasalforcingsLaddieThicknessEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vx",BasalforcingsLaddieVyEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vy",BasalforcingsLaddieVxEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.temperature",BasalforcingsLaddieTEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.salinity",BasalforcingsLaddieSEnum);
 
 	if(isgroundingline) 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.bed",BedEnum);
 
@@ -113,7 +98,7 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 			Element* element = xDynamicCast<Element*>(object);
 			if(iomodel->domaintype!=Domain2DhorizontalEnum && !element->IsOnBase()) continue;
 			element->DatasetInputAdd(BasalforcingsLaddieForcingTemperatureEnum,array2d_T,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingTemperatureEnum,kk);
-			element->DatasetInputAdd(BasalforcingsLaddieForcingTemperatureEnum,array2d_T,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingSalinityEnum,kk);
+			element->DatasetInputAdd(BasalforcingsLaddieForcingSalinityEnum,array2d_T,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingSalinityEnum,kk);
 		}
 	}
 	xDelete<IssmDouble>(array2d_T);
@@ -121,8 +106,10 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 }/*}}}*/
 void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 
-	int     numoutputs;
-	char**  requestedoutputs = NULL;
+	//int     numoutputs;
+	//char**  requestedoutputs = NULL;
+	IssmDouble *transparam;
+	int M, N;
 
 	/*
 	!!NOTE: Parameters for LADDIE are updated through "CreateParameters.cpp"
@@ -136,16 +123,28 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Dmin",BasalforcingsLaddieThicknessMinEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Utide",BasalforcingsLaddieVelTideEnum));
 
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isentrainment",BasalforcingsLaddieIsEntrainmentEnum));
-	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd_mon",BasalforcingsLaddieCdEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd",BasalforcingsLaddieCdEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd_top",BasalforcingsLaddieCdTopEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.f_cori",BasalforcingsLaddieCoriolisFrequencyEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Kparam",BasalforcingsLaddieKparamEnum));
 
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismelt",BasalforcingsLaddieIsMeltEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isentrainment",BasalforcingsLaddieIsEntrainmentEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.stabilization",BasalforcingsLaddieStabilizationEnum));
 
-	iomodel->FindConstant(&requestedoutputs,&numoutputs,"md.basalforcings.requested_outputs");
-	parameters->AddObject(new IntParam(MasstransportNumRequestedOutputsEnum,numoutputs));
-	if(numoutputs)parameters->AddObject(new StringArrayParam(MasstransportRequestedOutputsEnum,requestedoutputs,numoutputs));
-	iomodel->DeleteData(&requestedoutputs,numoutputs,"md.basalforcings.requested_outputs");
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepDummyEnum));
+
+	/*Deal with forcing depth: */
+	iomodel->FetchData(&transparam,&M,&N,"md.basalforcings.forcing_depth");
+	_assert_(M==1); _assert_(N>=1);
+	parameters->AddObject(new DoubleVecParam(BasalforcingsLaddieForcingDepthEnum,transparam,N));
+	xDelete<IssmDouble>(transparam);
+
+	//iomodel->FindConstant(&requestedoutputs,&numoutputs,"md.basalforcings.requested_outputs");
+	//parameters->AddObject(new IntParam(MasstransportNumRequestedOutputsEnum,numoutputs));
+	//if(numoutputs)parameters->AddObject(new StringArrayParam(MasstransportRequestedOutputsEnum,requestedoutputs,numoutputs));
+	//iomodel->DeleteData(&requestedoutputs,numoutputs,"md.basalforcings.requested_outputs");
 }/*}}}*/
 
 /*Finite Element Analysis*/
@@ -187,6 +186,7 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrix(Element* element){
 	int domaintype;
 	element->FindParam(&domaintype,DomainTypeEnum);
 	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+
 	return Ke;
 }/*}}}*/
 ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVector(Element* element){/*{{{*/
@@ -224,15 +224,6 @@ void           BasalforcingsLaddieMassAnalysis::InputUpdateFromSolution(IssmDoub
 
 	/*Only update if on base*/
 	if(!element->IsOnBase()) return;
-
-	/*deal with logic of accumulating thickness if we are coupled to a 
-	 * sea level core:*/
-	int frequency,count,isgrd;
-	element->FindParam(&isgrd,SolidearthSettingsGRDEnum);
-	if(isgrd){
-		element->FindParam(&frequency,SolidearthSettingsRunFrequencyEnum);
-		element->FindParam(&count,SealevelchangeRunCountEnum);
-	}
 
 	/*Fetch dof list and allocate solution vector*/
 	int *doflist = NULL;
@@ -274,6 +265,7 @@ void           BasalforcingsLaddieMassAnalysis::UpdateConstraints(FemModel* femm
 		IssmDouble *mask      = xNew<IssmDouble>(numnodes);
 		IssmDouble *ls_active = xNew<IssmDouble>(numnodes);
 
+		IssmDouble Dmin = element->FindParam(BasalforcingsLaddieThicknessMinEnum);
 		element->GetInputListOnNodes(&mask[0],MaskOceanLevelsetEnum);
 		element->GetInputListOnNodes(&ls_active[0],IceMaskNodeActivationEnum);
 
@@ -285,7 +277,7 @@ void           BasalforcingsLaddieMassAnalysis::UpdateConstraints(FemModel* femm
 			else{
 				/*Apply plume thickness as zero value along grounding line*/
 				node->Deactivate();
-				node->ApplyConstraint(0,0.0);
+				node->ApplyConstraint(0,Dmin);
 			}
 		}
 		xDelete<IssmDouble>(mask);
@@ -299,7 +291,7 @@ void           BasalforcingsLaddieMassAnalysis::UpdateConstraints(FemModel* femm
 ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsOceanInElement()) return NULL;
+	if(!element->IsOceanInElement() || !element->IsIceInElement()) return NULL;
 
 	/*Intermediaries */
 	int        stabilization;
@@ -317,7 +309,7 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 	switch(domaintype){
 		//case Domain2DverticalEnum:   dim = 1; break;
 		case Domain2DhorizontalEnum: dim = 2; break;
-		//case Domain3DEnum:           dim = 2; break;
+		case Domain3DEnum:           dim = 2; break;
 		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
 	}
 
@@ -331,12 +323,12 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 
 	/*Retrieve all inputs and parameters*/
 	element->GetVerticesCoordinates(&xyz_list);
-	element->FindParam(&dt,TimesteppingTimeStepEnum);
+	element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
 	element->FindParam(&domaintype,DomainTypeEnum);
-	element->FindParam(&stabilization,MasstransportStabilizationEnum);
+	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationEnum);
 	/*Plume thickness D and depth averaged horizontal velocity*/
-	Input* vx_input        = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
-	Input* vy_input        = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
+	Input* vx_input  = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
+	Input* vy_input  = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
 
 	h = element->CharacteristicLength();
 
@@ -387,13 +379,8 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 			case 2:
 				/*Streamline upwinding*/
 				vx_input->GetInputAverage(&vx);
-				if(dim==1){
-					vel=fabs(vx)+1.e-8;
-				}
-				else{
-					vy_input->GetInputAverage(&vy);
-					vel=sqrt(vx*vx+vy*vy)+1.e-8;
-				}
+				vy_input->GetInputAverage(&vy);
+				vel=sqrt(vx*vx+vy*vy)+1.e-8;
 				tau=h/(2*vel);
 				break;
 			case 5:
@@ -507,13 +494,14 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsIceInElement()) return NULL;
+	if(!element->IsOceanInElement() || !element->IsIceInElement()) return NULL;
 
 	/*Intermediaries */
 	int			stabilization,dim,domaintype;
 	int         melt_style,point1;
 	int         isentrainment;
 	bool        mainlyfloating;
+	IssmDouble  factor;
 	IssmDouble  fraction1,fraction2;
 	IssmDouble  Jdet,dt,intrusiondist;
 	IssmDouble  ms,mb,gmb,fmb,fmb_pert,gldistance;
@@ -532,7 +520,7 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 	switch(domaintype){
 		//case Domain2DverticalEnum:   dim = 1; break;
 		case Domain2DhorizontalEnum: dim = 2; break;
-		//case Domain3DEnum:           dim = 2; break;
+		case Domain3DEnum:           dim = 2; break;
 		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
 	}
 
@@ -553,23 +541,23 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 	Input* thickness_input  = element->GetInput(BasalforcingsLaddieThicknessEnum);   _assert_(thickness_input);
 	Input* vx_input      = element->GetInput(BasalforcingsLaddieVxEnum);		  _assert_(vx_input);
 	Input* vy_input      = element->GetInput(BasalforcingsLaddieVyEnum);	     _assert_(vy_input);
-	Input* melt_input    = element->GetInput(BasalforcingsLaddieMeltingRateEnum); _assert_(melt_input);
-	Input* entr_input    = element->GetInput(BasalforcingsLaddieEntrainmentRateEnum); _assert_(ent_input);
+	Input* melt_input    = element->GetInput(BasalforcingsFloatingiceMeltingRateEnum); _assert_(melt_input);
+	Input* entr_input    = element->GetInput(BasalforcingsLaddieEntrainmentRateEnum); _assert_(entr_input);
 	h=element->CharacteristicLength();
 
 	/*Recover portion of element that is grounded*/
-	//phi=element->GetGroundedPortion(xyz_list);
-	//if(melt_style==SubelementMelt2Enum){
-	//	element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,MaskOceanLevelsetEnum,0);
-	//    gauss = element->NewGauss(point1,fraction1,fraction2,3);
-	//}
-	//else if(melt_style==IntrusionMeltEnum){
-	//	element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,DistanceToGroundinglineEnum,intrusiondist);
-   //    	gauss = element->NewGauss(point1,fraction1,fraction2,3);
-	//}
-	//else{
-	//	gauss = element->NewGauss(3);
-	//}
+	phi=element->GetGroundedPortion(xyz_list);
+	if(melt_style==SubelementMelt2Enum){
+		element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,MaskOceanLevelsetEnum,0);
+	    gauss = element->NewGauss(point1,fraction1,fraction2,3);
+	}
+	else if(melt_style==IntrusionMeltEnum){
+		element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,DistanceToGroundinglineEnum,intrusiondist);
+       	gauss = element->NewGauss(point1,fraction1,fraction2,3);
+	}
+	else{
+		gauss = element->NewGauss(3);
+	}
 
 	/* Start  looping on the number of gaussian points: */
 	while(gauss->next()){
@@ -582,7 +570,7 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 		melt_input->GetInputValue(&melt_rate,gauss);
 		entr_input->GetInputValue(&entr_rate,gauss);
 
-		IssmDouble factor = Jdet*gauss->weight*(thickness+dt*(melt_rate+entr_rate));
+		factor = Jdet*gauss->weight*(thickness+dt*(melt_rate+entr_rate));
 		for(int i=0;i<numnodes;i++) pe->values[i]+=factor*basis[i];
 
 		if(stabilization==5){ //SUPG
