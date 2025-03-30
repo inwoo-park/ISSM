@@ -489,22 +489,22 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				/*term: 2u dudx + u dvdy + v dudy -> 2u dudx + v dudy*/
-				Ke->values[2*i*2*numnodes+2*j] += factor*(
+				Ke->values[2*i*2*numnodes+2*j] += -factor*(
 							2*basis[j]*basis[i]*vx*dbasis[0*numnodes+i] + basis[j]*basis[i]*vy*dbasis[1*numnodes+i]
 							);
 				/*term: 2u dudx + u dvdy + v dudy -> u dvdy*/
-				Ke->values[2*i*2*numnodes+2*j+1] += factor*(
+				Ke->values[2*i*2*numnodes+2*j+1] += -factor*(
 							basis[j]*basis[i]*vx*dbasis[1*numnodes+i] 
 							);
 
 				/*term: u dvdx + v dudx + 2v dvdy -> v dudx */
-				Ke->values[(2*i+1)*2*numnodes+2*j] += factor*(
+				Ke->values[(2*i+1)*2*numnodes+2*j] += -factor*(
 							basis[j]*basis[i]*vy*dbasis[0*numnodes+i] 
 							);
 				/*term: u dvdx + v dudx + 2v dvdy -> u dvdx + 2v dvdy*/
-				Ke->values[(2*i+1)*2*numnodes+2*j+1] += factor*(
+				Ke->values[(2*i+1)*2*numnodes+2*j+1] += -factor*(
 							basis[j]*basis[i]*vy*dbasis[0*numnodes+i]
-							+2*basis[j]*basis[i]*vy*dbasis[1*numnodes+i]
+							+ 2*basis[j]*basis[i]*vy*dbasis[1*numnodes+i]
 							);
 			}
 		}
@@ -540,13 +540,15 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 
 		/*Coriolis term: f (v, -u) */
-		factor = gauss->weight*Jdet*coriolis_freq*vel*dt;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				/*term: (-f D v) */
-				Ke->values[2*i*2*numnodes+2*j+1]   += factor*basis[i]*basis[j];
-				/*term: (+f D u)*/
-				Ke->values[(2*i+1)*2*numnodes+2*j] += -factor*basis[i]*basis[j];
+		if(false){
+			factor = gauss->weight*Jdet*coriolis_freq*vel*dt;
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					/*term: (-f D v) */
+					Ke->values[2*i*2*numnodes+2*j+1]   += factor*basis[i]*basis[j];
+					/*term: (+f D u)*/
+					Ke->values[(2*i+1)*2*numnodes+2*j] += -factor*basis[i]*basis[j];
+				}
 			}
 		}
 	}

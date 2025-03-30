@@ -68,6 +68,7 @@ void bmb_core(FemModel* femmodel){
 		if(VerboseSolution()) _printf0_("      step1: Preapre ambient temperature and salinity\n");
 		UpdateLaddieAmbientFieldx(femmodel);
 
+		/*Step#2: update friction velocity*/
 		if(VerboseSolution()) _printf0_("      step2: Prepare frictinon velocity\n");
 		UpdateLaddieFrictionVelocityx(femmodel);
 
@@ -123,6 +124,9 @@ void bmb_core(FemModel* femmodel){
 				femmodel->SetCurrentConfiguration(BasalforcingsLaddieSaltAnalysisEnum);
 				solutionsequence_linear(femmodel);
 			}
+
+			/*Update friction velocity*/
+			UpdateLaddieFrictionVelocityx(femmodel);
 
 			/*Update density and effective gravity*/
 			UpdateLaddieDensityAndEffectiveGravityx(femmodel);
