@@ -561,22 +561,56 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 	int numvertices;
 	int isentrainment;
 
+	/*Parameters*/
+	IssmDouble  mu=2.5;
 	IssmDouble  Kparam; /*Kparam: Kochergin entrainment rate*/
+	IssmDouble  g; /*gravitational acceleration [m s-1]*/
+	IssmDouble  maxdentr; /*maximum detrainment rate [m s-1]*/
+	IssmDouble  Dmin; /*minimum plume thickness*/
+	/*Parameters for refreezing point*/
+	IssmDouble  l1=-5.73e-2;
+	IssmDouble  l2=8.32e-2;
+	IssmDouble  l3=7.61e-4;
+	/*Parameters for thermal expansion and haline contraction coefficients*/
+	IssmDouble  alpha=3.733e-5; /*[degC-1]*/
+	IssmDouble  beta=7.843e-4; /*[psu-1]*/
+
 	/*Initialize input values*/
 	IssmDouble  Kh, Ah;
-	IssmDouble  drho,g;
-	IssmDouble  vx, vy, ga, thickness;
+	IssmDouble  dt;
+	IssmDouble  T, S;
+	IssmDouble  Tb, Sb;
+	IssmDouble  zb;
+	IssmDouble  drhoa; /*buoyancy difference between mixed layer and ambient ocean interface.*/
+	IssmDouble  drhob; /*buoyancy difference between mixed layer and water in contact with ice*/
+	
+	IssmDouble  drho;
+	IssmDouble  vx, vy, ga, thickness, ustar;
+	IssmDouble  dvx[2],dvy[2];
+	IssmDouble  dvxdx, dvydy;
+	IssmDouble  dthk[2];
+	IssmDouble  dthkdx, dthkdy;
+	IssmDouble  melt;
+	IssmDouble *xyz_list=NULL;
 	IssmDouble  Ri, Sc;
+
 	IssmDouble *values;
 	IssmDouble *entr;
+	IssmDouble *entr_dummy, *entr2_dummy; /*entrainment rate*/
+	IssmDouble *dentr; /*dentrainment rate*/
+	IssmDouble *convD; /*diverence of (Hv) value*/
 
 	Element *element;
 	Gauss   *gauss;
 
+	/*Retrieve all parameters: */
+	femmodel->parameters->FindParam(&dt, BasalforcingsLaddieSubTimestepEnum);
 	femmodel->parameters->FindParam(&isentrainment, BasalforcingsLaddieIsEntrainmentEnum);
 	femmodel->parameters->FindParam(&Kparam, BasalforcingsLaddieKparamEnum);
 	femmodel->parameters->FindParam(&Ah, BasalforcingsLaddieHorizontalViscosityEnum);
 	femmodel->parameters->FindParam(&Kh, BasalforcingsLaddieHorizontalDiffusivityEnum);
+	femmodel->parameters->FindParam(&Dmin, BasalforcingsLaddieThicknessMinEnum);
+	femmodel->parameters->FindParam(&maxdentr, BasalforcingsLaddieMaxDentrainmentEnum);
 
 	/*Update entrainment rate*/
 	for(Object* & object : femmodel->elements->objects){
@@ -588,18 +622,38 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 			values = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsLaddieEntrainmentRateEnum,values,P1DGEnum);
 			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieDEntrainmentRateEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
 			continue;
 		}
-		
+
+		/*Retrieve all inputs: */
+		Input *ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+		Input *drho_input=element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drho_input);
+
+		Input *S_input     = element->GetInput(BasalforcingsLaddieSEnum); _assert_(S_input);
+		Input *T_input     = element->GetInput(BasalforcingsLaddieTEnum); _assert_(T_input);
+		Input *Tb_input    = element->GetInput(BasalforcingsLaddieTbEnum); _assert_(Tb_input);
+		Input *ustar_input = element->GetInput(BasalforcingsLaddieVelFrictionEnum); _assert_(ustar_input);
+		Input *zb_input    = element->GetInput(BaseEnum); _assert_(zb_input);
+
 		Input *vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
 		Input *vy_input=element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
 		Input *thickness_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
-		Input *ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
-		Input *drho_input=element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drho_input);
-		entr = xNew<IssmDouble>(numvertices);
+		Input *melt_input=element->GetInput(BasalforcingsFloatingiceMeltingRateEnum); _assert_(melt_input);
+
+
+		entr        = xNew<IssmDouble>(numvertices);
+		dentr       = xNew<IssmDouble>(numvertices);
+		entr_dummy  = xNew<IssmDouble>(numvertices);
+		entr2_dummy = xNew<IssmDouble>(numvertices);
+		convD       = xNew<IssmDouble>(numvertices);
+
 
 		gauss=element->NewGauss();
-		if(isentrainment==0){
+		if(isentrainment==0){/*{{{*/
 			for (int iv=0;iv<numvertices;iv++){
 				gauss->GaussVertex(iv);
 
@@ -620,86 +674,90 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 					tmp1 = Kparam*Kh/(Ah*Ah);
 					tmp2 = pow((vx*vx + vy*vy) - g*drho*Kh/Ah*thickness, 0.5);
 
-					entr[iv] = tmp1*tmp2;
+					entr_dummy[iv] = tmp1*tmp2;
+					dentr[iv] = 0.0;
 				}
 			}
-		}
-		else if(isentrainment==1){
-			/*Update entrainment rate with Gaspar et al. (2012): doi:10.3189/2012JoG12J003*/
-			_error_("Given md.basalforcings.isentrainement=1 is not implemented yet!");
-		}
-		else{
+		}/*}}}*/
+		else if(isentrainment==1){ /*{{{*/
+			/*
+			Update entrainment rate with Gaspar et al. (1988): doi:10.3189/2012JoG12J003
+			
+			See also
+			--------
+			laddie > src > physics.py > "def update_entrainment" in laddie.
+
+			Gaspar et al. (1988): https://doi.org/10.1175/1520-0485(1988)018<0161:MTSCOT>2.0.CO;2.
+			Gladish et al. (2012) doi:10.3189/2012JoG12J003
+			 */
+
+			/*Retrieve all inputs: */
+			element->GetVerticesCoordinates(&xyz_list);
+
+			for (int iv=0;iv<numvertices;iv++){
+				gauss->GaussVertex(iv);
+
+				T_input->GetInputValue(&T,gauss);
+				Tb_input->GetInputValue(&Tb,gauss);
+				zb_input->GetInputValue(&zb,gauss);
+				thickness_input->GetInputValue(&thickness,gauss);
+				ustar_input->GetInputValue(&ustar,gauss);
+
+				/*Guess salinity under the ice*/
+				Sb = (Tb-l2-l3*zb)/l1;
+				drhob = (beta*(S-Sb) - alpha*(T-Tb));
+
+				/*Dummy entrainment*/
+				entr_dummy[iv]  = 2*mu/g*pow(ustar,3.0)/(thickness*drhoa) - drhob/drhoa*melt;
+				entr_dummy[iv]  = max(entr_dummy[iv], 0.0);
+				dentr[iv] = min(maxdentr,max(entr_dummy[iv],0.0));
+
+			}
+		}/*}}}*/
+		else{/*{{{*/
 			_error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
+		}/*}}}*/
+
+		/*Additional entrainment to prevent D < Dmin*/
+		for(int iv=0;iv<numvertices;iv++){
+			gauss->GaussVertex(iv);
+
+			thickness_input->GetInputValue(&thickness,gauss);
+			melt_input->GetInputValue(&melt,gauss);
+
+			vx_input->GetInputValue(&vx,gauss);
+			vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
+			vy_input->GetInputValue(&vy,gauss);
+			vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
+			thickness_input->GetInputValue(&thickness,gauss);
+			thickness_input->GetInputDerivativeValue(&dthk[0],xyz_list,gauss);
+
+			dvxdx=dvx[0];
+			dvydy=dvy[1];
+			dthkdx=dthk[0];
+			dthkdy=dthk[1];
+
+			/*convD operation in Laddie may be -\nabla \cdot (Hv)??...*/
+			convD[iv] = -vx*dthkdx - thickness*dvxdx \
+					  -vy*dthkdy - thickness*dvydy;
+			entr2_dummy[iv] = max(0.0,
+						(Dmin - thickness)/dt - (convD[iv] + melt + entr_dummy[iv] - dentr[iv]));
+
+			/*Get net entrainment rate*/
+			entr[iv] = entr_dummy[iv] + entr2_dummy[iv] - dentr[iv];
 		}
 
 		/*Assign input*/
 		element->AddInput(BasalforcingsLaddieEntrainmentRateEnum,entr,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieDEntrainmentRateEnum,dentr,P1DGEnum);
 
 		/*Clear memory*/
 		xDelete<IssmDouble>(entr);
+		xDelete<IssmDouble>(entr_dummy);
+		xDelete<IssmDouble>(entr2_dummy);
+		xDelete<IssmDouble>(dentr);
+		xDelete<IssmDouble>(convD);
+		xDelete<IssmDouble>(xyz_list);
 		delete gauss;
 	}
-}/*}}}*/
-IssmDouble GetEntrainmentRateHollandx(IssmDouble Kparam, IssmDouble ga, IssmDouble thickness, IssmDouble vx, IssmDouble vy){/*{{{*/
-	/*
-	 Calculate the entrainment rate using Eq. 2 in Holland et al. (2006).
-	
-	 Inputs
-	 * Kparam: Kochergin entrainment rate
-	 * ga: effective gravitational acceleration [m s-2]
-	 * thickness: plume thickness [m]
-	 * u,v: depth averaged plume velocity [m s-1]
-
-	 See also
-	 Payne, A. J., Holland, P. R., Shepherd, A. P., Rutt, I. C., Jenkins, A., and Joughin, I.: Numerical modeling of ocean-ice interactions under Pine Island Bay’s ice shelf, J. Geophys. Res., 112, C10019, https://doi.org/10.1029/2006JC003733, 2007.
-	 Holland, P. R. and Feltham, D. L.: The Effects of Rotation and Ice Shelf Topography on Frazil-Laden Ice Shelf Water Plumes, Journal of Physical Oceanography, 36, 2312–2327, https://doi.org/10.1175/JPO2970.1, 2006.
-	 */
-	IssmDouble Ri; /*Richardson number*/
-	IssmDouble Sc; /*Schmidt number*/
-	IssmDouble entrainment; /*Entrainment rate*/
-
-	/*Calculate Richardson and Schmidt number*/
-	if(false){
-		Ri = ga*thickness/(pow(vx,2.0) + pow(vy,2.0));
-		Sc = Ri/(0.725*(Ri + 0.186 - pow(Ri*Ri - 0.316*Ri + 0.0346, 0.5)));
-		
-		entrainment = pow(Kparam,2.0)/Sc*pow((vx*vx + vy*vy)*(1 + Ri/Sc), 0.5);
-	}
-	else{
-		_error_("Not implemented yet.");
-	}
-
-	if(xIsNan<IssmDouble>(entrainment))
-		return 0.0;
-	else
-		return entrainment;
-}/*}}}*/
-IssmDouble GetEntrainmentRateGasparx(IssmDouble g, IssmDouble rho0, IssmDouble D, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa, IssmDouble Ustar, IssmDouble melt_rate){/*{{{*/
-	/*
-	 Calculate the entrainment rate using Eq. 2 in Holland et al. (2006).
-	
-	 Inputs
-	 * g: gravitational acceleration [m s-1]
-	 * T, S: ocean temperature and salinity in mixed-layer.
-	 * Ta, Sa: ambient ocean temperature and salinity in contacting ocean.
-	 * D: plume thickness [m]
-	 * Ustar: frictional stress at the ice base [m s-1]
-	 * zb: basal elevation [m]
-	 * melt_rate: sub-ice shelf melting rate [m s-1]
-
-	 See also
-	 Gladish, C. V., Holland, D. M., Holland, P. R., and Price, S. F.: Ice-shelf basal channels in a coupled ice/ocean model, Journal of Glaciology, 58, 1227–1244, https://doi.org/10.3189/2012JoG12J003, 2012.
-	 */
-
-	/*Hard coding for specific parameters*/
-	IssmDouble mu=0.5; /*Detrainment parameter*/
-	IssmDouble ga;
-	IssmDouble entrainment; /*Entrainment rate*/
-
-	/*Get effective gravitational acceleration due to density difference between mixed-layer and ambient ocean below the mixed-layer.*/
-	ga = GetEffectiveGravitationAccelerationx(g, rho0, T, S, Ta, Sa);
-
-	entrainment = 2*mu*pow(Ustar,3.0)/(ga*D) - melt_rate;
-
-	return entrainment;
 }/*}}}*/
