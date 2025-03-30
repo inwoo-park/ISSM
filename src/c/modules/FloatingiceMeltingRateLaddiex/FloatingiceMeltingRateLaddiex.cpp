@@ -563,7 +563,10 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 
 	IssmDouble  Kparam; /*Kparam: Kochergin entrainment rate*/
 	/*Initialize input values*/
-	IssmDouble  vx, vy, ga, D;
+	IssmDouble  Kh, Ah;
+	IssmDouble  drho,g;
+	IssmDouble  vx, vy, ga, thickness;
+	IssmDouble  Ri, Sc;
 	IssmDouble *values;
 	IssmDouble *entr;
 
@@ -572,6 +575,8 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 
 	femmodel->parameters->FindParam(&isentrainment, BasalforcingsLaddieIsEntrainmentEnum);
 	femmodel->parameters->FindParam(&Kparam, BasalforcingsLaddieKparamEnum);
+	femmodel->parameters->FindParam(&Ah, BasalforcingsLaddieHorizontalViscosityEnum);
+	femmodel->parameters->FindParam(&Kh, BasalforcingsLaddieHorizontalDiffusivityEnum);
 
 	/*Update entrainment rate*/
 	for(Object* & object : femmodel->elements->objects){
@@ -588,30 +593,43 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 		
 		Input *vx_input=element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
 		Input *vy_input=element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
-		Input *D_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(D_input);
+		Input *thickness_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
 		Input *ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+		Input *drho_input=element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drho_input);
 		entr = xNew<IssmDouble>(numvertices);
 
 		gauss=element->NewGauss();
-		for (int iv=0;iv<numvertices;iv++){
-			gauss->GaussVertex(iv);
+		if(isentrainment==0){
+			for (int iv=0;iv<numvertices;iv++){
+				gauss->GaussVertex(iv);
 
-			if(isentrainment==0){
 				/*Update entrainment rate with Holland et al. (2006): doi:10.1175/JPO2970.1*/
 				vx_input->GetInputValue(&vx,gauss);
 				vy_input->GetInputValue(&vy,gauss);
-				D_input->GetInputValue(&D,gauss);
+				thickness_input->GetInputValue(&thickness,gauss);
 				ga_input->GetInputValue(&ga,gauss);
-				
-				entr[iv]=GetEntrainmentRateHollandx(Kparam, ga, D, vx, vy);
+				drho_input->GetInputValue(&drho,gauss);
+
+				if(false){
+					Ri = ga*thickness/(pow(vx,2.0) + pow(vy,2.0));
+					Sc = Ri/(0.725*(Ri + 0.186 - pow(Ri*Ri - 0.316*Ri + 0.0346, 0.5)));
+					
+					entr[iv] = pow(Kparam,2.0)/Sc*pow((vx*vx + vy*vy)*(1 + Ri/Sc), 0.5);
+				}else{
+					IssmDouble tmp1, tmp2;
+					tmp1 = Kparam*Kh/(Ah*Ah);
+					tmp2 = pow((vx*vx + vy*vy) - g*drho*Kh/Ah*thickness, 0.5);
+
+					entr[iv] = tmp1*tmp2;
+				}
 			}
-			else if(isentrainment==1){
-				/*Update entrainment rate with Gaspar et al. (2012): doi:10.3189/2012JoG12J003*/
-				_error_("Given md.basalforcings.isentrainement=1 is not implemented yet!");
-			}
-			else{
-				_error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
-			}
+		}
+		else if(isentrainment==1){
+			/*Update entrainment rate with Gaspar et al. (2012): doi:10.3189/2012JoG12J003*/
+			_error_("Given md.basalforcings.isentrainement=1 is not implemented yet!");
+		}
+		else{
+			_error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
 		}
 
 		/*Assign input*/
@@ -641,12 +659,17 @@ IssmDouble GetEntrainmentRateHollandx(IssmDouble Kparam, IssmDouble ga, IssmDoub
 	IssmDouble entrainment; /*Entrainment rate*/
 
 	/*Calculate Richardson and Schmidt number*/
-	Ri = ga*thickness/(pow(vx,2.0) + pow(vy,2.0));
-	Sc = Ri/(0.725*(Ri + 0.186 - pow(Ri*Ri - 0.316*Ri + 0.0346, 0.5)));
-	
-	entrainment = pow(Kparam,2.0)/Sc*pow((vx*vx + vy*vy)*(1 + Ri/Sc), 0.5);
+	if(false){
+		Ri = ga*thickness/(pow(vx,2.0) + pow(vy,2.0));
+		Sc = Ri/(0.725*(Ri + 0.186 - pow(Ri*Ri - 0.316*Ri + 0.0346, 0.5)));
+		
+		entrainment = pow(Kparam,2.0)/Sc*pow((vx*vx + vy*vy)*(1 + Ri/Sc), 0.5);
+	}
+	else{
+		_error_("Not implemented yet.");
+	}
 
-	if(isnan(entrainment))
+	if(xIsNan<IssmDouble>(entrainment))
 		return 0.0;
 	else
 		return entrainment;
