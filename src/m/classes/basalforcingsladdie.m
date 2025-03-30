@@ -40,12 +40,21 @@ classdef basalforcingsladdie
 		ismelt=0;
 		f_cori=0;
 
+		%Entrainment specials
+		maxdentr=0;
+
 		%Timestepping
 		subtimestep=0;
 		diagnostic_frequency=0;
 
 		%Numerical Method
 		stabilization=0;
+
+		%Modules
+		ismass=0;
+		ismomentum=0;
+		isheat=0;
+		issalt=0;
 	end % }}}
 	methods
 		function self = basalforcingsladdie(varargin) % {{{
@@ -79,12 +88,20 @@ classdef basalforcingsladdie
 			fielddisplay(self,'f_cori','Coriolis frequency [unit: s-1]');
 			fielddisplay(self,'Cd','momentum drag coefficient [unit: -]')
 			fielddisplay(self,'Cd_top','top drag coefficient [unit: -]')
+
 			fielddisplay(self,'Kparam','Kochergin entrainment rate [unit: -]. This parameter is required for isentrainment=0 (Holland et al. (2006).');
+			fielddisplay(self,'maxdentr','maximum dentrainment rate [m s-1]');
+
 			fielddisplay(self,'isentrainment','select calculating entrainment value (dot{e}). 0: Holland et al. (2006), 1: Gaspar et al. (1988). (defalt: 0)')
 			fielddisplay(self,'ismelt','select calculating sub-ice shelf melting value (M_b). 0: two-equation formulation (McPhee et al., 2008), 1: three-equation formulation (Jenkins et al., 2010). (defalt: 0)')
 
 			fielddisplay(self,'subtimestep','Sub timestepping for 2D plume model [unit: s]');
 			fielddisplay(self,'diagnostic_frequency','Store the estimated sub-ice shelf melting rate every given diagnostic_frequency [unit: -]');
+
+			fielddisplay(self,'ismass','boolean to use mass analysis in Laddie (default: true).');
+			fielddisplay(self,'ismomentum','boolean to use momentum analysis in Laddie (default: true).');
+			fielddisplay(self,'isheat','boolean to use heat analysis in Laddie (default: true).');
+			fielddisplay(self,'issalt','boolean to use salt analysis in Laddie (default: true).');
 		end % }}}
 		function self = extrude(self,md) % {{{
 			self.groundedice_melting_rate=project3d(md,'vector',self.groundedice_melting_rate,'type','node','layer',1); 
@@ -109,15 +126,19 @@ classdef basalforcingsladdie
 			%Set default parameter values
 			self.Kh = 25; % unit: m2 s-1
 			self.Ah = 25; % unit: m2 s-1
-			self.Dmin   = 2.8; % unit: m
+			self.Dmin   = 1; % unit: m
 			self.Utide  = 0.01; % unit: m s-1
 			self.Cd= 2.5e-3; % unit: -
 			self.Cd_top=1.1e-3; % unit -
 			self.f_cori = 1.37e-4; % unit: s-1
 
-			%Korchergin entrainment rate
-			% 
-			self.Kparam=0.01; % See Holland et al. (2006) Table 1
+			%Entrainment specials
+			% 1) Holland et al. (2006) 
+			% See Holland et al. (2006) Table 1
+			self.Kparam=0.01;
+
+			% 2) Gaspar et al. (1988) / Gladish et al. (2012).
+			self.maxdentr =0.5;
 
 			%Use entrainment with Holland et al. (2006).
 			self.isentrainment = 0;
@@ -129,6 +150,11 @@ classdef basalforcingsladdie
 			self.subtimestep = 72; % unit: s-1
 			self.diagnostic_frequency=1; % unit: -
 
+			%Anlayses
+			self.ismass=1;
+			self.ismomentum=1;
+			self.isheat=1;
+			self.issalt=1;
 		end % }}}
 		function md = checkconsistency(self,md,solution,analyses) % {{{
 
@@ -171,6 +197,7 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.Cd','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.Cd_top','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.Kparam','numel',1,'NaN',1,'Inf',1,'>',0);
+			md = checkfield(md,'fieldname','basalforcings.maxdentr','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.f_cori','numel',1,'NaN',1,'Inf',1);
 			if isa(md.timestepping,'timesteppingadaptive')
 				error('ERROR: md.timestepping with "timesteppingadaptive" is not yet supported. Use "timetsepping".');
@@ -179,6 +206,11 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.diagnostic_frequency','numel',1,'NaN',1,'Inf',1,'>',0);
 
 			md = checkfield(md,'fieldname','basalforcings.stabilization','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,3,4,5]);
+
+			md = checkfield(md,'fieldname','basalforcings.ismass','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.ismomentum','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.isheat','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.issalt','values',[0,1]);
 		end % }}}
 		function marshall(self,prefix,md,fid) % {{{
 
@@ -210,12 +242,19 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','Cd','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Cd_top','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Kparam','format','Double');
+			WriteData(fid,prefix,'object',self,'fieldname','maxdentr','format','Double');
+
 			WriteData(fid,prefix,'object',self,'fieldname','f_cori','format','Double');
 
 			WriteData(fid,prefix,'object',self,'fieldname','subtimestep','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','diagnostic_frequency','format','Integer');
 
 			WriteData(fid,prefix,'object',self,'fieldname','stabilization','format','Integer');
+
+			WriteData(fid,prefix,'object',self,'fieldname','ismass','format','Boolean');
+			WriteData(fid,prefix,'object',self,'fieldname','ismomentum','format','Boolean');
+			WriteData(fid,prefix,'object',self,'fieldname','isheat','format','Boolean');
+			WriteData(fid,prefix,'object',self,'fieldname','issalt','format','Boolean');
 		end % }}}
 		function savemodeljs(self,fid,modelname) % {{{
 		

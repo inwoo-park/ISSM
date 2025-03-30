@@ -128,12 +128,20 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.f_cori",BasalforcingsLaddieCoriolisFrequencyEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Kparam",BasalforcingsLaddieKparamEnum));
 
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.maxdentr",BasalforcingsLaddieMaxDentrainmentEnum));
+
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismelt",BasalforcingsLaddieIsMeltEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isentrainment",BasalforcingsLaddieIsEntrainmentEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.stabilization",BasalforcingsLaddieStabilizationEnum));
 
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepDummyEnum));
+
+	/*Turn on/off each analysis*/
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismass",BasalforcingsLaddieIsMassEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismomentum",BasalforcingsLaddieIsMomentumEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isheat",BasalforcingsLaddieIsHeatEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.issalt",BasalforcingsLaddieIsSaltEnum));
 
 	/*Deal with forcing depth: */
 	iomodel->FetchData(&transparam,&M,&N,"md.basalforcings.forcing_depth");

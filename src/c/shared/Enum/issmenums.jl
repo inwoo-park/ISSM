@@ -113,7 +113,12 @@
 	BasalforcingsLaddieHorizontalViscosityEnum
 	BasalforcingsLaddieIsEntrainmentEnum
 	BasalforcingsLaddieIsMeltEnum
+	BasalforcingsLaddieIsMassEnum
+	BasalforcingsLaddieIsMomentumEnum
+	BasalforcingsLaddieIsHeatEnum
+	BasalforcingsLaddieIsSaltEnum
 	BasalforcingsLaddieKparamEnum
+	BasalforcingsLaddieMaxDentrainmentEnum
 	BasalforcingsLaddieStabilizationEnum
 	BasalforcingsLaddieSubTimestepEnum
 	BasalforcingsLaddieSubTimestepDummyEnum
@@ -804,6 +809,8 @@
 	BasalforcingsLaddieForcingSalinityEnum
 	BasalforcingsLaddieMeltingRateEnum
 	BasalforcingsLaddieEntrainmentRateEnum
+	BasalforcingsLaddieConvDEnum
+	BasalforcingsLaddieDEntrainmentRateEnum
 	BasalforcingsLaddieGammaTEnum
 	BasalforcingsLaddieGammaSEnum
 	BasalforcingsLaddieVelFrictionEnum
@@ -2000,7 +2007,12 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieHorizontalViscosityEnum) return "BasalforcingsLaddieHorizontalViscosity" end
 	if(enum==BasalforcingsLaddieIsEntrainmentEnum) return "BasalforcingsLaddieIsEntrainment" end
 	if(enum==BasalforcingsLaddieIsMeltEnum) return "BasalforcingsLaddieIsMelt" end
+	if(enum==BasalforcingsLaddieIsMassEnum) return "BasalforcingsLaddieIsMass" end
+	if(enum==BasalforcingsLaddieIsMomentumEnum) return "BasalforcingsLaddieIsMomentum" end
+	if(enum==BasalforcingsLaddieIsHeatEnum) return "BasalforcingsLaddieIsHeat" end
+	if(enum==BasalforcingsLaddieIsSaltEnum) return "BasalforcingsLaddieIsSalt" end
 	if(enum==BasalforcingsLaddieKparamEnum) return "BasalforcingsLaddieKparam" end
+	if(enum==BasalforcingsLaddieMaxDentrainmentEnum) return "BasalforcingsLaddieMaxDentrainment" end
 	if(enum==BasalforcingsLaddieStabilizationEnum) return "BasalforcingsLaddieStabilization" end
 	if(enum==BasalforcingsLaddieSubTimestepEnum) return "BasalforcingsLaddieSubTimestep" end
 	if(enum==BasalforcingsLaddieSubTimestepDummyEnum) return "BasalforcingsLaddieSubTimestepDummy" end
@@ -2691,6 +2703,8 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieForcingSalinityEnum) return "BasalforcingsLaddieForcingSalinity" end
 	if(enum==BasalforcingsLaddieMeltingRateEnum) return "BasalforcingsLaddieMeltingRate" end
 	if(enum==BasalforcingsLaddieEntrainmentRateEnum) return "BasalforcingsLaddieEntrainmentRate" end
+	if(enum==BasalforcingsLaddieConvDEnum) return "BasalforcingsLaddieConvD" end
+	if(enum==BasalforcingsLaddieDEntrainmentRateEnum) return "BasalforcingsLaddieDEntrainmentRate" end
 	if(enum==BasalforcingsLaddieGammaTEnum) return "BasalforcingsLaddieGammaT" end
 	if(enum==BasalforcingsLaddieGammaSEnum) return "BasalforcingsLaddieGammaS" end
 	if(enum==BasalforcingsLaddieVelFrictionEnum) return "BasalforcingsLaddieVelFriction" end
@@ -3887,7 +3901,12 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieHorizontalViscosity") return BasalforcingsLaddieHorizontalViscosityEnum  end
 	if(name=="BasalforcingsLaddieIsEntrainment") return BasalforcingsLaddieIsEntrainmentEnum  end
 	if(name=="BasalforcingsLaddieIsMelt") return BasalforcingsLaddieIsMeltEnum  end
+	if(name=="BasalforcingsLaddieIsMass") return BasalforcingsLaddieIsMassEnum  end
+	if(name=="BasalforcingsLaddieIsMomentum") return BasalforcingsLaddieIsMomentumEnum  end
+	if(name=="BasalforcingsLaddieIsHeat") return BasalforcingsLaddieIsHeatEnum  end
+	if(name=="BasalforcingsLaddieIsSalt") return BasalforcingsLaddieIsSaltEnum  end
 	if(name=="BasalforcingsLaddieKparam") return BasalforcingsLaddieKparamEnum  end
+	if(name=="BasalforcingsLaddieMaxDentrainment") return BasalforcingsLaddieMaxDentrainmentEnum  end
 	if(name=="BasalforcingsLaddieStabilization") return BasalforcingsLaddieStabilizationEnum  end
 	if(name=="BasalforcingsLaddieSubTimestep") return BasalforcingsLaddieSubTimestepEnum  end
 	if(name=="BasalforcingsLaddieSubTimestepDummy") return BasalforcingsLaddieSubTimestepDummyEnum  end
@@ -4578,6 +4597,8 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieForcingSalinity") return BasalforcingsLaddieForcingSalinityEnum  end
 	if(name=="BasalforcingsLaddieMeltingRate") return BasalforcingsLaddieMeltingRateEnum  end
 	if(name=="BasalforcingsLaddieEntrainmentRate") return BasalforcingsLaddieEntrainmentRateEnum  end
+	if(name=="BasalforcingsLaddieConvD") return BasalforcingsLaddieConvDEnum  end
+	if(name=="BasalforcingsLaddieDEntrainmentRate") return BasalforcingsLaddieDEntrainmentRateEnum  end
 	if(name=="BasalforcingsLaddieGammaT") return BasalforcingsLaddieGammaTEnum  end
 	if(name=="BasalforcingsLaddieGammaS") return BasalforcingsLaddieGammaSEnum  end
 	if(name=="BasalforcingsLaddieVelFriction") return BasalforcingsLaddieVelFrictionEnum  end

@@ -36,6 +36,7 @@ void bmb_core(FemModel* femmodel){
 		/*Sub-ice shelf melting with LADDIE simulation*/
 		int        timestepping; /*check TimeSteppingEnum*/
 		int        step=0;
+		bool       ismass, ismomentum, isheat, issalt;
 		IssmDouble time=0.0;
 		IssmDouble subfinaltime; /*Global time step from ISSM*/
 		IssmDouble yts;/*year to seconds*/
@@ -46,6 +47,10 @@ void bmb_core(FemModel* femmodel){
 		femmodel->parameters->FindParam(&dt,BasalforcingsLaddieSubTimestepDummyEnum);
 		femmodel->parameters->FindParam(&yts,ConstantsYtsEnum);
 		femmodel->parameters->FindParam(&timestepping,TimesteppingTypeEnum);
+		femmodel->parameters->FindParam(&ismass,BasalforcingsLaddieIsMassEnum);
+		femmodel->parameters->FindParam(&ismomentum,BasalforcingsLaddieIsMomentumEnum);
+		femmodel->parameters->FindParam(&isheat,BasalforcingsLaddieIsHeatEnum);
+		femmodel->parameters->FindParam(&issalt,BasalforcingsLaddieIsSaltEnum);
 
 		/*Check time stepping type*/
 		switch(timestepping){
@@ -92,24 +97,32 @@ void bmb_core(FemModel* femmodel){
 			//if(VerboseSolution()) _printf0_("   Laddie time: "<<time/24/3600<<" days\n");
 
 			/*Step#1: Calculate mass transport model of Laddie*/
-			if(VerboseSolution()) _printf0_("   computing Laddie mass transport\n");
-			femmodel->SetCurrentConfiguration(BasalforcingsLaddieMassAnalysisEnum);
-			solutionsequence_linear(femmodel);
+			if (ismass){
+				if(VerboseSolution()) _printf0_("   computing Laddie mass transport\n");
+				femmodel->SetCurrentConfiguration(BasalforcingsLaddieMassAnalysisEnum);
+				solutionsequence_linear(femmodel);
+			}
 
 			/*Step#2: Calculate momentum equation of Laddie*/
-			if(VerboseSolution()) _printf0_("   computing Laddie momentum equation\n");
-			femmodel->SetCurrentConfiguration(BasalforcingsLaddieMomentumAnalysisEnum);
-			solutionsequence_linear(femmodel);
+			if (ismomentum){
+				if(VerboseSolution()) _printf0_("   computing Laddie momentum equation\n");
+				femmodel->SetCurrentConfiguration(BasalforcingsLaddieMomentumAnalysisEnum);
+				solutionsequence_linear(femmodel);
+			}
 
 			/*Step#3: Calculate heat equation of Laddie*/
-			if(VerboseSolution()) _printf0_("   computing Laddie heat equation\n");
-			femmodel->SetCurrentConfiguration(BasalforcingsLaddieHeatAnalysisEnum);
-			solutionsequence_linear(femmodel);
+			if (isheat){
+				if(VerboseSolution()) _printf0_("   computing Laddie heat equation\n");
+				femmodel->SetCurrentConfiguration(BasalforcingsLaddieHeatAnalysisEnum);
+				solutionsequence_linear(femmodel);
+			}
 
 			/*Step#4: Calculate salt equation of Laddie*/
-			if(VerboseSolution()) _printf0_("   computing Laddie salt equation\n");
-			femmodel->SetCurrentConfiguration(BasalforcingsLaddieSaltAnalysisEnum);
-			solutionsequence_linear(femmodel);
+			if (issalt){
+				if(VerboseSolution()) _printf0_("   computing Laddie salt equation\n");
+				femmodel->SetCurrentConfiguration(BasalforcingsLaddieSaltAnalysisEnum);
+				solutionsequence_linear(femmodel);
+			}
 
 			/*Update density and effective gravity*/
 			UpdateLaddieDensityAndEffectiveGravityx(femmodel);

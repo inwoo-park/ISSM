@@ -626,12 +626,16 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 			values = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsLaddieDEntrainmentRateEnum,values,P1DGEnum);
 			xDelete<IssmDouble>(values);
+
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieConvDEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
 			continue;
 		}
 
 		/*Retrieve all inputs: */
-		Input *ga_input=element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
-		Input *drho_input=element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drho_input);
+		Input *ga_input    = element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+		Input *drho_input  = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drho_input);
 
 		Input *S_input     = element->GetInput(BasalforcingsLaddieSEnum); _assert_(S_input);
 		Input *T_input     = element->GetInput(BasalforcingsLaddieTEnum); _assert_(T_input);
@@ -702,21 +706,32 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 				zb_input->GetInputValue(&zb,gauss);
 				thickness_input->GetInputValue(&thickness,gauss);
 				ustar_input->GetInputValue(&ustar,gauss);
+				drho_input->GetInputValue(&drhoa,gauss);
 
 				/*Guess salinity under the ice*/
 				Sb = (Tb-l2-l3*zb)/l1;
 				drhob = (beta*(S-Sb) - alpha*(T-Tb));
 
 				/*Dummy entrainment*/
-				entr_dummy[iv]  = 2*mu/g*pow(ustar,3.0)/(thickness*drhoa) - drhob/drhoa*melt;
-				entr_dummy[iv]  = max(entr_dummy[iv], 0.0);
+				entr_dummy[iv] = 2*mu/g*pow(ustar,3.0)/(thickness*drhoa) - drhob/drhoa*melt;
+				entr_dummy[iv] = max(entr_dummy[iv], 0.0);
 				dentr[iv] = min(maxdentr,max(entr_dummy[iv],0.0));
-
 			}
 		}/*}}}*/
 		else{/*{{{*/
 			_error_("Given md.basalforcings.isentrainment is not avavilable. Only 0 or 1 are available");
 		}/*}}}*/
+
+		/*Check Nan value*/
+		for(int iv=0;iv<numvertices;iv++){
+			if (xIsNan<IssmDouble>(entr_dummy[iv])){
+				_printf0_("entr_dummy value = " << entr_dummy[iv] << "\n");
+				_error_("entr_dummy[" << iv << "] got NaN value!\n");
+			}
+			if (xIsNan<IssmDouble>(dentr[iv])){
+				_error_("dentr[" << iv << "] got NaN value!\n");
+			}
+		}
 
 		/*Additional entrainment to prevent D < Dmin*/
 		for(int iv=0;iv<numvertices;iv++){
@@ -750,6 +765,7 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 		/*Assign input*/
 		element->AddInput(BasalforcingsLaddieEntrainmentRateEnum,entr,P1DGEnum);
 		element->AddInput(BasalforcingsLaddieDEntrainmentRateEnum,dentr,P1DGEnum);
+		element->AddInput(BasalforcingsLaddieConvDEnum,convD,P1DGEnum);
 
 		/*Clear memory*/
 		xDelete<IssmDouble>(entr);
