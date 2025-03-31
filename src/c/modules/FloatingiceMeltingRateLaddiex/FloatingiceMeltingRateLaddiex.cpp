@@ -443,7 +443,7 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 	IssmDouble l2=8.32e-2; /*PMP salinity parameter [degC]*/
 	IssmDouble l3=7.61e-4; /*PMP salinity parameter [degC m-1]*/
 
-	IssmDouble Ti=-20; /*basal ice temperature on ice shelf [degC]*/
+	IssmDouble Ti=-5; /*basal ice temperature on ice shelf [degC]*/
 
 	IssmDouble *values; /*value for assigning value*/
 	IssmDouble *melt, *Tb;
@@ -605,6 +605,7 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 
 	/*Retrieve all parameters: */
 	femmodel->parameters->FindParam(&dt, BasalforcingsLaddieSubTimestepEnum);
+	femmodel->parameters->FindParam(&g, ConstantsGEnum);
 	femmodel->parameters->FindParam(&isentrainment, BasalforcingsLaddieIsEntrainmentEnum);
 	femmodel->parameters->FindParam(&Kparam, BasalforcingsLaddieKparamEnum);
 	femmodel->parameters->FindParam(&Ah, BasalforcingsLaddieHorizontalViscosityEnum);
@@ -638,6 +639,7 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 		Input *drho_input  = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drho_input);
 
 		Input *S_input     = element->GetInput(BasalforcingsLaddieSEnum); _assert_(S_input);
+
 		Input *T_input     = element->GetInput(BasalforcingsLaddieTEnum); _assert_(T_input);
 		Input *Tb_input    = element->GetInput(BasalforcingsLaddieTbEnum); _assert_(Tb_input);
 		Input *ustar_input = element->GetInput(BasalforcingsLaddieVelFrictionEnum); _assert_(ustar_input);
@@ -648,13 +650,11 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 		Input *thickness_input=element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
 		Input *melt_input=element->GetInput(BasalforcingsFloatingiceMeltingRateEnum); _assert_(melt_input);
 
-
 		entr        = xNew<IssmDouble>(numvertices);
 		dentr       = xNew<IssmDouble>(numvertices);
 		entr_dummy  = xNew<IssmDouble>(numvertices);
 		entr2_dummy = xNew<IssmDouble>(numvertices);
 		convD       = xNew<IssmDouble>(numvertices);
-
 
 		gauss=element->NewGauss();
 		if(isentrainment==0){/*{{{*/
@@ -695,14 +695,12 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 			Gladish et al. (2012) doi:10.3189/2012JoG12J003
 			 */
 
-			/*Retrieve all inputs: */
-			element->GetVerticesCoordinates(&xyz_list);
-
 			for (int iv=0;iv<numvertices;iv++){
 				gauss->GaussVertex(iv);
 
 				T_input->GetInputValue(&T,gauss);
 				Tb_input->GetInputValue(&Tb,gauss);
+				S_input->GetInputValue(&S,gauss);
 				zb_input->GetInputValue(&zb,gauss);
 				thickness_input->GetInputValue(&thickness,gauss);
 				ustar_input->GetInputValue(&ustar,gauss);
@@ -714,6 +712,16 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 
 				/*Dummy entrainment*/
 				entr_dummy[iv] = 2*mu/g*pow(ustar,3.0)/(thickness*drhoa) - drhob/drhoa*melt;
+				if (xIsNan<IssmDouble>(entr_dummy[iv]) || xIsInf<IssmDouble>(entr_dummy[iv])){
+					_printf0_("mu         = " << mu << "\n");
+					_printf0_("g          = " << g << "\n");
+					_printf0_("ustar      = " << ustar << "\n");
+					_printf0_("thickness  = " << thickness << "\n");
+					_printf0_("drhoa      = " << drhoa << "\n");
+					_printf0_("drhob      = " << drhob << "\n");
+					_printf0_("melt       = " << melt << "\n");
+					_error_("entr_dummy[" << iv << "] got NaN/Inf value!\n");
+				}
 				entr_dummy[iv] = max(entr_dummy[iv], 0.0);
 				dentr[iv] = min(maxdentr,max(entr_dummy[iv],0.0));
 			}
@@ -725,15 +733,22 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 		/*Check Nan value*/
 		for(int iv=0;iv<numvertices;iv++){
 			if (xIsNan<IssmDouble>(entr_dummy[iv])){
-				_printf0_("entr_dummy value = " << entr_dummy[iv] << "\n");
 				_error_("entr_dummy[" << iv << "] got NaN value!\n");
+			}
+			if (xIsInf<IssmDouble>(entr_dummy[iv])){
+				_printf0_("entr_dummy value = " << entr_dummy[iv] << "\n");
+				_error_("entr_dummy[" << iv << "] got Inf value!\n");
 			}
 			if (xIsNan<IssmDouble>(dentr[iv])){
 				_error_("dentr[" << iv << "] got NaN value!\n");
 			}
+			if (xIsInf<IssmDouble>(dentr[iv])){
+				_error_("dentr[" << iv << "] got Inf value!\n");
+			}
 		}
 
 		/*Additional entrainment to prevent D < Dmin*/
+		element->GetVerticesCoordinates(&xyz_list);
 		for(int iv=0;iv<numvertices;iv++){
 			gauss->GaussVertex(iv);
 
