@@ -154,7 +154,7 @@ _error_("Not implemented");
 ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrix(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsIceInElement()) return NULL;
+	if(!element->IsIceInElement() || !element->IsOceanInElement()) return NULL;
 
 	if(!element->IsOceanInElement()) return NULL;
 	Element* basalelement = element->SpawnBasalElement();
@@ -181,7 +181,7 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrix(Element* element){
 ElementVector* BasalforcingsLaddieSaltAnalysis::CreatePVector(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsIceInElement()) return NULL;
+	if(!element->IsIceInElement() || !element->IsOceanInElement()) return NULL;
 
 	if(!element->IsOnBase()) return NULL;
 	Element* basalelement = element->SpawnBasalElement();
