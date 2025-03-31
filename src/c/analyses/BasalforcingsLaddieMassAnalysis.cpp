@@ -24,7 +24,7 @@ void BasalforcingsLaddieMassAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,
 
 	/*Check in 3d*/
 	if(iomodel->domaintype==Domain3DEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
-	::CreateNodes(nodes,iomodel,BasalforcingsLaddieMassAnalysisEnum,FINITEELEMENT,isamr);
+	::CreateNodes(nodes,iomodel,BasalforcingsLaddieMassAnalysisEnum,P1Enum,isamr);
 	iomodel->DeleteData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
 }/*}}}*/
 int  BasalforcingsLaddieMassAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
@@ -43,6 +43,7 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 	/*Finite element type*/
 	finiteelement = FINITEELEMENT;
 	if(stabilization==3){
+		_error_("Given P1DGEnum is not supported.");
 		finiteelement = P1DGEnum;
 	}
 
@@ -59,8 +60,8 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 	/*Create Inptus: */
 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.base",BaseEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.D",BasalforcingsLaddieThicknessEnum);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vx",BasalforcingsLaddieVyEnum);
-	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vy",BasalforcingsLaddieVxEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vx",BasalforcingsLaddieVxEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vy",BasalforcingsLaddieVyEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.temperature",BasalforcingsLaddieTEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.salinity",BasalforcingsLaddieSEnum);
 
@@ -98,7 +99,7 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 			Element* element = xDynamicCast<Element*>(object);
 			if(iomodel->domaintype!=Domain2DhorizontalEnum && !element->IsOnBase()) continue;
 			element->DatasetInputAdd(BasalforcingsLaddieForcingTemperatureEnum,array2d_T,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingTemperatureEnum,kk);
-			element->DatasetInputAdd(BasalforcingsLaddieForcingSalinityEnum,array2d_T,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingSalinityEnum,kk);
+			element->DatasetInputAdd(BasalforcingsLaddieForcingSalinityEnum,array2d_S,inputs,iomodel,M,N,1,BasalforcingsLaddieForcingSalinityEnum,kk);
 		}
 	}
 	xDelete<IssmDouble>(array2d_T);
@@ -172,7 +173,7 @@ _error_("Not implemented");
 ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrix(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsIceInElement()) return NULL;
+	if(!element->IsIceInElement() || !element->IsOceanInElement()) return NULL;
 
 	if(!element->IsOceanInElement()) return NULL;
 	Element* basalelement = element->SpawnBasalElement();
@@ -200,7 +201,7 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrix(Element* element){
 ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVector(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-	if(!element->IsIceInElement()) return NULL;
+	if(!element->IsIceInElement() || !element->IsOceanInElement()) return NULL;
 
 	if(!element->IsOnBase()) return NULL;
 	Element* basalelement = element->SpawnBasalElement();
