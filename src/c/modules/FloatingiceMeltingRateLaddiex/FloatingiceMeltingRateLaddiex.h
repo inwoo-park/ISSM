@@ -8,7 +8,6 @@
 #include "../../classes/classes.h"
 #include "../FloatingiceMeltingRatex/FloatingiceMeltingRatex.h"
 
-IssmDouble GetLaddieFrictionVelocityx(IssmDouble Cd_top, IssmDouble vx, IssmDouble vy, IssmDouble Utide);
 IssmDouble GetDensityDifferencex(IssmDouble rho0, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa);
 IssmDouble GetEffectiveGravitationAccelerationx(IssmDouble g, IssmDouble rho0, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa);
 void FloatingiceMeltingRateLaddiex(FemModel* femmodel);

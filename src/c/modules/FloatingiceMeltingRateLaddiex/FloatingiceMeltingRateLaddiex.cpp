@@ -8,40 +8,6 @@
 #include "./../../classes/Inputs/DatasetInput.h"
 #include "../InputDuplicatex/InputDuplicatex.h"
 
-IssmDouble GetLaddieFrictionVelocityx(IssmDouble Cd_top, IssmDouble vx, IssmDouble vy, IssmDouble Utide){/*{{{*/
-	/*
-	 Calculate the friction velocity Ustar defined in Jenkins et al. (2010)
-
-	 Ustar = sqrt(Cd_top (vx^2 + vy^2 + Utide^2))
-
-	 Inputs
-	 * Cd_top: drag coefficient.
-	 * vx, vy: plume velocity [m s-1].
-	 * Utide: time-mean tidal velocity [m s-1].
-
-	 Outputs
-	 * Ustar - element friction velocity
-
-	 See also
-	 Eq 13. in Lambert et al. (2023TC)
-	 */
-
-	/*Hard coding for specific parameters*/
-	//IssmDouble Cd_top=1.1e-3; // top drag coefficient 
-	//IssmDouble Utide=0.01; // tide velocity [m s-1]
-	
-	/*Input values*/
-	//IssmDouble vx, vy;
-
-	/*Output values*/
-	IssmDouble Ustar; // Friction velocity
-
-	/*Calculate fricition velocity*/
-	Ustar = Cd_top * (pow(vx,2.0) + pow(vy,2.0) + pow(Utide,2));
-   Ustar = pow(Ustar,0.5);
-
-	return Ustar;
-}/*}}}*/
 IssmDouble GetDensityDifferencex(IssmDouble rho0, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa){/*{{{*/
 	/*
 	 Explain
@@ -206,6 +172,7 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 	IssmDouble Ta, Sa; /*ambient ocean forcing for temperature [degC] and salinity [psu]*/
 	IssmDouble alpha=3.733e-5; /*thermal expansion coefficient [degC -1]*/
 	IssmDouble beta=7.843e-4; /*haline contraction coefficient [psu-1]*/
+	IssmDouble mindrho=0.005; /*minmum density difference [kg m-3]*/
 
 	IssmDouble *values;
 
@@ -253,6 +220,10 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 
 			/*Calculate density difference*/
 			drho[iv] = rho0*(-alpha*(Ta-T) + beta*(Sa-S));
+			if(drho[iv]<0){
+				_printf0_("WARNING: drho value encounters the negative value!\n");
+				drho[iv] = max(drho[iv], mindrho/rho0);
+			}
 			ga[iv] = g*drho[iv]/rho0;
 		}
 
@@ -268,7 +239,17 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 
 void UpdateLaddieFrictionVelocityx(FemModel* femmodel){/*{{{*/
 	/*
-	 Update friction velocity, Ustar, at each vertices.
+	 Calculate the friction velocity Ustar defined in Jenkins et al. (2010)
+
+	 Ustar = sqrt(Cd_top (vx^2 + vy^2 + Utide^2))
+
+	 Inputs
+	 * Cd_top: drag coefficient.
+	 * vx, vy: plume velocity [m s-1].
+	 * Utide: time-mean tidal velocity [m s-1].
+
+	 Outputs
+	 * Ustar - element friction velocity
 
 	 See also
 	 Eq. 13 in Lambert et al. (2023): https://tc.copernicus.org/articles/17/3203/2023/
@@ -308,7 +289,7 @@ void UpdateLaddieFrictionVelocityx(FemModel* femmodel){/*{{{*/
 			vy_input->GetInputValue(&vy, gauss);
 
 			/*Calculate friction velocity*/
-			ustar[iv] = GetLaddieFrictionVelocityx(Cdtop, vx, vy, utide);
+			ustar[iv] = sqrt(Cdtop*(vx*vx + vy*vy + utide*utide));
 		}
 
 		/*Assign value in: */
@@ -447,9 +428,10 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 
 	IssmDouble *values; /*value for assigning value*/
 	IssmDouble *melt, *Tb;
-	IssmDouble *ustar;
+	IssmDouble  ustar;
 	IssmDouble *gammaT, *gammaS;
 	Input   *D_input, *vx_input, *vy_input, *T_input, *S_input, *base_input;
+	Input   *ustar_input;
 	Element *element;
 	Gauss   *gauss;
 
@@ -475,10 +457,6 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 			xDelete<IssmDouble>(values);
 
 			values = xNewZeroInit<IssmDouble>(numvertices);
-			element->AddInput(BasalforcingsLaddieVelFrictionEnum,values,P1DGEnum);
-			xDelete<IssmDouble>(values);
-
-			values = xNewZeroInit<IssmDouble>(numvertices);
 			element->AddInput(BasalforcingsLaddieGammaTEnum,values,P1DGEnum);
 			xDelete<IssmDouble>(values);
 
@@ -495,10 +473,10 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 		T_input    = element->GetInput(BasalforcingsLaddieTEnum);     _assert_(T_input);
 		S_input    = element->GetInput(BasalforcingsLaddieSEnum);     _assert_(S_input);
 		base_input = element->GetInput(BaseEnum);                     _assert_(base_input);
+		ustar_input= element->GetInput(BasalforcingsLaddieVelFrictionEnum); _assert_(ustar_input);
 
 		melt  = xNew<IssmDouble>(numvertices);
 		Tb    = xNew<IssmDouble>(numvertices); /* freezing temperature at ice shelf base*/
-		ustar = xNew<IssmDouble>(numvertices);
 		gammaT= xNew<IssmDouble>(numvertices);
 		gammaS= xNew<IssmDouble>(numvertices);
 
@@ -514,13 +492,13 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 			S_input->GetInputValue(&S, gauss);
 			base_input->GetInputValue(&zb, gauss);
 
-			/*Calculate friction velocity*/
-			ustar[iv] = GetLaddieFrictionVelocityx(Cd_top, vx, vy, Utide);
+			/*Get friction velocity*/
+			ustar_input->GetInputValue(&ustar, gauss);
 
 			/*Calculate effective gammaT and gammaS*/
-			AA = 2.12*log(ustar[iv]*D/nu0+1e-12); 
-			gammaT[iv] = ustar[iv]/(AA + 12.5*pow(Pr,2/3) - 8.68);
-			gammaS[iv] = ustar[iv]/(AA + 12.5*pow(Sc,2/3) - 8.68);
+			AA = 2.12*log(ustar*D/nu0+1e-12); 
+			gammaT[iv] = ustar/(AA + 12.5*pow(Pr,2/3) - 8.68);
+			gammaS[iv] = ustar/(AA + 12.5*pow(Sc,2/3) - 8.68);
 
 			/*Solve three equation*/
 			That = (l2 + l3*zb);
@@ -540,14 +518,12 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 		/*Assigne value*/
 		element->AddInput(BasalforcingsFloatingiceMeltingRateEnum,melt,P1DGEnum);
 		element->AddInput(BasalforcingsLaddieTbEnum,Tb,P1DGEnum);
-		element->AddInput(BasalforcingsLaddieVelFrictionEnum,ustar,P1DGEnum);
 		element->AddInput(BasalforcingsLaddieGammaTEnum,gammaT,P1DGEnum);
 		element->AddInput(BasalforcingsLaddieGammaSEnum,gammaS,P1DGEnum);
 
 		/*Clear memory*/
 		xDelete<IssmDouble>(melt);
 		xDelete<IssmDouble>(Tb);
-		xDelete<IssmDouble>(ustar);
 		xDelete<IssmDouble>(gammaT);
 		xDelete<IssmDouble>(gammaS);
 		delete gauss;
@@ -713,14 +689,18 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 				/*Dummy entrainment*/
 				entr_dummy[iv] = 2*mu/g*pow(ustar,3.0)/(thickness*drhoa) - drhob/drhoa*melt;
 				if (xIsNan<IssmDouble>(entr_dummy[iv]) || xIsInf<IssmDouble>(entr_dummy[iv])){
-					_printf0_("mu         = " << mu << "\n");
-					_printf0_("g          = " << g << "\n");
-					_printf0_("ustar      = " << ustar << "\n");
-					_printf0_("thickness  = " << thickness << "\n");
-					_printf0_("drhoa      = " << drhoa << "\n");
-					_printf0_("drhob      = " << drhob << "\n");
-					_printf0_("melt       = " << melt << "\n");
-					_error_("entr_dummy[" << iv << "] got NaN/Inf value!\n");
+					_error_("entr_dummy[" << iv << "] got NaN/Inf value!\n" << \
+								"mu         = " << mu << "\n" << \
+								"g          = " << g << "\n" << \
+								"ustar      = " << ustar << "\n" << \
+								"thickness  = " << thickness << "\n" << \
+								"drhoa      = " << drhoa << "\n" << \
+								"drhob      = " << drhob << "\n" << \
+								"Tb         = " << Tb << "\n" << \
+								"Sb         = " << Sb << "\n" << \
+								"T          = " << T << "\n" << \
+								"S          = " << S << "\n" << \
+								"melt       = " << melt << "\n");
 				}
 				entr_dummy[iv] = max(entr_dummy[iv], 0.0);
 				dentr[iv] = min(maxdentr,max(entr_dummy[iv],0.0));
