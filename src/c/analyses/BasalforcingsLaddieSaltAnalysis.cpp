@@ -211,23 +211,48 @@ void           BasalforcingsLaddieSaltAnalysis::GradientJ(Vector<IssmDouble>* gr
 }/*}}}*/
 void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDouble* solution,Element* element){/*{{{*/
 
-
 	/*Only update if on base*/
 	if(!element->IsOnBase() || !element->IsIceInElement() || !element->IsOceanInElement()) return;
 
-	/*Fetch dof list and allocate solution vector*/
-	int *doflist = NULL;
-	element->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
-
-	int numnodes = element->GetNumberOfNodes();
-	IssmDouble *Snew = xNew<IssmDouble>(numnodes);
+	int         i,dim,domaintype;
+	int         numnodes;
+	int        *doflist = NULL;
+	IssmDouble *xyz_list;
 	IssmDouble  thickness;
+	Element    *basalelement;
+	Gauss      *gauss;
 
-	Input      *thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
+	element->FindParam(&domaintype,DomainTypeEnum);
+	/*Get basal element*/
+	switch(domaintype){
+		case Domain2DhorizontalEnum:
+			basalelement = element;
+			dim=2;
+			break;
+		case Domain3DEnum: case Domain2DverticalEnum:
+			if(!element->IsOnBase()){xDelete<IssmDouble>(xyz_list); return;}
+			basalelement=element->SpawnBasalElement();
+			dim=2;
+			break;
+		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
+	}
+
+	/*Fetch number of nodes and dof for this finite element*/
+	numnodes = basalelement->GetNumberOfNodes();
+	int numdof   = numnodes*dim;
+	IssmDouble *Snew = xNew<IssmDouble>(numnodes);
+
+	/*Fetch dof list and allocate solution vector*/
+	basalelement->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
+
+	Input *thickness_input = basalelement->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
 
 	/*Use the dof list to index into the solution vector: */
-	thickness_input->GetInputAverage(&thickness);
-	for(int i=0;i<numnodes;i++){
+	gauss=basalelement->NewGauss();
+	for(i=0;i<numnodes;i++){
+		gauss->GaussVertex(i);
+		thickness_input->GetInputValue(&thickness,gauss);
+
 		Snew[i]=solution[doflist[i]]/thickness;
 		/*Check solution*/
 		if(xIsNan<IssmDouble>(Snew[i])) _error_("NaN found in solution vector");
@@ -236,7 +261,10 @@ void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDoub
 	element->AddBasalInput(BasalforcingsLaddieSEnum,Snew,element->GetElementType());
 
 	xDelete<int>(doflist);
+	xDelete<IssmDouble>(xyz_list);
 	xDelete<IssmDouble>(Snew);
+	delete gauss;
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
 }/*}}}*/
 void           BasalforcingsLaddieSaltAnalysis::UpdateConstraints(FemModel* femmodel){/*{{{*/
 	SetActiveNodesLSMx(femmodel);

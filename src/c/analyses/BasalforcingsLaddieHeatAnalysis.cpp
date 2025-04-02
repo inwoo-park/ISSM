@@ -24,7 +24,7 @@ void BasalforcingsLaddieHeatAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,
 
 	/*Create Nodes either DG or CG depending on stabilization*/
 	if(iomodel->domaintype!=Domain2DhorizontalEnum && iomodel->domaintype!=Domain3DsurfaceEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
-	::CreateNodes(nodes,iomodel,BasalforcingsLaddieHeatAnalysisEnum,FINITEELEMENT,isamr);
+	::CreateNodes(nodes,iomodel,BasalforcingsLaddieHeatAnalysisEnum,P1Enum,isamr);
 	iomodel->DeleteData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
 }/*}}}*/
 int  BasalforcingsLaddieHeatAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
@@ -36,10 +36,7 @@ void BasalforcingsLaddieHeatAnalysis::UpdateElements(Elements* elements,Inputs* 
 	int    finiteelement;
 
 	iomodel->FindConstant(&stabilization,"md.basalforcings.stabilization");
-	finiteelement=FINITEELEMENT;
-	if(stabilization==3){
-		finiteelement = P1DGEnum;
-	}
+	finiteelement=P1Enum;
 
 	/*Update elements: */
 	int counter=0;
@@ -131,19 +128,53 @@ void           BasalforcingsLaddieHeatAnalysis::InputUpdateFromSolution(IssmDoub
 	/*Only update if on base*/
 	if(!element->IsOnBase() || !element->IsIceInElement() || !element->IsOceanInElement()) return;
 
-	/*Fetch dof list and allocate solution vector*/
-	int *doflist = NULL;
-	element->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
-
-	int numnodes = element->GetNumberOfNodes();
+	int         i,dim,domaintype;
+	int         numnodes;
+	int        *doflist = NULL;
+	IssmDouble *xyz_list;
 	IssmDouble  thickness;
+	Element    *basalelement;
+	Gauss      *gauss;
+
+	element->FindParam(&domaintype,DomainTypeEnum);
+	/*Get basal element*/
+	switch(domaintype){
+		case Domain2DhorizontalEnum:
+			basalelement = element;
+			dim=2;
+			break;
+		case Domain3DEnum: case Domain2DverticalEnum:
+			if(!element->IsOnBase()){xDelete<IssmDouble>(xyz_list); return;}
+			basalelement=element->SpawnBasalElement();
+			dim=2;
+			break;
+		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
+	}
+
+	/*Fetch number of nodes and dof for this finite element*/
+	numnodes = basalelement->GetNumberOfNodes();
+	int numdof   = numnodes*dim;
 	IssmDouble *Tnew = xNew<IssmDouble>(numnodes);
 
-	Input *thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
+	/*Fetch dof list and allocate solution vector*/
+	basalelement->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
+
+	Input *thickness_input = basalelement->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
 
 	/*Use the dof list to index into the solution vector: */
-	thickness_input->GetInputAverage(&thickness);
-	for(int i=0;i<numnodes;i++){
+	/*NOTE: Old legacy*/
+	//thickness_input->GetInputAverage(&thickness);
+	//for(int i=0;i<numnodes;i++){
+	//	Tnew[i]=solution[doflist[i]]/thickness;
+	//	/*Check solution*/
+	//	if(xIsNan<IssmDouble>(Tnew[i])) _error_("NaN found in solution vector");
+	//	if(xIsInf<IssmDouble>(Tnew[i])) _error_("Inf found in solution vector");
+	//}
+	gauss=basalelement->NewGauss();
+	for(i=0;i<numnodes;i++){
+		gauss->GaussVertex(i);
+		thickness_input->GetInputValue(&thickness,gauss);
+
 		Tnew[i]=solution[doflist[i]]/thickness;
 		/*Check solution*/
 		if(xIsNan<IssmDouble>(Tnew[i])) _error_("NaN found in solution vector");
@@ -152,7 +183,10 @@ void           BasalforcingsLaddieHeatAnalysis::InputUpdateFromSolution(IssmDoub
 	element->AddBasalInput(BasalforcingsLaddieTEnum,Tnew,element->GetElementType());
 
 	xDelete<int>(doflist);
+	xDelete<IssmDouble>(xyz_list);
 	xDelete<IssmDouble>(Tnew);
+	delete gauss;
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
 }/*}}}*/
 void           BasalforcingsLaddieHeatAnalysis::UpdateConstraints(FemModel* femmodel){/*{{{*/
 
