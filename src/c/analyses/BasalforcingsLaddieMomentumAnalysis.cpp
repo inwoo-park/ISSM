@@ -535,7 +535,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 
 		/*Friction term: Cd |u| (u, v)*/
-		if(false){
+		if(true){
 			factor = gauss->weight*Jdet*Cd*vel*dt;
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
@@ -548,7 +548,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 
 		/*Coriolis term: f (v, -u) */
-		if(false){
+		if(true){
 			factor = gauss->weight*Jdet*coriolis_freq*thickness*dt;
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
