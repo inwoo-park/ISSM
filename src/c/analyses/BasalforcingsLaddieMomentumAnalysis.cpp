@@ -280,7 +280,7 @@ void           BasalforcingsLaddieMomentumAnalysis::GradientJ(Vector<IssmDouble>
 }/*}}}*/
 void           BasalforcingsLaddieMomentumAnalysis::InputUpdateFromSolution(IssmDouble* solution,Element* element){/*{{{*/
 
-	int         i,dim,domaintype;
+	int         i,dim=2,domaintype;
 	int*        doflist=NULL;
 	IssmDouble* xyz_list=NULL;
 	IssmDouble  thickness;
