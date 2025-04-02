@@ -130,6 +130,7 @@ enum definitions{
 	BasalforcingsLaddieDiagnosticFrequencyEnum,
 	BasalforcingsLaddieThicknessMinEnum,
 	BasalforcingsLaddieVelTideEnum,
+	BasalforcingsLaddieVCutEnum,
 	CalvingADStressThresholdFloatingiceEnum,
 	CalvingADStressThresholdGroundediceEnum,
 	CalvingCrevasseDepthEnum,

@@ -40,6 +40,9 @@ classdef basalforcingsladdie
 		ismelt=0;
 		f_cori=0;
 
+		%For stability
+		vcut=0;
+
 		%Entrainment specials
 		maxdentr=0;
 
@@ -98,6 +101,8 @@ classdef basalforcingsladdie
 			fielddisplay(self,'subtimestep','Sub timestepping for 2D plume model [unit: s]');
 			fielddisplay(self,'diagnostic_frequency','Store the estimated sub-ice shelf melting rate every given diagnostic_frequency [unit: -]');
 
+			fielddisplay(self,'vcut','cutoff velocity for u and v [m s-1] (default: 1.414)');
+
 			fielddisplay(self,'ismass','boolean to use mass analysis in Laddie (default: true).');
 			fielddisplay(self,'ismomentum','boolean to use momentum analysis in Laddie (default: true).');
 			fielddisplay(self,'isheat','boolean to use heat analysis in Laddie (default: true).');
@@ -149,6 +154,9 @@ classdef basalforcingsladdie
 			%Time stepping specials
 			self.subtimestep = 72; % unit: s-1
 			self.diagnostic_frequency=1; % unit: -
+
+			%Stability for momentum equation
+			self.vcut = 1.414; % unit: m s-1
 
 			%Anlayses
 			self.ismass=1;
@@ -205,7 +213,9 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.subtimestep','numel',1,'NaN',1,'Inf',1,'>',0,'<=',md.timestepping.time_step*md.constants.yts);
 			md = checkfield(md,'fieldname','basalforcings.diagnostic_frequency','numel',1,'NaN',1,'Inf',1,'>',0);
 
-			md = checkfield(md,'fieldname','basalforcings.stabilization','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,3,4,5]);
+			md = checkfield(md,'fieldname','basalforcings.vcut','numel',1,'NaN',1,'Inf',1,'>',0,'<',1e+10);
+
+			md = checkfield(md,'fieldname','basalforcings.stabilization','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,5]);
 
 			md = checkfield(md,'fieldname','basalforcings.ismass','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.ismomentum','values',[0,1]);
@@ -250,6 +260,8 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','diagnostic_frequency','format','Integer');
 
 			WriteData(fid,prefix,'object',self,'fieldname','stabilization','format','Integer');
+
+			WriteData(fid,prefix,'object',self,'fieldname','vcut','format','Double');
 
 			WriteData(fid,prefix,'object',self,'fieldname','ismass','format','Boolean');
 			WriteData(fid,prefix,'object',self,'fieldname','ismomentum','format','Boolean');

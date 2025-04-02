@@ -138,6 +138,9 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepDummyEnum));
 
+	/*Some parameters momentum analysis*/
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.vcut",BasalforcingsLaddieVCutEnum));
+
 	/*Turn on/off each analysis*/
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismass",BasalforcingsLaddieIsMassEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismomentum",BasalforcingsLaddieIsMomentumEnum));

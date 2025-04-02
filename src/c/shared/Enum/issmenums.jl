@@ -125,6 +125,7 @@
 	BasalforcingsLaddieDiagnosticFrequencyEnum
 	BasalforcingsLaddieThicknessMinEnum
 	BasalforcingsLaddieVelTideEnum
+	BasalforcingsLaddieVCutEnum
 	CalvingADStressThresholdFloatingiceEnum
 	CalvingADStressThresholdGroundediceEnum
 	CalvingCrevasseDepthEnum
@@ -2019,6 +2020,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieDiagnosticFrequencyEnum) return "BasalforcingsLaddieDiagnosticFrequency" end
 	if(enum==BasalforcingsLaddieThicknessMinEnum) return "BasalforcingsLaddieThicknessMin" end
 	if(enum==BasalforcingsLaddieVelTideEnum) return "BasalforcingsLaddieVelTide" end
+	if(enum==BasalforcingsLaddieVCutEnum) return "BasalforcingsLaddieVCut" end
 	if(enum==CalvingADStressThresholdFloatingiceEnum) return "CalvingADStressThresholdFloatingice" end
 	if(enum==CalvingADStressThresholdGroundediceEnum) return "CalvingADStressThresholdGroundedice" end
 	if(enum==CalvingCrevasseDepthEnum) return "CalvingCrevasseDepth" end
@@ -3913,6 +3915,7 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieDiagnosticFrequency") return BasalforcingsLaddieDiagnosticFrequencyEnum  end
 	if(name=="BasalforcingsLaddieThicknessMin") return BasalforcingsLaddieThicknessMinEnum  end
 	if(name=="BasalforcingsLaddieVelTide") return BasalforcingsLaddieVelTideEnum  end
+	if(name=="BasalforcingsLaddieVCut") return BasalforcingsLaddieVCutEnum  end
 	if(name=="CalvingADStressThresholdFloatingice") return CalvingADStressThresholdFloatingiceEnum  end
 	if(name=="CalvingADStressThresholdGroundedice") return CalvingADStressThresholdGroundediceEnum  end
 	if(name=="CalvingCrevasseDepth") return CalvingCrevasseDepthEnum  end
