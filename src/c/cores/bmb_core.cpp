@@ -37,11 +37,15 @@ void bmb_core(FemModel* femmodel){
 		int        step=0;
 		bool       ismass, ismomentum, isheat, issalt;
 		IssmDouble time=0.0;
+		IssmDouble timeglobal=0.0;
+		IssmDouble time_year=0.0;
+		IssmDouble time_day=0.0;
 		IssmDouble subfinaltime; /*Global time step from ISSM*/
 		IssmDouble yts;/*year to seconds*/
 		IssmDouble dt; /*Time step in LADDIE*/
 
 		/*Get time step in ice and LADDIE*/
+		femmodel->parameters->FindParam(&timeglobal,TimeEnum);
 		femmodel->parameters->FindParam(&subfinaltime,TimesteppingTimeStepEnum);
 		femmodel->parameters->FindParam(&dt,BasalforcingsLaddieSubTimestepDummyEnum);
 		femmodel->parameters->FindParam(&yts,ConstantsYtsEnum);
@@ -92,9 +96,14 @@ void bmb_core(FemModel* femmodel){
 			/*Set new step number and time step size*/
 			step+=1;
 			time+=dt;
+
+			time_year = floor((time+(timeglobal-subfinaltime))/yts);
+			time_day  = ((time+(timeglobal-subfinaltime))/yts - time_year)*yts/24/3600;
+
 			femmodel->parameters->SetParam(dt,BasalforcingsLaddieSubTimestepEnum);
 			_printf0_("   Laddie iteration: "<< step << "/" << ceil((subfinaltime-time)/dt)+step << \
-							" time [days]: " << time/24/3600 << "\n");
+							" time [year/days]: " << std::fixed<< setprecision(0) << time_year << " yr " << \
+												 " " << std::fixed << setprecision(6) << time_day << " days\n");
 			//if(VerboseSolution()) _printf0_("   Laddie time: "<<time/24/3600<<" days\n");
 
 			/*Step#1: Calculate mass transport model of Laddie*/
