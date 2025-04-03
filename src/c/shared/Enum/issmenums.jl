@@ -121,6 +121,7 @@
 	BasalforcingsLaddieIsSaltEnum
 	BasalforcingsLaddieKparamEnum
 	BasalforcingsLaddieMaxDentrainmentEnum
+	BasalforcingsLaddieMuEnum
 	BasalforcingsLaddieStabilizationEnum
 	BasalforcingsLaddieSubTimestepEnum
 	BasalforcingsLaddieSubTimestepDummyEnum
@@ -2018,6 +2019,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieIsSaltEnum) return "BasalforcingsLaddieIsSalt" end
 	if(enum==BasalforcingsLaddieKparamEnum) return "BasalforcingsLaddieKparam" end
 	if(enum==BasalforcingsLaddieMaxDentrainmentEnum) return "BasalforcingsLaddieMaxDentrainment" end
+	if(enum==BasalforcingsLaddieMuEnum) return "BasalforcingsLaddieMu" end
 	if(enum==BasalforcingsLaddieStabilizationEnum) return "BasalforcingsLaddieStabilization" end
 	if(enum==BasalforcingsLaddieSubTimestepEnum) return "BasalforcingsLaddieSubTimestep" end
 	if(enum==BasalforcingsLaddieSubTimestepDummyEnum) return "BasalforcingsLaddieSubTimestepDummy" end
@@ -3915,6 +3917,7 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieIsSalt") return BasalforcingsLaddieIsSaltEnum  end
 	if(name=="BasalforcingsLaddieKparam") return BasalforcingsLaddieKparamEnum  end
 	if(name=="BasalforcingsLaddieMaxDentrainment") return BasalforcingsLaddieMaxDentrainmentEnum  end
+	if(name=="BasalforcingsLaddieMu") return BasalforcingsLaddieMuEnum  end
 	if(name=="BasalforcingsLaddieStabilization") return BasalforcingsLaddieStabilizationEnum  end
 	if(name=="BasalforcingsLaddieSubTimestep") return BasalforcingsLaddieSubTimestepEnum  end
 	if(name=="BasalforcingsLaddieSubTimestepDummy") return BasalforcingsLaddieSubTimestepDummyEnum  end

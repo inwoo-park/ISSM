@@ -129,7 +129,9 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.f_cori",BasalforcingsLaddieCoriolisFrequencyEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Kparam",BasalforcingsLaddieKparamEnum));
 
+	/*For entrainment rate*/
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.maxdentr",BasalforcingsLaddieMaxDentrainmentEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.mu",BasalforcingsLaddieMuEnum));
 
 	/*For sub-ice shelf melting parameters*/
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isgammaTfix",BasalforcingsLaddieIsGammaTFixEnum));

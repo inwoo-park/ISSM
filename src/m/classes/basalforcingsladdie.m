@@ -45,6 +45,7 @@ classdef basalforcingsladdie
 
 		%Entrainment specials
 		maxdentr=0;
+		mu=0;
 
 		%Timestepping
 		subtimestep=0;
@@ -93,8 +94,10 @@ classdef basalforcingsladdie
 			fielddisplay(self,'Cd','momentum drag coefficient [unit: -]')
 			fielddisplay(self,'Cd_top','top drag coefficient [unit: -]')
 
+			%Parameters for entrainment rate.
 			fielddisplay(self,'Kparam','Kochergin entrainment rate [unit: -]. This parameter is required for isentrainment=0 (Holland et al. (2006).');
 			fielddisplay(self,'maxdentr','maximum dentrainment rate [m s-1]');
+			fielddisplay(self,'mu','parameter in gasar entrainment. Gaspar: 0.5; Gladish 2.5 (default: 2.5)');
 
 			fielddisplay(self,'isentrainment','select calculating entrainment value (dot{e}). 0: Holland et al. (2006), 1: Gaspar et al. (1988). (defalt: 0)')
 			fielddisplay(self,'ismelt','select calculating sub-ice shelf melting value (M_b). 0: two-equation formulation (McPhee et al., 2008), 1: three-equation formulation (Jenkins et al., 2010). (defalt: 0)')
@@ -147,6 +150,7 @@ classdef basalforcingsladdie
 
 			% 2) Gaspar et al. (1988) / Gladish et al. (2012).
 			self.maxdentr =0.5;
+			self.mu=2.5;
 
 			%Use entrainment with Gaspar et al. (1988)
 			self.isentrainment = 1;
@@ -211,8 +215,11 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.Cd','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.Cd_top','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.Kparam','numel',1,'NaN',1,'Inf',1,'>',0);
-			md = checkfield(md,'fieldname','basalforcings.maxdentr','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.f_cori','numel',1,'NaN',1,'Inf',1);
+
+			%For entrainment rate
+			md = checkfield(md,'fieldname','basalforcings.maxdentr','numel',1,'NaN',1,'Inf',1,'>',0);
+			md = checkfield(md,'fieldname','basalforcings.mu','numel',1,'NaN',1,'Inf',1,'>',0);
 
 			%For sub-ice shelf melting
 			md = checkfield(md,'fieldname','basalforcings.isgammaTfix','numel',1,'NaN',1,'Inf',1,'values',[0,1]);
@@ -264,9 +271,12 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','Cd','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Cd_top','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Kparam','format','Double');
-			WriteData(fid,prefix,'object',self,'fieldname','maxdentr','format','Double');
 
 			WriteData(fid,prefix,'object',self,'fieldname','f_cori','format','Double');
+
+			%Write parameters for entrainmentrate
+			WriteData(fid,prefix,'object',self,'fieldname','maxdentr','format','Double');
+			WriteData(fid,prefix,'object',self,'fieldname','mu','format','Double');
 
 			%Write parameters for sub-ice shelf melting
 			WriteData(fid,prefix,'object',self,'fieldname','isgammaTfix','format','Boolean');

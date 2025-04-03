@@ -126,6 +126,7 @@ enum definitions{
 	BasalforcingsLaddieIsSaltEnum,
 	BasalforcingsLaddieKparamEnum,
 	BasalforcingsLaddieMaxDentrainmentEnum,
+	BasalforcingsLaddieMuEnum,
 	BasalforcingsLaddieStabilizationEnum,
 	BasalforcingsLaddieSubTimestepEnum,
 	BasalforcingsLaddieSubTimestepDummyEnum,
