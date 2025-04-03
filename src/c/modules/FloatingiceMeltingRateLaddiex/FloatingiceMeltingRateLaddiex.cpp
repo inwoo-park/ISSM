@@ -550,7 +550,7 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 	int isentrainment;
 
 	/*Parameters*/
-	IssmDouble  mu=2.5;
+	IssmDouble  mu; /*Parameter in Gaspar parameterization. Gaspar: 0.5; Gladish: 2.5*/
 	IssmDouble  Kparam; /*Kparam: Kochergin entrainment rate*/
 	IssmDouble  g; /*gravitational acceleration [m s-1]*/
 	IssmDouble  maxdentr; /*maximum detrainment rate [m s-1]*/
@@ -600,6 +600,7 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 	femmodel->parameters->FindParam(&Kh, BasalforcingsLaddieHorizontalDiffusivityEnum);
 	femmodel->parameters->FindParam(&Dmin, BasalforcingsLaddieThicknessMinEnum);
 	femmodel->parameters->FindParam(&maxdentr, BasalforcingsLaddieMaxDentrainmentEnum);
+	femmodel->parameters->FindParam(&mu, BasalforcingsLaddieMuEnum);
 
 	/*Update entrainment rate*/
 	for(Object* & object : femmodel->elements->objects){
