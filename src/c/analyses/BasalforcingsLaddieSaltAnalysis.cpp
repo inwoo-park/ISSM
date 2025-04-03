@@ -370,28 +370,27 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 		dvydy=dvy[1];
 
 		/*Transient term*/
-		D_scalar=gauss->weight*Jdet;
-		factor=D_scalar*thickness;
-		for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) Ke->values[i*numnodes+j] += factor*basis[i]*basis[j];
+		D_scalar=gauss->weight*Jdet*thickness;
+		for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j];
 
 		/*Diffusion term: */
-		factor=dt*D_scalar*Kh*thickness;
+		D_scalar=gauss->weight*Jdet*dt*Kh*thickness;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
-				Ke->values[i*numnodes+j] += factor*(
+				Ke->values[i*numnodes+j] += D_scalar*(
 							dbasis[0*numnodes+j]*dbasis[0*numnodes+i] + dbasis[1*numnodes+j]*dbasis[1*numnodes+j]
 							);
 			}
 		}
 
 		/*Advection term: */
-		factor=D_scalar*dt*thickness;
+		D_scalar=gauss->weight*Jdet*dt*thickness;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				/*\phi_i \phi_j \nabla\cdot v*/
-				Ke->values[i*numnodes+j] += factor*basis[i]*basis[j]*(dvxdx+dvydy);
+				Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j]*(dvxdx+dvydy);
 				/*\phi_i v\cdot\nabla\phi_j*/
-				Ke->values[i*numnodes+j] += factor*basis[i]*(vx*thickness*dbasis[0*numnodes+j] + vy*thickness*dbasis[1*numnodes+j]);
+				Ke->values[i*numnodes+j] += D_scalar*basis[i]*(vx*thickness*dbasis[0*numnodes+j] + vy*thickness*dbasis[1*numnodes+j]);
 			}
 		}
 
