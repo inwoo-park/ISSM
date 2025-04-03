@@ -40,8 +40,8 @@ classdef basalforcingsladdie
 		ismelt=0;
 		f_cori=0;
 
-		%For stability
-		vcut=0;
+		isgammaTfix=0;
+		gammaT=0;
 
 		%Entrainment specials
 		maxdentr=0;
@@ -50,7 +50,8 @@ classdef basalforcingsladdie
 		subtimestep=0;
 		diagnostic_frequency=0;
 
-		%Numerical Method
+		%For numerical stability
+		vcut=0;
 		stabilization=0;
 
 		%Modules
@@ -97,6 +98,8 @@ classdef basalforcingsladdie
 
 			fielddisplay(self,'isentrainment','select calculating entrainment value (dot{e}). 0: Holland et al. (2006), 1: Gaspar et al. (1988). (defalt: 0)')
 			fielddisplay(self,'ismelt','select calculating sub-ice shelf melting value (M_b). 0: two-equation formulation (McPhee et al., 2008), 1: three-equation formulation (Jenkins et al., 2010). (defalt: 0)')
+			fielddisplay(self,'isgammaTfix','use fixed heat exchange coefficient from gammaT (default: 0)');
+			fielddisplay(self,'gammaT','specify heat exchange velocity between ice and water below ice base [unit: m s-1] (default: 1.47e-4)');
 
 			fielddisplay(self,'subtimestep','Sub timestepping for 2D plume model [unit: s]');
 			fielddisplay(self,'diagnostic_frequency','Store the estimated sub-ice shelf melting rate every given diagnostic_frequency [unit: -]');
@@ -145,11 +148,13 @@ classdef basalforcingsladdie
 			% 2) Gaspar et al. (1988) / Gladish et al. (2012).
 			self.maxdentr =0.5;
 
-			%Use entrainment with Holland et al. (2006).
-			self.isentrainment = 0;
+			%Use entrainment with Gaspar et al. (1988)
+			self.isentrainment = 1;
 
 			%Use three equation formulation.
 			self.ismelt = 1;
+			self.isgammaTfix=0;
+			self.gammaT = 1.47e-4; % unit: m s-1
 
 			%Time stepping specials
 			self.subtimestep = 72; % unit: s-1
@@ -157,6 +162,7 @@ classdef basalforcingsladdie
 
 			%Stability for momentum equation
 			self.vcut = 1.414; % unit: m s-1
+			self.stabilization=1;
 
 			%Anlayses
 			self.ismass=1;
@@ -207,6 +213,12 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.Kparam','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.maxdentr','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.f_cori','numel',1,'NaN',1,'Inf',1);
+
+			%For sub-ice shelf melting
+			md = checkfield(md,'fieldname','basalforcings.isgammaTfix','numel',1,'NaN',1,'Inf',1,'values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.gammaT','numel',1,'NaN',1,'Inf',1,'>',0);
+
+			%For timestepping
 			if isa(md.timestepping,'timesteppingadaptive')
 				error('ERROR: md.timestepping with "timesteppingadaptive" is not yet supported. Use "timetsepping".');
 			end
@@ -255,6 +267,10 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','maxdentr','format','Double');
 
 			WriteData(fid,prefix,'object',self,'fieldname','f_cori','format','Double');
+
+			%Write parameters for sub-ice shelf melting
+			WriteData(fid,prefix,'object',self,'fieldname','isgammaTfix','format','Boolean');
+			WriteData(fid,prefix,'object',self,'fieldname','gammaT','format','Double');
 
 			WriteData(fid,prefix,'object',self,'fieldname','subtimestep','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','diagnostic_frequency','format','Integer');

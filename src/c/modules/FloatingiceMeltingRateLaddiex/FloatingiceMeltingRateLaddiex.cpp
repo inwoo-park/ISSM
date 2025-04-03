@@ -404,10 +404,12 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 
 	/*Initialize input values: */
 	int numvertices;
+	bool        isgammaTfix;
 	IssmDouble  D, vx, vy, T, S, zb;
 	IssmDouble  That, Chat, Ctil;
 	IssmDouble  AA;
 	IssmDouble  b, c;
+	IssmDouble  gammaT_const;
 
 	/*Initialize constant values: */
 	IssmDouble Utide; /*Tidal velocity [m s-1]*/
@@ -441,6 +443,8 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 	femmodel->parameters->FindParam(&Ci, MaterialsHeatcapacityEnum);
 	femmodel->parameters->FindParam(&Cp, MaterialsMixedLayerCapacityEnum);
 	femmodel->parameters->FindParam(&L, MaterialsLatentheatEnum);
+	femmodel->parameters->FindParam(&isgammaTfix, BasalforcingsLaddieIsGammaTFixEnum);
+	femmodel->parameters->FindParam(&gammaT_const,BasalforcingsLaddieConstGammaTEnum);
 
 	/*Update sub-ice shelf melting rate using three equation formulatoin*/
 	for(Object* & object : femmodel->elements->objects){
@@ -491,14 +495,22 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 			T_input->GetInputValue(&T, gauss);
 			S_input->GetInputValue(&S, gauss);
 			base_input->GetInputValue(&zb, gauss);
-
-			/*Get friction velocity*/
 			ustar_input->GetInputValue(&ustar, gauss);
 
 			/*Calculate effective gammaT and gammaS*/
-			AA = 2.12*log(ustar*D/nu0+1e-12); 
-			gammaT[iv] = ustar/(AA + 12.5*pow(Pr,2/3) - 8.68);
-			gammaS[iv] = ustar/(AA + 12.5*pow(Sc,2/3) - 8.68);
+			if(isgammaTfix){
+				/*
+				Use fixed heat exchange coefficient described in Laddie simulation.
+				
+				Ratio gammaT/gammaS from Asay-David (ISOMIP) experiment
+				*/
+				gammaT[iv] = gammaT_const;
+				gammaS[iv] = gammaT_const/10.0;
+			}else{
+				AA = 2.12*log(ustar*D/nu0+1e-12); 
+				gammaT[iv] = ustar/(AA + 12.5*pow(Pr,2/3) - 8.68);
+				gammaS[iv] = ustar/(AA + 12.5*pow(Sc,2/3) - 8.68);
+			}
 
 			/*Solve three equation*/
 			That = (l2 + l3*zb);

@@ -119,6 +119,8 @@ syn keyword cConstant BasalforcingsUpperwaterMeltingRateEnum
 syn keyword cConstant BasalforcingsLaddieCdEnum
 syn keyword cConstant BasalforcingsLaddieCdTopEnum
 syn keyword cConstant BasalforcingsLaddieCoriolisFrequencyEnum
+syn keyword cConstant BasalforcingsLaddieConstGammaTEnum
+syn keyword cConstant BasalforcingsLaddieIsGammaTFixEnum
 syn keyword cConstant BasalforcingsLaddieForcingDepthEnum
 syn keyword cConstant BasalforcingsLaddieHorizontalDiffusivityEnum
 syn keyword cConstant BasalforcingsLaddieHorizontalViscosityEnum

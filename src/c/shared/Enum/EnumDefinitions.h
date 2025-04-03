@@ -113,6 +113,8 @@ enum definitions{
 	BasalforcingsLaddieCdEnum,
 	BasalforcingsLaddieCdTopEnum,
 	BasalforcingsLaddieCoriolisFrequencyEnum,
+	BasalforcingsLaddieConstGammaTEnum,
+	BasalforcingsLaddieIsGammaTFixEnum,
 	BasalforcingsLaddieForcingDepthEnum,
 	BasalforcingsLaddieHorizontalDiffusivityEnum,
 	BasalforcingsLaddieHorizontalViscosityEnum,
