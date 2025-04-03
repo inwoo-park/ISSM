@@ -243,16 +243,37 @@ void           BasalforcingsLaddieMassAnalysis::InputUpdateFromSolution(IssmDoub
 	/*Only update if on base*/
 	if(!element->IsOnBase() || !element->IsIceInElement() || !element->IsOceanInElement()) return;
 
-	/*Fetch dof list and allocate solution vector*/
-	int *doflist = NULL;
-	element->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
+	int         numnodes, dim, domaintype;
+	int        *doflist = NULL;
+	IssmDouble *xyz_list;
+	Element    *basalelement;
+	Gauss      *gauss;
 
-	int numnodes = element->GetNumberOfNodes();
+	element->FindParam(&domaintype,DomainTypeEnum);
+	/*Get basal element*/
+	switch(domaintype){
+		case Domain2DhorizontalEnum:
+			basalelement = element;
+			dim=2;
+			break;
+		case Domain3DEnum: case Domain2DverticalEnum:
+			if(!element->IsOnBase()){xDelete<IssmDouble>(xyz_list); return;}
+			basalelement=element->SpawnBasalElement();
+			dim=2;
+			break;
+		default: _error_("mesh "<<EnumToStringx(domaintype)<<" not supported yet");
+	}
+
+	/*Fetch number of nodes and dof for this finite element*/
+	numnodes = basalelement->GetNumberOfNodes();
 	IssmDouble* Dnew      = xNew<IssmDouble>(numnodes);
 	IssmDouble* Dresidual = xNew<IssmDouble>(numnodes);
 
+	/*Fetch dof list and allocate solution vector*/
+	basalelement->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
+
 	/*Use the dof list to index into the solution vector: */
-	IssmDouble Dmin = element->FindParam(BasalforcingsLaddieThicknessMinEnum);
+	IssmDouble Dmin   = basalelement->FindParam(BasalforcingsLaddieThicknessMinEnum);
 	for(int i=0;i<numnodes;i++){
 		Dnew[i]=solution[doflist[i]];
 		Dresidual[i]=0.;
@@ -264,12 +285,15 @@ void           BasalforcingsLaddieMassAnalysis::InputUpdateFromSolution(IssmDoub
 			Dnew[i]=Dmin;
 		}
 	}
-	element->AddBasalInput(BasalforcingsLaddieThicknessEnum,Dnew,element->GetElementType());
-	element->AddBasalInput(BasalforcingsLaddieThicknessResidualEnum,Dresidual,element->GetElementType());
+	basalelement->AddBasalInput(BasalforcingsLaddieThicknessEnum,Dnew,element->GetElementType());
+	basalelement->AddBasalInput(BasalforcingsLaddieThicknessResidualEnum,Dresidual,element->GetElementType());
 
+	/*Clear memory: */
 	xDelete<int>(doflist);
 	xDelete<IssmDouble>(Dnew);
  	xDelete<IssmDouble>(Dresidual);
+	delete gauss;
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
 }/*}}}*/
 void           BasalforcingsLaddieMassAnalysis::UpdateConstraints(FemModel* femmodel){/*{{{*/
 
