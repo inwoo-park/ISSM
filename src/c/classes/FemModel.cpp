@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <float.h>/*  DBL_EPSILON  */
 #include "../cores/cores.h"
 #include "../shared/io/io.h"
 #include "./classes.h"
@@ -2767,7 +2768,7 @@ void FemModel::Responsex(IssmDouble* responses,int response_descriptor_enum){/*{
 		case VelEnum:                            this->ElementResponsex(responses,VelEnum); break;
 		case FrictionCoefficientEnum:            NodalValuex(responses, FrictionCoefficientEnum,elements,nodes, vertices, loads, materials, parameters); break;
 		default:
-			if(response_descriptor_enum>=Outputdefinition1Enum && response_descriptor_enum <=Outputdefinition100Enum){
+			if(response_descriptor_enum>=Outputdefinition1Enum && response_descriptor_enum <=Outputdefinition2000Enum){
 				int ierr = OutputDefinitionsResponsex(responses, this,response_descriptor_enum);
 				if(ierr) _error_("could not evaluate response");
 			}
@@ -3230,6 +3231,11 @@ void FemModel::UpdateConstraintsx(void){ /*{{{*/
 
 	/*Now, update degrees of freedoms: */
 	NodesDofx(nodes,parameters);
+
+	/*Update FileInputs if need be*/
+	if(this->inputs->IsFileInputUpdate(time)){
+		_error_("not implemented yet");
+	}
 
 }/*}}}*/
 int  FemModel::UpdateVertexPositionsx(void){ /*{{{*/
