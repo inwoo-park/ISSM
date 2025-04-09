@@ -2,6 +2,7 @@
  * \brief: core of the bmb (Basal mass balance) solution 
  */ 
 
+#include <float.h>
 #include "./cores.h"
 #include "../toolkits/toolkits.h"
 #include "../classes/classes.h"
