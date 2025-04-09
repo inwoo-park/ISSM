@@ -653,6 +653,101 @@ AC_DEFUN([ISSM_OPTIONS],[
 	dnl Python{{{
 	AC_MSG_CHECKING([for Python])
 	AC_ARG_WITH(
+		[python],
+		AS_HELP_STRING([--with-python=EXEC], [Python path, e.g., "/usr/bin/python3"]),
+		[PYTHON_PATH=${withval}],
+		[PYTHON_PATH="no"]
+	)
+
+	if test "x${PYTHON_PATH}" == "xno"; then
+		HAVE_PYTHON=no
+	else
+		HAVE_PYTHON=yes
+		if ! test -f "${PYTHON_PATH}"; then
+			AC_MSG_ERROR([Python provided (${PYTHON_PATH}) does not exist!]);
+		fi
+	fi
+	AC_MSG_RESULT([${HAVE_PYTHON}])
+	AM_CONDITIONAL([PYTHON], [test "x${HAVE_PYTHON}" == "xyes"])
+
+	dnl Python specifics
+	if test "x${HAVE_PYTHON}" == "xyes"; then
+
+		AC_MSG_CHECKING([for Python version])
+		PYTHON_VERSION=$(${PYTHON_PATH} -c "import sys; sys.stdout.write(str(sys.version_info.major)+'.'+str(sys.version_info.minor))")
+		AC_MSG_RESULT([${PYTHON_VERSION}])
+		
+		dnl Make sure major version is 3
+		PYTHON_MAJOR=${PYTHON_VERSION%.*}
+		AC_DEFINE_UNQUOTED([_PYTHON_MAJOR_], ${PYTHON_MAJOR}, [Python version major])
+		if test "x${PYTHON_MAJOR}" != "x3"; then
+			AC_MSG_ERROR([Only Python 3 is supported]);
+		fi
+
+		AC_MSG_CHECKING([for Python include directory])
+		PYTHONINCL=$(${PYTHON_PATH} -c "import sys; import sysconfig; sys.stdout.write(sysconfig.get_config_var('INCLUDEPY'))")
+		if ! test -f "${PYTHONINCL}/Python.h"; then
+			PYTHONINCL=$(${PYTHON_PATH} -c "from sysconfig import get_paths as gp; print(gp()[['include']])")
+			if ! test -f "${PYTHONINCL}/Python.h"; then
+				AC_MSG_ERROR([Python.h not found! Please locate this file and contact ISSM developers via forum or email.]);
+			fi
+		fi
+		AC_MSG_RESULT([$PYTHONINCL])
+		PYTHONINCL="-I${PYTHONINCL}"
+
+		AC_MSG_CHECKING([for libpython])
+		PYTHONLIBDIR=$(${PYTHON_PATH} -c "import sys; import sysconfig; sys.stdout.write(sysconfig.get_config_var('LIBDIR'))")
+		if ls ${PYTHONLIBDIR}/libpython${PYTHON_VERSION}m.* 1> /dev/null 2>&1; then
+			PYTHONLIB="-L${PYTHONLIBDIR} -lpython${PYTHON_VERSION}m"
+		elif ls ${PYTHONLIBDIR}/libpython${PYTHON_VERSION}.* 1> /dev/null 2>&1; then
+			PYTHONLIB="-L${PYTHONLIBDIR} -lpython${PYTHON_VERSION}"
+		else
+			PYTHONLIBDIR=$(${PYTHON_PATH} -c "from sysconfig import get_paths as gp; print(gp()[['stdlib']])")
+			if ls ${PYTHONLIBDIR}/../libpython${PYTHON_VERSION}m.* 1> /dev/null 2>&1; then
+				PYTHONLIB="-L${PYTHONLIBDIR}/.. -lpython${PYTHON_VERSION}m"
+			elif ls ${PYTHONLIBDIR}/../libpython${PYTHON_VERSION}.* 1> /dev/null 2>&1; then
+				PYTHONLIB="-L${PYTHONLIBDIR}/.. -lpython${PYTHON_VERSION}"
+			else
+				AC_MSG_ERROR([libpython not found! Please locate this file and contact ISSM developers via forum or email.]);
+			fi
+		fi
+		AC_MSG_RESULT([$PYTHONLIB])
+
+		case "${host_os}" in
+			*darwin*) PYTHONLINK="-dynamiclib" ;;
+			*linux*)  PYTHONLINK="-shared" ;;
+			*mingw*)  PYTHONLINK="-shared" ;;
+		esac
+		AC_DEFINE([_HAVE_PYTHON_], [1], [with Python in ISSM src])
+		AC_SUBST([PYTHONINCL])
+		AC_SUBST([PYTHONLIB])
+		PYTHONWRAPPEREXT=".so"
+		AC_SUBST([PYTHONWRAPPEREXT])
+		AC_SUBST([PYTHONLINK])
+
+		dnl NumPy
+		AC_MSG_CHECKING([for NumPy version])
+		NUMPY_VERSION=$(${PYTHON_PATH} -c "import numpy; import sys; sys.stdout.write(numpy.version.version)")
+		AC_MSG_RESULT([$NUMPY_VERSION])
+
+		AC_MSG_CHECKING([for NumPy include directory])
+		NUMPYINCL=$(${PYTHON_PATH} -c "import numpy; import sys; sys.stdout.write(numpy.get_include())")
+		AC_MSG_RESULT([$NUMPYINCL])
+		if ! test -d "${NUMPYINCL}"; then
+			AC_MSG_ERROR([NumPy directory provided (${NUMPYINCL}) does not exist!]);
+		fi
+
+		dnl NumPy libraries and header files
+		PYTHON_NUMPYINCL="-I${NUMPYINCL} -I${NUMPYINCL}/numpy"
+		AC_DEFINE([_HAVE_PYTHON_NUMPY_], [1], [with NumPy in ISSM src])
+		AC_SUBST([PYTHON_NUMPYINCL])
+	fi
+	AM_CONDITIONAL([PYTHON3], [test "xyes" == "xyes"])
+	dnl }}}
+	dnl Python-OLD{{{
+	if test "x${HAVE_PYTHON}" != "xyes"; then
+	AC_MSG_CHECKING([for Python])
+	AC_ARG_WITH(
 		[python-dir],
 		AS_HELP_STRING([--with-python-dir=DIR], [Python root directory]),
 		[PYTHON_ROOT=${withval}],
@@ -795,6 +890,7 @@ AC_DEFUN([ISSM_OPTIONS],[
 		AC_DEFINE([_HAVE_PYTHON_NUMPY_], [1], [with NumPy in ISSM src])
 		AC_SUBST([PYTHON_NUMPYINCL])
 	fi
+	fi #Starts in pythonb-old
 	dnl }}}
 	dnl Chaco{{{
 	AC_MSG_CHECKING([for Chaco])
@@ -1056,40 +1152,6 @@ AC_DEFUN([ISSM_OPTIONS],[
 		AC_SUBST([AMPILIB])
 	fi
 	AM_CONDITIONAL([AMPI], [test "x${HAVE_AMPI}" == "xyes"])
-	dnl }}}
-	dnl Adjoint MPI (CoDiPack){{{
-	AC_MSG_CHECKING([for Adjoint MPI])
-	AC_ARG_WITH(
-		[adjointmpi-dir],
-		AS_HELP_STRING([--with-adjointmpi-dir=DIR], [Adjoint MPI root directory]),
-		[ADJOINTMPI_ROOT=${withval}],
-		[ADJOINTMPI_ROOT="no"]
-	)
-	if test "x${ADJOINTMPI_ROOT}" == "xno"; then
-		HAVE_ADJOINTMPI=no
-	else
-		HAVE_ADJOINTMPI=yes
-		if ! test -d "${ADJOINTMPI_ROOT}"; then
-			AC_MSG_ERROR([Adjoint MPI directory provided (${ADJOINTMPI_ROOT}) does not exist!]);
-		fi
-	fi
-	AC_MSG_RESULT([${HAVE_ADJOINTMPI}])
-
-	dnl Adjoint MPI libraries and header files
-	if test "x${HAVE_ADJOINTMPI}" == "xyes"; then
-		if test "x${CODIPACK_ROOT}" == "xno"; then
-			AC_MSG_ERROR([cannot run Adjoint MPI without CoDiPack]);
-		fi
-		ADJOINTMPIINCL="-I${ADJOINTMPI_ROOT}/include"
-		ADJOINTMPILIB="-L${ADJOINTMPI_ROOT}/lib  -lAMPI"
-		dnl Also set _HAVE_AMPI_, because the interface is (almost) the same as
-		dnl for AMPI
-		AC_DEFINE([_HAVE_AMPI_], [1], [with AMPI in ISSM src])
-		AC_DEFINE([_HAVE_ADJOINTMPI_], [1], [with Adjoint MPI in ISSM src])
-		AC_SUBST([ADJOINTMPIINCL])
-		AC_SUBST([ADJOINTMPILIB])
-	fi
-	AM_CONDITIONAL([ADJOINTMPI], [test "x${HAVE_ADJOINTMPI}" == "xyes"])
 	dnl }}}
 	dnl MeDiPack (CoDiPack, ADOL-C dev){{{
 	AC_MSG_CHECKING([for MeDiPack])
@@ -2259,63 +2321,6 @@ AC_DEFUN([ISSM_OPTIONS],[
 	fi
 	AM_CONDITIONAL([HAVE_FORTRANDIR], [test "x${IS_FORTRANDIR_A_DIR}" == "xyes"])
 	dnl }}}
-	dnl MeteoIO{{{
-	AC_MSG_CHECKING([for MeteoIO])
-	AC_ARG_WITH(
-		[meteoio-dir],
-		AS_HELP_STRING([--with-meteoio-dir=DIR], [use MeteoIO in conjunction with SNOWPACK model]),
-		[METEOIO_ROOT=${withval}],
-		[METEOIO_ROOT="no"]
-	)
-	if test "x${METEOIO_ROOT}" == "xno"; then
-		HAVE_METEOIO=no
-	else
-		HAVE_METEOIO=yes
-		if ! test -d "${METEOIO_ROOT}"; then
-			AC_MSG_ERROR([MeteoIO directory provided (${METEOIO_ROOT}) does not exist!]);
-		fi
-	fi
-	AC_MSG_RESULT([${HAVE_METEOIO}])
-
-	dnl MeteoIO libraries and header files
-	if test "x${HAVE_METEOIO}" == "xyes"; then
-		METEOIOINCL="-I${METEOIO_ROOT}/include"
-		METEOIOLIB="-dy -L${METEOIO_ROOT}/lib -lmeteoio"
-
-		AC_DEFINE([_HAVE_METEOIO_], [1], [with MeteoIO])
-		AC_SUBST([METEOIOINCL])
-		AC_SUBST([METEOIOLIB])
-	fi
-	AM_CONDITIONAL([METEOIO], [test "x${HAVE_METEOIO}" == "xyes"])
-	dnl }}}
-	dnl SNOWPACK{{{
-	AC_MSG_CHECKING([for SNOWPACK])
-	AC_ARG_WITH(
-		[snowpack-dir],
-		AS_HELP_STRING([--with-snowpack-dir=DIR], [use SNOWPACK for surface mass balance model]),
-		[SNOWPACK_ROOT=${withval}],
-		[SNOWPACK_ROOT="no"]
-	)
-	if test "x${SNOWPACK_ROOT}" == "xno"; then
-		HAVE_SNOWPACK=no
-	else
-		HAVE_SNOWPACK=yes
-		if ! test -d "${SNOWPACK_ROOT}"; then
-			AC_MSG_ERROR([SNOWPACK directory provided (${SNOWPACK_ROOT}) does not exist!]);
-		fi
-	fi
-	AC_MSG_RESULT([${HAVE_SNOWPACK}])
-
-	dnl SNOWPACK libraries and header files
-	if test "x${HAVE_SNOWPACK}" == "xyes"; then
-		SNOWPACKINCL="-I${SNOWPACK_ROOT}/include"
-		SNOWPACKLIB="-dy -L${SNOWPACK_ROOT}/lib -lsnowpack"
-		AC_DEFINE([_HAVE_SNOWPACK_], [1], [with SNOWPACK for surface mass balance model])
-		AC_SUBST([SNOWPACKINCL])
-		AC_SUBST([SNOWPACKLIB])
-	fi
-	AM_CONDITIONAL([SNOWPACK], [test "x${HAVE_SNOWPACK}" == "xyes"])
-	dnl }}}
 	dnl NeoPZ{{{
 	AC_MSG_CHECKING([for NeoPZ])
 	AC_ARG_WITH(
@@ -2427,22 +2432,6 @@ AC_DEFUN([ISSM_OPTIONS],[
 	fi
 	AM_CONDITIONAL([OCEAN], [test "x${HAVE_OCEAN}" == "xyes"])
 	AC_MSG_RESULT([${HAVE_OCEAN}])
-	dnl }}}
-	dnl with-kml{{{
-	AC_MSG_CHECKING(for kml capability compilation)
-	AC_ARG_WITH(
-		[kml],
-		AS_HELP_STRING([--with-kml=YES], [compile with kml capabilities (default: no)]),
-		[KML=${withval}],
-		[KML=no]
-	)
-	HAVE_KML=no
-	if test "x${KML}" == "xyes"; then
-		HAVE_KML=yes
-		AC_DEFINE([_HAVE_KML_], [1], [with kml capability])
-	fi
-	AM_CONDITIONAL([KML], [test "x${HAVE_KML}" == "xyes"])
-	AC_MSG_RESULT([${HAVE_KML}])
 	dnl }}}
 	dnl with-kriging{{{
 	AC_MSG_CHECKING(for kriging capability compilation)

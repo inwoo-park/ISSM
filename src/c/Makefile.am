@@ -1,4 +1,4 @@
-AM_CPPFLAGS = @NEOPZINCL@ @DAKOTAINCL@ @SHAPELIBINCL@ @TRIANGLEINCL@ @PETSCINCL@ @AMPIINCL@ @ADJOINTMPIINCL@ @MEDIPACKINCL@ @MPIINCL@ @PARMETISINCL@ @METISINCL@ @CHACOINCL@ @SCOTCHINCL@ @PLAPACKINCL@ @MKLINCL@ @MUMPSINCL@ @SPAIINCL@ @HYPREINCL@ @PROMETHEUSINCL@ @SUPERLUINCL@ @SPOOLESINCL@ @PASTIXINCL@ @MLINCL@ @TAOINCL@ @ADOLCINCL@ @CODIPACKINCL@ @GSLINCL@ @BOOSTINCL@ @METEOIOINCL@ @SNOWPACKINCL@ @ESMFINCL@ @PROJINCL@ @MPLAPACKINCL@
+AM_CPPFLAGS = @NEOPZINCL@ @DAKOTAINCL@ @SHAPELIBINCL@ @TRIANGLEINCL@ @PETSCINCL@ @AMPIINCL@ @MEDIPACKINCL@ @MPIINCL@ @PARMETISINCL@ @METISINCL@ @CHACOINCL@ @SCOTCHINCL@ @PLAPACKINCL@ @MKLINCL@ @MUMPSINCL@ @SPAIINCL@ @HYPREINCL@ @PROMETHEUSINCL@ @SUPERLUINCL@ @SPOOLESINCL@ @PASTIXINCL@ @MLINCL@ @TAOINCL@ @ADOLCINCL@ @CODIPACKINCL@ @GSLINCL@ @BOOSTINCL@ @ESMFINCL@ @PROJINCL@ @MPLAPACKINCL@
 AM_FCFLAGS = @SEMICINCL@
 
 AUTOMAKE_OPTIONS = subdir-objects
@@ -200,7 +200,6 @@ issm_sources += \
 	./modules/MmeToInputx/MmeToInputx.cpp\
 	./modules/ModelProcessorx/ModelProcessorx.cpp \
 	./modules/ModelProcessorx/ElementsAndVerticesPartitioning.cpp \
-	./modules/ModelProcessorx/NodesPartitioning.cpp \
 	./modules/ModelProcessorx/EdgesPartitioning.cpp \
 	./modules/ModelProcessorx/FacesPartitioning.cpp \
 	./modules/ModelProcessorx/CreateParameters.cpp \
@@ -347,13 +346,11 @@ issm_sources += \
 	./classes/Inputs/DatasetInput.cpp \
 	./classes/Inputs/ControlInput.cpp \
 	./classes/Inputs/TransientInput.cpp \
+	./classes/Inputs/TransientFileInput.cpp \
 	./classes/Inputs/ArrayInput.cpp \
 	./classes/Inputs/IntArrayInput.cpp
 #}}}
-# ADJOINTMPI/MeDiPack sources {{{
-if ADJOINTMPI
-issm_sources += ./toolkits/codipack/ampi_interface.cpp
-endif
+# CoDiPack/MeDiPack sources {{{
 if MEDIPACK
 issm_sources += ./toolkits/codipack/ampi_interface.cpp
 endif
@@ -637,42 +634,6 @@ endif
 endif
 #}}}
 # Wrapper sources
-# Kml sources {{{
-kml_sources = \
-	./modules/Exp2Kmlx/Exp2Kmlx.cpp \
-	./modules/Kml2Expx/Kml2Expx.cpp \
-	./modules/Shp2Kmlx/Shp2Kmlx.cpp \
-	./modules/KMLFileReadx/KMLFileReadx.cpp \
-	./modules/KMLMeshWritex/KMLMeshWritex.cpp \
-	./modules/KMLOverlayx/KMLOverlayx.cpp \
-	./kml/KML_Attribute.cpp \
-	./kml/KML_Comment.cpp \
-	./kml/KML_ColorStyle.cpp \
-	./kml/KML_Container.cpp \
-	./kml/KML_Document.cpp \
-	./kml/KML_Feature.cpp \
-	./kml/KML_File.cpp \
-	./kml/KML_Folder.cpp \
-	./kml/KML_Geometry.cpp \
-	./kml/KML_GroundOverlay.cpp \
-	./kml/KML_Icon.cpp \
-	./kml/KML_LatLonBox.cpp \
-	./kml/KML_LinearRing.cpp \
-	./kml/KML_LineString.cpp \
-	./kml/KML_LineStyle.cpp \
-	./kml/KML_MultiGeometry.cpp \
-	./kml/KML_Object.cpp \
-	./kml/KML_Overlay.cpp \
-	./kml/KML_Point.cpp \
-	./kml/KML_Placemark.cpp \
-	./kml/KML_Polygon.cpp \
-	./kml/KML_PolyStyle.cpp \
-	./kml/KML_Style.cpp \
-	./kml/KML_StyleSelector.cpp \
-	./kml/KML_SubStyle.cpp \
-	./kml/KML_Unknown.cpp \
-	./kml/KMLFileReadUtils.cpp
-#}}}
 # NEOPZ sources {{{
 neopz_sources = ./classes/AmrNeopz.cpp
 #}}}
@@ -749,7 +710,7 @@ endif
 libISSMCore_la_SOURCES  = $(issm_sources)
 libISSMCore_la_CXXFLAGS = $(ALL_CXXFLAGS)
 libISSMCore_la_FFLAGS = $(AM_FFLAGS)
-libISSMCore_LIB_ADD = $(CHACOLIB) $(DAKOTALIB) $(PETSCLIB) $(MUMPSLIB) $(SCALAPACKLIB) $(BLASLAPACKLIB) $(PARMETISLIB) $(METISLIB) $(HDF5LIB) $(TAOLIB) $(M1QN3LIB) $(SEMICLIB) $(PLAPACKLIB) $(MPLAPACKLIB) $(SUPERLULIB) $(SPOOLESLIB) $(BLACSLIB) $(HYPRELIB) $(SPAILIB) $(PROMETHEUSLIB) $(PASTIXLIB) $(MLLIB) $(SCOTCHLIB) $(MKLLIB) $(MPILIB) $(MATHLIB) $(GRAPHICSLIB) $(MULTITHREADINGLIB) $(GSLLIB) $(ADOLCLIB) $(AMPILIB) $(ADJOINTMPILIB) $(METEOIOLIB) $(SNOWPACKLIB) $(PROJLIB)
+libISSMCore_LIB_ADD = $(CHACOLIB) $(DAKOTALIB) $(PETSCLIB) $(MUMPSLIB) $(SCALAPACKLIB) $(BLASLAPACKLIB) $(PARMETISLIB) $(METISLIB) $(HDF5LIB) $(TAOLIB) $(M1QN3LIB) $(SEMICLIB) $(PLAPACKLIB) $(MPLAPACKLIB) $(SUPERLULIB) $(SPOOLESLIB) $(BLACSLIB) $(HYPRELIB) $(SPAILIB) $(PROMETHEUSLIB) $(PASTIXLIB) $(MLLIB) $(SCOTCHLIB) $(MKLLIB) $(MPILIB) $(MATHLIB) $(GRAPHICSLIB) $(MULTITHREADINGLIB) $(GSLLIB) $(ADOLCLIB) $(AMPILIB) $(PROJLIB)
 if FORTRAN
 libISSMCore_LIB_ADD += $(FLIBS) $(FORTRANLIB)
 endif
@@ -772,9 +733,6 @@ libISSMModules_la_SOURCES = $(modules_sources)
 libISSMModules_la_SOURCES += $(bamg_sources)
 if KRIGING
 libISSMModules_la_SOURCES += $(kriging_sources)
-endif
-if KML
-libISSMModules_la_SOURCES += $(kml_sources)
 endif
 
 libISSMModules_la_CXXFLAGS = $(ALL_CXXFLAGS)
@@ -889,7 +847,7 @@ LDADD += ./libISSMModules.la $(TRIANGLELIB)
 endif
 
 # External packages
-LDADD += $(DAKOTALIB) $(SEMICLIB) $(M1QN3LIB) $(CHACOLIB) $(PETSCLIB) $(MUMPSLIB) $(SCALAPACKLIB) $(BLASLAPACKLIB) $(PARMETISLIB) $(METISLIB) $(NEOPZLIB) $(TAOLIB) $(PLAPACKLIB) $(MPLAPACKLIB) $(SUPERLULIB) $(SPOOLESLIB) $(BLACSLIB) $(HDF5LIB) $(HYPRELIB) $(SPAILIB) $(PROMETHEUSLIB) $(PASTIXLIB) $(MLLIB) $(SCOTCHLIB) $(MKLLIB) $(MATHLIB) $(GRAPHICSLIB) $(MULTITHREADINGLIB) $(GSLLIB) $(AMPILIB) $(ADJOINTMPILIB) $(ADOLCLIB) $(MPILIB) $(METEOIOLIB) $(SNOWPACKLIB) $(ESMFLIB)
+LDADD += $(DAKOTALIB) $(SEMICLIB) $(M1QN3LIB) $(CHACOLIB) $(PETSCLIB) $(MUMPSLIB) $(SCALAPACKLIB) $(BLASLAPACKLIB) $(PARMETISLIB) $(METISLIB) $(NEOPZLIB) $(TAOLIB) $(PLAPACKLIB) $(MPLAPACKLIB) $(SUPERLULIB) $(SPOOLESLIB) $(BLACSLIB) $(HDF5LIB) $(HYPRELIB) $(SPAILIB) $(PROMETHEUSLIB) $(PASTIXLIB) $(MLLIB) $(SCOTCHLIB) $(MKLLIB) $(MATHLIB) $(GRAPHICSLIB) $(MULTITHREADINGLIB) $(GSLLIB) $(AMPILIB) $(ADOLCLIB) $(MPILIB) $(ESMFLIB)
 
 if FORTRAN
 LDADD += $(FLIBS) $(FORTRANLIB)
