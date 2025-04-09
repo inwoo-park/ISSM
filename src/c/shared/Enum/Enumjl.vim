@@ -127,6 +127,7 @@ syn keyword juliaConstC BasalforcingsLaddieKparamEnum
 syn keyword juliaConstC BasalforcingsLaddieMaxDentrainmentEnum
 syn keyword juliaConstC BasalforcingsLaddieMuEnum
 syn keyword juliaConstC BasalforcingsLaddieStabilizationEnum
+syn keyword juliaConstC BasalforcingsLaddieStabilizationMomentumEnum
 syn keyword juliaConstC BasalforcingsLaddieSubTimestepEnum
 syn keyword juliaConstC BasalforcingsLaddieSubTimestepDummyEnum
 syn keyword juliaConstC BasalforcingsLaddieDiagnosticFrequencyEnum
@@ -803,6 +804,8 @@ syn keyword juliaConstC BasalforcingsPicoSubShelfOceanSalinityEnum
 syn keyword juliaConstC BasalforcingsPicoSubShelfOceanTempEnum
 syn keyword juliaConstC BasalforcingsLaddieThicknessEnum
 syn keyword juliaConstC BasalforcingsLaddieThicknessResidualEnum
+syn keyword juliaConstC BasalforcingsLaddieThicknessOldEnum
+syn keyword juliaConstC BasalforcingsLaddieDThicknessDtEnum
 syn keyword juliaConstC BasalforcingsLaddieVxEnum
 syn keyword juliaConstC BasalforcingsLaddieVyEnum
 syn keyword juliaConstC BasalforcingsLaddieVelEnum

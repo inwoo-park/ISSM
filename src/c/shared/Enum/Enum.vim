@@ -134,6 +134,7 @@ syn keyword cConstant BasalforcingsLaddieKparamEnum
 syn keyword cConstant BasalforcingsLaddieMaxDentrainmentEnum
 syn keyword cConstant BasalforcingsLaddieMuEnum
 syn keyword cConstant BasalforcingsLaddieStabilizationEnum
+syn keyword cConstant BasalforcingsLaddieStabilizationMomentumEnum
 syn keyword cConstant BasalforcingsLaddieSubTimestepEnum
 syn keyword cConstant BasalforcingsLaddieSubTimestepDummyEnum
 syn keyword cConstant BasalforcingsLaddieDiagnosticFrequencyEnum
@@ -810,6 +811,8 @@ syn keyword cConstant BasalforcingsPicoSubShelfOceanSalinityEnum
 syn keyword cConstant BasalforcingsPicoSubShelfOceanTempEnum
 syn keyword cConstant BasalforcingsLaddieThicknessEnum
 syn keyword cConstant BasalforcingsLaddieThicknessResidualEnum
+syn keyword cConstant BasalforcingsLaddieThicknessOldEnum
+syn keyword cConstant BasalforcingsLaddieDThicknessDtEnum
 syn keyword cConstant BasalforcingsLaddieVxEnum
 syn keyword cConstant BasalforcingsLaddieVyEnum
 syn keyword cConstant BasalforcingsLaddieVelEnum
