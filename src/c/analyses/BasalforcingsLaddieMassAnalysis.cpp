@@ -9,7 +9,6 @@
 
 /*Model processing*/
 void BasalforcingsLaddieMassAnalysis::CreateConstraints(Constraints* constraints,IoModel* iomodel){/*{{{*/
-
 	/*No constraints for now*/
 }/*}}}*/
 void BasalforcingsLaddieMassAnalysis::CreateLoads(Loads* loads, IoModel* iomodel){/*{{{*/
@@ -140,6 +139,7 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismelt",BasalforcingsLaddieIsMeltEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isentrainment",BasalforcingsLaddieIsEntrainmentEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.stabilization",BasalforcingsLaddieStabilizationEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.stabilizationMomentum",BasalforcingsLaddieStabilizationMomentumEnum));
 
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.subtimestep",BasalforcingsLaddieSubTimestepDummyEnum));
@@ -319,7 +319,7 @@ void           BasalforcingsLaddieMassAnalysis::UpdateConstraints(FemModel* femm
 			else{
 				/*Apply plume thickness as zero value along grounding line*/
 				node->Deactivate();
-				node->ApplyConstraint(0,Dmin);
+				if(true) node->ApplyConstraint(0,Dmin);
 			}
 		}
 		xDelete<IssmDouble>(mask);
@@ -375,7 +375,7 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 	h = element->CharacteristicLength();
 
 	/* Start  looping on the number of gaussian points: */
-	Gauss* gauss=element->NewGauss(2);
+	Gauss* gauss=element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
@@ -588,20 +588,21 @@ ElementVector* BasalforcingsLaddieMassAnalysis::CreatePVectorCG(Element* element
 	h=element->CharacteristicLength();
 
 	/*Recover portion of element that is grounded*/
-	phi=element->GetGroundedPortion(xyz_list);
-	if(melt_style==SubelementMelt2Enum){
-		element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,MaskOceanLevelsetEnum,0);
-	    gauss = element->NewGauss(point1,fraction1,fraction2,3);
-	}
-	else if(melt_style==IntrusionMeltEnum){
-		element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,DistanceToGroundinglineEnum,intrusiondist);
-       	gauss = element->NewGauss(point1,fraction1,fraction2,3);
-	}
-	else{
-		gauss = element->NewGauss(3);
-	}
-
+//	phi=element->GetGroundedPortion(xyz_list);
+//	if(melt_style==SubelementMelt2Enum){
+//		element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,MaskOceanLevelsetEnum,0);
+//	    gauss = element->NewGauss(point1,fraction1,fraction2,3);
+//	}
+//	else if(melt_style==IntrusionMeltEnum){
+//		element->GetGroundedPart(&point1,&fraction1,&fraction2,&mainlyfloating,DistanceToGroundinglineEnum,intrusiondist);
+//       	gauss = element->NewGauss(point1,fraction1,fraction2,3);
+//	}
+//	else{
+//		gauss = element->NewGauss(3);
+//	}
+//
 	/* Start  looping on the number of gaussian points: */
+	gauss = element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);

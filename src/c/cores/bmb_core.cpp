@@ -36,6 +36,8 @@ void bmb_core(FemModel* femmodel){
 		/*Sub-ice shelf melting with LADDIE simulation*/
 		int        timestepping; /*check TimeSteppingEnum*/
 		int        step=0;
+		int        stabilization;
+		int        stabilizationMomentum;
 		bool       ismass, ismomentum, isheat, issalt;
 		IssmDouble time=0.0;
 		IssmDouble timeglobal=0.0;
@@ -55,6 +57,7 @@ void bmb_core(FemModel* femmodel){
 		femmodel->parameters->FindParam(&ismomentum,BasalforcingsLaddieIsMomentumEnum);
 		femmodel->parameters->FindParam(&isheat,BasalforcingsLaddieIsHeatEnum);
 		femmodel->parameters->FindParam(&issalt,BasalforcingsLaddieIsSaltEnum);
+		femmodel->parameters->FindParam(&stabilization,BasalforcingsLaddieStabilizationMomentumEnum);
 
 		/*Check time stepping type*/
 		switch(timestepping){
@@ -68,24 +71,9 @@ void bmb_core(FemModel* femmodel){
 				_error_("Time stepping \""<<EnumToStringx(timestepping)<<"\" not supported yet");
 		}
 
-		/*Step#1: prepare ambient temperature and salinity*/
-		if(VerboseSolution()) _printf0_("      step1: Preapre ambient temperature and salinity\n");
+		/*Prepare ambient temperature and salinity*/
+		if(VerboseSolution()) _printf0_("      Preapre ambient temperature and salinity\n");
 		UpdateLaddieAmbientFieldx(femmodel);
-
-		/*Step#2: update friction velocity*/
-		if(VerboseSolution()) _printf0_("      step2: Prepare frictinon velocity\n");
-		UpdateLaddieFrictionVelocityx(femmodel);
-
-		/*Update density and effective gravity: */
-		if(VerboseSolution()) _printf0_("      step3: Prepare density and effective gravity\n");
-		UpdateLaddieDensityAndEffectiveGravityx(femmodel);
-
-		/*First, initialize guess sub-ice shelf melting and entrainment rate.*/
-		if(VerboseSolution()) _printf0_("   computing melting rate\n");
-		FloatingiceMeltingRateLaddiex(femmodel);	
-
-		if(VerboseSolution()) _printf0_("   computing entrainment rate\n");
-		UpdateLaddieEntrainmentRatex(femmodel);
 
 		_printf0_("Go to solve LADDIE!\n");
 		while(time < subfinaltime - (yts*DBL_EPSILON)){
@@ -105,20 +93,43 @@ void bmb_core(FemModel* femmodel){
 			_printf0_("   Laddie iteration: "<< step << "/" << ceil((subfinaltime-time)/dt)+step << \
 							" time [year/days]: " << std::fixed<< setprecision(0) << time_year << " yr " << \
 												 " " << std::fixed << setprecision(6) << time_day << " days\n");
-			//if(VerboseSolution()) _printf0_("   Laddie time: "<<time/24/3600<<" days\n");
+
+			/*Step#1: Update friction velocity*/
+			if(VerboseSolution()) _printf0_("   computing friction velocity\n");
+			UpdateLaddieFrictionVelocityx(femmodel);
+
+			/*Step#2: Update density and effective gravity: */
+			if(VerboseSolution()) _printf0_("   computing density and effective gravity\n");
+			UpdateLaddieDensityAndEffectiveGravityx(femmodel);
+
+			/*Step#3: Update melting rate rate*/
+			if(VerboseSolution()) _printf0_("   computing melting rate\n");
+			UpdateLaddieMeltratex(femmodel);	
+
+			/*Step#4: Update entrainment rate*/
+			if(VerboseSolution()) _printf0_("   computing entrainment rate\n");
+			UpdateLaddieEntrainmentRatex(femmodel);
 
 			/*Step#1: Calculate mass transport model of Laddie*/
+			InputDuplicatex(femmodel,BasalforcingsLaddieThicknessEnum,BasalforcingsLaddieThicknessOldEnum);
 			if (ismass){
 				if(VerboseSolution()) _printf0_("   computing Laddie mass transport\n");
 				femmodel->SetCurrentConfiguration(BasalforcingsLaddieMassAnalysisEnum);
 				solutionsequence_linear(femmodel);
 			}
+			/*Update thickness change (dthk/dt) depending on time*/
+			//UpdateLaddieDThicknessDtx(femmodel);
 
 			/*Step#2: Calculate momentum equation of Laddie*/
 			if (ismomentum){
 				if(VerboseSolution()) _printf0_("   computing Laddie momentum equation\n");
 				femmodel->SetCurrentConfiguration(BasalforcingsLaddieMomentumAnalysisEnum);
-				solutionsequence_linear(femmodel);
+				if(stabilizationMomentum==4){
+					solutionsequence_fct(femmodel);
+				}
+				else{
+					solutionsequence_linear(femmodel);
+				}
 			}
 
 			/*Step#3: Calculate heat equation of Laddie*/
@@ -134,18 +145,13 @@ void bmb_core(FemModel* femmodel){
 				femmodel->SetCurrentConfiguration(BasalforcingsLaddieSaltAnalysisEnum);
 				solutionsequence_linear(femmodel);
 			}
-
-			/*Update friction velocity*/
-			UpdateLaddieFrictionVelocityx(femmodel);
-
-			/*Update density and effective gravity*/
-			UpdateLaddieDensityAndEffectiveGravityx(femmodel);
-
-			/*First, initialize guess sub-ice shelf melting and entrainment rate.*/
-			if(VerboseSolution()) _printf0_("   computing melting rate and entrainment rate\n");
-			FloatingiceMeltingRateLaddiex(femmodel);	
-			UpdateLaddieEntrainmentRatex(femmodel);
 		}
+
+		/*Update all inputs after finishing laddie simulation.*/
+		UpdateLaddieFrictionVelocityx(femmodel);
+		UpdateLaddieDensityAndEffectiveGravityx(femmodel);
+		UpdateLaddieMeltratex(femmodel);	
+		UpdateLaddieEntrainmentRatex(femmodel);
 	}
 
 	/*Call module now*/
