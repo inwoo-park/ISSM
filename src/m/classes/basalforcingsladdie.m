@@ -54,6 +54,7 @@ classdef basalforcingsladdie
 		%For numerical stability
 		vcut=0;
 		stabilization=0;
+		stabilizationMomentum=0;
 
 		%Modules
 		ismass=0;
@@ -108,6 +109,9 @@ classdef basalforcingsladdie
 			fielddisplay(self,'diagnostic_frequency','Store the estimated sub-ice shelf melting rate every given diagnostic_frequency [unit: -]');
 
 			fielddisplay(self,'vcut','cutoff velocity for u and v [m s-1] (default: 1.414)');
+
+			fielddisplay(self,'stabilization','stabilization scheme for mass, heat and salt.');
+			fielddisplay(self,'stabilizationMomentum','stabilization scheme for momentum.'); 
 
 			fielddisplay(self,'ismass','boolean to use mass analysis in Laddie (default: true).');
 			fielddisplay(self,'ismomentum','boolean to use momentum analysis in Laddie (default: true).');
@@ -167,6 +171,7 @@ classdef basalforcingsladdie
 			%Stability for momentum equation
 			self.vcut = 1.414; % unit: m s-1
 			self.stabilization=1;
+			self.stabilizationMomentum=1;
 
 			%Anlayses
 			self.ismass=1;
@@ -235,6 +240,7 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.vcut','numel',1,'NaN',1,'Inf',1,'>',0,'<',1e+10);
 
 			md = checkfield(md,'fieldname','basalforcings.stabilization','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,5]);
+			md = checkfield(md,'fieldname','basalforcings.stabilizationMomentum','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,3,5]);
 
 			md = checkfield(md,'fieldname','basalforcings.ismass','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.ismomentum','values',[0,1]);
@@ -286,6 +292,7 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','diagnostic_frequency','format','Integer');
 
 			WriteData(fid,prefix,'object',self,'fieldname','stabilization','format','Integer');
+			WriteData(fid,prefix,'object',self,'fieldname','stabilizationMomentum','format','Integer');
 
 			WriteData(fid,prefix,'object',self,'fieldname','vcut','format','Double');
 
