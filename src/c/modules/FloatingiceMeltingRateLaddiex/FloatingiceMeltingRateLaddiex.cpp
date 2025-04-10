@@ -56,6 +56,55 @@ void FloatingiceMeltingRateLaddiex(FemModel* femmodel){/*{{{*/
 	UpdateLaddieMeltratex(femmodel);
 }/*}}}*/
 
+void UpdateLaddieDThicknessDtx(FemModel* femmodel){/*{{{*/
+	/*
+	Prepare (d thickness / dt ) for heat and salt analysis
+	 */
+
+	IssmDouble  dt;
+	IssmDouble  thk1, thk0;
+
+	IssmDouble *dthkdt;
+	IssmDouble *values;
+
+	Gauss      *gauss;
+
+	for(Object* & object : femmodel->elements->objects){
+		Element* element = xDynamicCast<Element*>(object);
+		int      numvertices = element->GetNumberOfVertices();
+
+		/*Set melt to 0 if non floating*/
+		if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
+			values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsLaddieDThicknessDtEnum,values,P1DGEnum);
+			xDelete<IssmDouble>(values);
+			continue;
+		}
+
+		/*Retrieve all inputs: */
+		element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
+
+		Input *thk1_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thk1_input);
+		Input *thk0_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thk0_input);
+		dthkdt = xNew<IssmDouble>(numvertices);
+
+		gauss=element->NewGauss();
+		for(int iv=0;iv<numvertices;iv++){
+			gauss->GaussVertex(iv);
+			thk1_input->GetInputValue(&thk1,gauss);
+			thk0_input->GetInputValue(&thk0,gauss);
+			
+			/*calculate dthk/dt value: */
+			dthkdt[iv] = (thk1-thk0)/dt;
+		}
+
+		/*Assign value in: */
+		element->AddInput(BasalforcingsLaddieDThicknessDtEnum,dthkdt,P1DGEnum);
+
+		xDelete<IssmDouble>(dthkdt);
+		delete gauss;
+	}
+}/*}}}*/
 void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 	/*
 	Make 3D ambient ocean temperature/salinity to 2D ambient ocean temperature/salinity considering ice base elevation and plume thickness.
