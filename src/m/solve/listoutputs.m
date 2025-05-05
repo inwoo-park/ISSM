@@ -364,6 +364,7 @@ SedimentHeadResidual
 SedimentHeadStacked
 SigmaNN
 SigmaVM
+SmbAblation
 SmbAccumulatedEC
 SmbAccumulatedMassBalance
 SmbAccumulatedMelt
@@ -424,9 +425,12 @@ SmbECSubstep
 SmbECDt
 SmbECini
 SmbEla
+SmbEnhanceFactor
 SmbEvaporation
 SmbFAC
 SmbFACSubstep
+SmbGCMLapserates
+SmbGCMRefSurface
 SmbGdn
 SmbGdnini
 SmbGsp
@@ -448,6 +452,7 @@ SmbMask
 SmbMeanLHF
 SmbMeanSHF
 SmbMeanULW
+SmbMeanTemperature
 SmbMelt
 SmbMeltSubstep
 SmbMonthlytemperatures
@@ -498,6 +503,7 @@ SmbT
 SmbTa
 SmbTamp
 SmbTeValue
+SmbTemperature
 SmbTemperaturesAnomaly
 SmbTemperaturesLgm
 SmbTemperaturesPresentday
@@ -557,6 +563,7 @@ SurfaceRelVelMisfit
 SurfaceSlopeX
 SurfaceSlopeY
 Temperature
+TemperatureObs
 TemperaturePDD
 TemperaturePicard
 TemperatureSEMIC

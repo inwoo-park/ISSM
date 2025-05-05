@@ -296,6 +296,8 @@ const char* EnumToStringx(int en){
 		case HydrologyChannelBetaEnum : return "HydrologyChannelBeta";
 		case HydrologyCavitySpacingEnum : return "HydrologyCavitySpacing";
 		case HydrologyChannelSheetWidthEnum : return "HydrologyChannelSheetWidth";
+		case HydrologyGapHeightMinEnum : return "HydrologyGapHeightMin";
+		case HydrologyGapHeightMaxEnum : return "HydrologyGapHeightMax";
 		case HydrologyEnglacialVoidRatioEnum : return "HydrologyEnglacialVoidRatio";
 		case HydrologyIschannelsEnum : return "HydrologyIschannels";
 		case HydrologyIsIncludeSheetThicknessEnum : return "HydrologyIsIncludeSheetThickness";
@@ -578,6 +580,8 @@ const char* EnumToStringx(int en){
 		case SmbAlbedoSnowMinEnum : return "SmbAlbedoSnowMin";
 		case SmbAlbedoIceEnum : return "SmbAlbedoIce";
 		case SmbAlbedoLandEnum : return "SmbAlbedoLand";
+		case SmbAllSolidTempEnum : return "SmbAllSolidTemp";
+		case SmbAllLiquidTempEnum : return "SmbAllLiquidTemp";
 		case SmbARMATimestepEnum : return "SmbARMATimestep";
 		case SmbARMAarOrderEnum : return "SmbARMAarOrder";
 		case SmbARMAarlagcoefsEnum : return "SmbARMAarlagcoefs";
@@ -590,6 +594,8 @@ const char* EnumToStringx(int en){
 		case SmbDebrisalbedoEnum : return "SmbDebrisalbedo";
 		case SmbIcealbedoEnum : return "SmbIcealbedo";
 		case SmbSnowalbedoEnum : return "SmbSnowalbedo";
+		case SmbDdfSnowEnum : return "SmbDdfSnow";
+		case SmbDdfIceEnum : return "SmbDdfIce";
 		case SmbDebrisIsAndersonEnum : return "SmbDebrisIsAnderson";
 		case SmbDebrisIsCryokarstEnum : return "SmbDebrisIsCryokarst";
 		case SmbDebrisAndersonD0Enum : return "SmbDebrisAndersonD0";
@@ -610,6 +616,10 @@ const char* EnumToStringx(int en){
 		case SmbEnum : return "Smb";
 		case SmbEIdxEnum : return "SmbEIdx";
 		case SmbFEnum : return "SmbF";
+		case SmbGCMXgridEnum : return "SmbGCMXgrid";
+		case SmbGCMYgridEnum : return "SmbGCMYgrid";
+		case SmbGCMPrecipitationEnum : return "SmbGCMPrecipitation";
+		case SmbGCMTemperatureEnum : return "SmbGCMTemperature";
 		case SmbHumiditygradEnum : return "SmbHumiditygrad";
 		case SmbInitDensityScalingEnum : return "SmbInitDensityScaling";
 		case SmbIsaccumulationEnum : return "SmbIsaccumulation";
@@ -1139,6 +1149,7 @@ const char* EnumToStringx(int en){
 		case SedimentHeadStackedEnum : return "SedimentHeadStacked";
 		case SigmaNNEnum : return "SigmaNN";
 		case SigmaVMEnum : return "SigmaVM";
+		case SmbAblationEnum : return "SmbAblation";
 		case SmbAccumulatedECEnum : return "SmbAccumulatedEC";
 		case SmbAccumulatedMassBalanceEnum : return "SmbAccumulatedMassBalance";
 		case SmbAccumulatedMeltEnum : return "SmbAccumulatedMelt";
@@ -1199,9 +1210,12 @@ const char* EnumToStringx(int en){
 		case SmbECDtEnum : return "SmbECDt";
 		case SmbECiniEnum : return "SmbECini";
 		case SmbElaEnum : return "SmbEla";
+		case SmbEnhanceFactorEnum : return "SmbEnhanceFactor";
 		case SmbEvaporationEnum : return "SmbEvaporation";
 		case SmbFACEnum : return "SmbFAC";
 		case SmbFACSubstepEnum : return "SmbFACSubstep";
+		case SmbGCMLapseratesEnum : return "SmbGCMLapserates";
+		case SmbGCMRefSurfaceEnum : return "SmbGCMRefSurface";
 		case SmbGdnEnum : return "SmbGdn";
 		case SmbGdniniEnum : return "SmbGdnini";
 		case SmbGspEnum : return "SmbGsp";
@@ -1223,6 +1237,7 @@ const char* EnumToStringx(int en){
 		case SmbMeanLHFEnum : return "SmbMeanLHF";
 		case SmbMeanSHFEnum : return "SmbMeanSHF";
 		case SmbMeanULWEnum : return "SmbMeanULW";
+		case SmbMeanTemperatureEnum : return "SmbMeanTemperature";
 		case SmbMeltEnum : return "SmbMelt";
 		case SmbMeltSubstepEnum : return "SmbMeltSubstep";
 		case SmbMonthlytemperaturesEnum : return "SmbMonthlytemperatures";
@@ -1273,6 +1288,7 @@ const char* EnumToStringx(int en){
 		case SmbTaEnum : return "SmbTa";
 		case SmbTampEnum : return "SmbTamp";
 		case SmbTeValueEnum : return "SmbTeValue";
+		case SmbTemperatureEnum : return "SmbTemperature";
 		case SmbTemperaturesAnomalyEnum : return "SmbTemperaturesAnomaly";
 		case SmbTemperaturesLgmEnum : return "SmbTemperaturesLgm";
 		case SmbTemperaturesPresentdayEnum : return "SmbTemperaturesPresentday";
@@ -1332,6 +1348,7 @@ const char* EnumToStringx(int en){
 		case SurfaceSlopeXEnum : return "SurfaceSlopeX";
 		case SurfaceSlopeYEnum : return "SurfaceSlopeY";
 		case TemperatureEnum : return "Temperature";
+		case TemperatureObsEnum : return "TemperatureObs";
 		case TemperaturePDDEnum : return "TemperaturePDD";
 		case TemperaturePicardEnum : return "TemperaturePicard";
 		case TemperatureSEMICEnum : return "TemperatureSEMIC";
@@ -3715,6 +3732,7 @@ const char* EnumToStringx(int en){
 		case SMBmeltcomponentsEnum : return "SMBmeltcomponents";
 		case SMBpddEnum : return "SMBpdd";
 		case SMBpddSicopolisEnum : return "SMBpddSicopolis";
+		case SMBpddGCMEnum : return "SMBpddGCM";
 		case SMBsemicEnum : return "SMBsemic";
 		case SSAApproximationEnum : return "SSAApproximation";
 		case SSAFSApproximationEnum : return "SSAFSApproximation";
@@ -3779,6 +3797,7 @@ const char* EnumToStringx(int en){
 		case TotalSmbRefreezeEnum : return "TotalSmbRefreeze";
 		case TotalSmbMeltEnum : return "TotalSmbMelt";
 		case TransientArrayParamEnum : return "TransientArrayParam";
+		case TransientGriddedFieldParamEnum : return "TransientGriddedFieldParam";
 		case TransientInputEnum : return "TransientInput";
 		case TransientFileInputEnum : return "TransientFileInput";
 		case TransientParamEnum : return "TransientParam";

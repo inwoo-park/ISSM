@@ -283,6 +283,8 @@
 	HydrologyChannelBetaEnum
 	HydrologyCavitySpacingEnum
 	HydrologyChannelSheetWidthEnum
+	HydrologyGapHeightMinEnum
+	HydrologyGapHeightMaxEnum
 	HydrologyEnglacialVoidRatioEnum
 	HydrologyIschannelsEnum
 	HydrologyIsIncludeSheetThicknessEnum
@@ -565,6 +567,8 @@
 	SmbAlbedoSnowMinEnum
 	SmbAlbedoIceEnum
 	SmbAlbedoLandEnum
+	SmbAllSolidTempEnum
+	SmbAllLiquidTempEnum
 	SmbARMATimestepEnum
 	SmbARMAarOrderEnum
 	SmbARMAarlagcoefsEnum
@@ -577,6 +581,8 @@
 	SmbDebrisalbedoEnum
 	SmbIcealbedoEnum
 	SmbSnowalbedoEnum
+	SmbDdfSnowEnum
+	SmbDdfIceEnum
 	SmbDebrisIsAndersonEnum
 	SmbDebrisIsCryokarstEnum
 	SmbDebrisAndersonD0Enum
@@ -597,6 +603,10 @@
 	SmbEnum
 	SmbEIdxEnum
 	SmbFEnum
+	SmbGCMXgridEnum
+	SmbGCMYgridEnum
+	SmbGCMPrecipitationEnum
+	SmbGCMTemperatureEnum
 	SmbHumiditygradEnum
 	SmbInitDensityScalingEnum
 	SmbIsaccumulationEnum
@@ -1126,6 +1136,7 @@
 	SedimentHeadStackedEnum
 	SigmaNNEnum
 	SigmaVMEnum
+	SmbAblationEnum
 	SmbAccumulatedECEnum
 	SmbAccumulatedMassBalanceEnum
 	SmbAccumulatedMeltEnum
@@ -1186,9 +1197,12 @@
 	SmbECDtEnum
 	SmbECiniEnum
 	SmbElaEnum
+	SmbEnhanceFactorEnum
 	SmbEvaporationEnum
 	SmbFACEnum
 	SmbFACSubstepEnum
+	SmbGCMLapseratesEnum
+	SmbGCMRefSurfaceEnum
 	SmbGdnEnum
 	SmbGdniniEnum
 	SmbGspEnum
@@ -1210,6 +1224,7 @@
 	SmbMeanLHFEnum
 	SmbMeanSHFEnum
 	SmbMeanULWEnum
+	SmbMeanTemperatureEnum
 	SmbMeltEnum
 	SmbMeltSubstepEnum
 	SmbMonthlytemperaturesEnum
@@ -1260,6 +1275,7 @@
 	SmbTaEnum
 	SmbTampEnum
 	SmbTeValueEnum
+	SmbTemperatureEnum
 	SmbTemperaturesAnomalyEnum
 	SmbTemperaturesLgmEnum
 	SmbTemperaturesPresentdayEnum
@@ -1319,6 +1335,7 @@
 	SurfaceSlopeXEnum
 	SurfaceSlopeYEnum
 	TemperatureEnum
+	TemperatureObsEnum
 	TemperaturePDDEnum
 	TemperaturePicardEnum
 	TemperatureSEMICEnum
@@ -3702,6 +3719,7 @@
 	SMBmeltcomponentsEnum
 	SMBpddEnum
 	SMBpddSicopolisEnum
+	SMBpddGCMEnum
 	SMBsemicEnum
 	SSAApproximationEnum
 	SSAFSApproximationEnum
@@ -3766,6 +3784,7 @@
 	TotalSmbRefreezeEnum
 	TotalSmbMeltEnum
 	TransientArrayParamEnum
+	TransientGriddedFieldParamEnum
 	TransientInputEnum
 	TransientFileInputEnum
 	TransientParamEnum
@@ -4085,6 +4104,8 @@ function EnumToString(enum::IssmEnum)
 	if(enum==HydrologyChannelBetaEnum) return "HydrologyChannelBeta" end
 	if(enum==HydrologyCavitySpacingEnum) return "HydrologyCavitySpacing" end
 	if(enum==HydrologyChannelSheetWidthEnum) return "HydrologyChannelSheetWidth" end
+	if(enum==HydrologyGapHeightMinEnum) return "HydrologyGapHeightMin" end
+	if(enum==HydrologyGapHeightMaxEnum) return "HydrologyGapHeightMax" end
 	if(enum==HydrologyEnglacialVoidRatioEnum) return "HydrologyEnglacialVoidRatio" end
 	if(enum==HydrologyIschannelsEnum) return "HydrologyIschannels" end
 	if(enum==HydrologyIsIncludeSheetThicknessEnum) return "HydrologyIsIncludeSheetThickness" end
@@ -4367,6 +4388,8 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SmbAlbedoSnowMinEnum) return "SmbAlbedoSnowMin" end
 	if(enum==SmbAlbedoIceEnum) return "SmbAlbedoIce" end
 	if(enum==SmbAlbedoLandEnum) return "SmbAlbedoLand" end
+	if(enum==SmbAllSolidTempEnum) return "SmbAllSolidTemp" end
+	if(enum==SmbAllLiquidTempEnum) return "SmbAllLiquidTemp" end
 	if(enum==SmbARMATimestepEnum) return "SmbARMATimestep" end
 	if(enum==SmbARMAarOrderEnum) return "SmbARMAarOrder" end
 	if(enum==SmbARMAarlagcoefsEnum) return "SmbARMAarlagcoefs" end
@@ -4379,6 +4402,8 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SmbDebrisalbedoEnum) return "SmbDebrisalbedo" end
 	if(enum==SmbIcealbedoEnum) return "SmbIcealbedo" end
 	if(enum==SmbSnowalbedoEnum) return "SmbSnowalbedo" end
+	if(enum==SmbDdfSnowEnum) return "SmbDdfSnow" end
+	if(enum==SmbDdfIceEnum) return "SmbDdfIce" end
 	if(enum==SmbDebrisIsAndersonEnum) return "SmbDebrisIsAnderson" end
 	if(enum==SmbDebrisIsCryokarstEnum) return "SmbDebrisIsCryokarst" end
 	if(enum==SmbDebrisAndersonD0Enum) return "SmbDebrisAndersonD0" end
@@ -4399,6 +4424,10 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SmbEnum) return "Smb" end
 	if(enum==SmbEIdxEnum) return "SmbEIdx" end
 	if(enum==SmbFEnum) return "SmbF" end
+	if(enum==SmbGCMXgridEnum) return "SmbGCMXgrid" end
+	if(enum==SmbGCMYgridEnum) return "SmbGCMYgrid" end
+	if(enum==SmbGCMPrecipitationEnum) return "SmbGCMPrecipitation" end
+	if(enum==SmbGCMTemperatureEnum) return "SmbGCMTemperature" end
 	if(enum==SmbHumiditygradEnum) return "SmbHumiditygrad" end
 	if(enum==SmbInitDensityScalingEnum) return "SmbInitDensityScaling" end
 	if(enum==SmbIsaccumulationEnum) return "SmbIsaccumulation" end
@@ -4928,6 +4957,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SedimentHeadStackedEnum) return "SedimentHeadStacked" end
 	if(enum==SigmaNNEnum) return "SigmaNN" end
 	if(enum==SigmaVMEnum) return "SigmaVM" end
+	if(enum==SmbAblationEnum) return "SmbAblation" end
 	if(enum==SmbAccumulatedECEnum) return "SmbAccumulatedEC" end
 	if(enum==SmbAccumulatedMassBalanceEnum) return "SmbAccumulatedMassBalance" end
 	if(enum==SmbAccumulatedMeltEnum) return "SmbAccumulatedMelt" end
@@ -4988,9 +5018,12 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SmbECDtEnum) return "SmbECDt" end
 	if(enum==SmbECiniEnum) return "SmbECini" end
 	if(enum==SmbElaEnum) return "SmbEla" end
+	if(enum==SmbEnhanceFactorEnum) return "SmbEnhanceFactor" end
 	if(enum==SmbEvaporationEnum) return "SmbEvaporation" end
 	if(enum==SmbFACEnum) return "SmbFAC" end
 	if(enum==SmbFACSubstepEnum) return "SmbFACSubstep" end
+	if(enum==SmbGCMLapseratesEnum) return "SmbGCMLapserates" end
+	if(enum==SmbGCMRefSurfaceEnum) return "SmbGCMRefSurface" end
 	if(enum==SmbGdnEnum) return "SmbGdn" end
 	if(enum==SmbGdniniEnum) return "SmbGdnini" end
 	if(enum==SmbGspEnum) return "SmbGsp" end
@@ -5012,6 +5045,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SmbMeanLHFEnum) return "SmbMeanLHF" end
 	if(enum==SmbMeanSHFEnum) return "SmbMeanSHF" end
 	if(enum==SmbMeanULWEnum) return "SmbMeanULW" end
+	if(enum==SmbMeanTemperatureEnum) return "SmbMeanTemperature" end
 	if(enum==SmbMeltEnum) return "SmbMelt" end
 	if(enum==SmbMeltSubstepEnum) return "SmbMeltSubstep" end
 	if(enum==SmbMonthlytemperaturesEnum) return "SmbMonthlytemperatures" end
@@ -5062,6 +5096,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SmbTaEnum) return "SmbTa" end
 	if(enum==SmbTampEnum) return "SmbTamp" end
 	if(enum==SmbTeValueEnum) return "SmbTeValue" end
+	if(enum==SmbTemperatureEnum) return "SmbTemperature" end
 	if(enum==SmbTemperaturesAnomalyEnum) return "SmbTemperaturesAnomaly" end
 	if(enum==SmbTemperaturesLgmEnum) return "SmbTemperaturesLgm" end
 	if(enum==SmbTemperaturesPresentdayEnum) return "SmbTemperaturesPresentday" end
@@ -5121,6 +5156,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SurfaceSlopeXEnum) return "SurfaceSlopeX" end
 	if(enum==SurfaceSlopeYEnum) return "SurfaceSlopeY" end
 	if(enum==TemperatureEnum) return "Temperature" end
+	if(enum==TemperatureObsEnum) return "TemperatureObs" end
 	if(enum==TemperaturePDDEnum) return "TemperaturePDD" end
 	if(enum==TemperaturePicardEnum) return "TemperaturePicard" end
 	if(enum==TemperatureSEMICEnum) return "TemperatureSEMIC" end
@@ -7504,6 +7540,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SMBmeltcomponentsEnum) return "SMBmeltcomponents" end
 	if(enum==SMBpddEnum) return "SMBpdd" end
 	if(enum==SMBpddSicopolisEnum) return "SMBpddSicopolis" end
+	if(enum==SMBpddGCMEnum) return "SMBpddGCM" end
 	if(enum==SMBsemicEnum) return "SMBsemic" end
 	if(enum==SSAApproximationEnum) return "SSAApproximation" end
 	if(enum==SSAFSApproximationEnum) return "SSAFSApproximation" end
@@ -7568,6 +7605,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==TotalSmbRefreezeEnum) return "TotalSmbRefreeze" end
 	if(enum==TotalSmbMeltEnum) return "TotalSmbMelt" end
 	if(enum==TransientArrayParamEnum) return "TransientArrayParam" end
+	if(enum==TransientGriddedFieldParamEnum) return "TransientGriddedFieldParam" end
 	if(enum==TransientInputEnum) return "TransientInput" end
 	if(enum==TransientFileInputEnum) return "TransientFileInput" end
 	if(enum==TransientParamEnum) return "TransientParam" end
@@ -7887,6 +7925,8 @@ function StringToEnum(name::String)
 	if(name=="HydrologyChannelBeta") return HydrologyChannelBetaEnum  end
 	if(name=="HydrologyCavitySpacing") return HydrologyCavitySpacingEnum  end
 	if(name=="HydrologyChannelSheetWidth") return HydrologyChannelSheetWidthEnum  end
+	if(name=="HydrologyGapHeightMin") return HydrologyGapHeightMinEnum  end
+	if(name=="HydrologyGapHeightMax") return HydrologyGapHeightMaxEnum  end
 	if(name=="HydrologyEnglacialVoidRatio") return HydrologyEnglacialVoidRatioEnum  end
 	if(name=="HydrologyIschannels") return HydrologyIschannelsEnum  end
 	if(name=="HydrologyIsIncludeSheetThickness") return HydrologyIsIncludeSheetThicknessEnum  end
@@ -8169,6 +8209,8 @@ function StringToEnum(name::String)
 	if(name=="SmbAlbedoSnowMin") return SmbAlbedoSnowMinEnum  end
 	if(name=="SmbAlbedoIce") return SmbAlbedoIceEnum  end
 	if(name=="SmbAlbedoLand") return SmbAlbedoLandEnum  end
+	if(name=="SmbAllSolidTemp") return SmbAllSolidTempEnum  end
+	if(name=="SmbAllLiquidTemp") return SmbAllLiquidTempEnum  end
 	if(name=="SmbARMATimestep") return SmbARMATimestepEnum  end
 	if(name=="SmbARMAarOrder") return SmbARMAarOrderEnum  end
 	if(name=="SmbARMAarlagcoefs") return SmbARMAarlagcoefsEnum  end
@@ -8181,6 +8223,8 @@ function StringToEnum(name::String)
 	if(name=="SmbDebrisalbedo") return SmbDebrisalbedoEnum  end
 	if(name=="SmbIcealbedo") return SmbIcealbedoEnum  end
 	if(name=="SmbSnowalbedo") return SmbSnowalbedoEnum  end
+	if(name=="SmbDdfSnow") return SmbDdfSnowEnum  end
+	if(name=="SmbDdfIce") return SmbDdfIceEnum  end
 	if(name=="SmbDebrisIsAnderson") return SmbDebrisIsAndersonEnum  end
 	if(name=="SmbDebrisIsCryokarst") return SmbDebrisIsCryokarstEnum  end
 	if(name=="SmbDebrisAndersonD0") return SmbDebrisAndersonD0Enum  end
@@ -8201,6 +8245,10 @@ function StringToEnum(name::String)
 	if(name=="Smb") return SmbEnum  end
 	if(name=="SmbEIdx") return SmbEIdxEnum  end
 	if(name=="SmbF") return SmbFEnum  end
+	if(name=="SmbGCMXgrid") return SmbGCMXgridEnum  end
+	if(name=="SmbGCMYgrid") return SmbGCMYgridEnum  end
+	if(name=="SmbGCMPrecipitation") return SmbGCMPrecipitationEnum  end
+	if(name=="SmbGCMTemperature") return SmbGCMTemperatureEnum  end
 	if(name=="SmbHumiditygrad") return SmbHumiditygradEnum  end
 	if(name=="SmbInitDensityScaling") return SmbInitDensityScalingEnum  end
 	if(name=="SmbIsaccumulation") return SmbIsaccumulationEnum  end
@@ -8730,6 +8778,7 @@ function StringToEnum(name::String)
 	if(name=="SedimentHeadStacked") return SedimentHeadStackedEnum  end
 	if(name=="SigmaNN") return SigmaNNEnum  end
 	if(name=="SigmaVM") return SigmaVMEnum  end
+	if(name=="SmbAblation") return SmbAblationEnum  end
 	if(name=="SmbAccumulatedEC") return SmbAccumulatedECEnum  end
 	if(name=="SmbAccumulatedMassBalance") return SmbAccumulatedMassBalanceEnum  end
 	if(name=="SmbAccumulatedMelt") return SmbAccumulatedMeltEnum  end
@@ -8790,9 +8839,12 @@ function StringToEnum(name::String)
 	if(name=="SmbECDt") return SmbECDtEnum  end
 	if(name=="SmbECini") return SmbECiniEnum  end
 	if(name=="SmbEla") return SmbElaEnum  end
+	if(name=="SmbEnhanceFactor") return SmbEnhanceFactorEnum  end
 	if(name=="SmbEvaporation") return SmbEvaporationEnum  end
 	if(name=="SmbFAC") return SmbFACEnum  end
 	if(name=="SmbFACSubstep") return SmbFACSubstepEnum  end
+	if(name=="SmbGCMLapserates") return SmbGCMLapseratesEnum  end
+	if(name=="SmbGCMRefSurface") return SmbGCMRefSurfaceEnum  end
 	if(name=="SmbGdn") return SmbGdnEnum  end
 	if(name=="SmbGdnini") return SmbGdniniEnum  end
 	if(name=="SmbGsp") return SmbGspEnum  end
@@ -8814,6 +8866,7 @@ function StringToEnum(name::String)
 	if(name=="SmbMeanLHF") return SmbMeanLHFEnum  end
 	if(name=="SmbMeanSHF") return SmbMeanSHFEnum  end
 	if(name=="SmbMeanULW") return SmbMeanULWEnum  end
+	if(name=="SmbMeanTemperature") return SmbMeanTemperatureEnum  end
 	if(name=="SmbMelt") return SmbMeltEnum  end
 	if(name=="SmbMeltSubstep") return SmbMeltSubstepEnum  end
 	if(name=="SmbMonthlytemperatures") return SmbMonthlytemperaturesEnum  end
@@ -8864,6 +8917,7 @@ function StringToEnum(name::String)
 	if(name=="SmbTa") return SmbTaEnum  end
 	if(name=="SmbTamp") return SmbTampEnum  end
 	if(name=="SmbTeValue") return SmbTeValueEnum  end
+	if(name=="SmbTemperature") return SmbTemperatureEnum  end
 	if(name=="SmbTemperaturesAnomaly") return SmbTemperaturesAnomalyEnum  end
 	if(name=="SmbTemperaturesLgm") return SmbTemperaturesLgmEnum  end
 	if(name=="SmbTemperaturesPresentday") return SmbTemperaturesPresentdayEnum  end
@@ -8923,6 +8977,7 @@ function StringToEnum(name::String)
 	if(name=="SurfaceSlopeX") return SurfaceSlopeXEnum  end
 	if(name=="SurfaceSlopeY") return SurfaceSlopeYEnum  end
 	if(name=="Temperature") return TemperatureEnum  end
+	if(name=="TemperatureObs") return TemperatureObsEnum  end
 	if(name=="TemperaturePDD") return TemperaturePDDEnum  end
 	if(name=="TemperaturePicard") return TemperaturePicardEnum  end
 	if(name=="TemperatureSEMIC") return TemperatureSEMICEnum  end
@@ -11306,6 +11361,7 @@ function StringToEnum(name::String)
 	if(name=="SMBmeltcomponents") return SMBmeltcomponentsEnum  end
 	if(name=="SMBpdd") return SMBpddEnum  end
 	if(name=="SMBpddSicopolis") return SMBpddSicopolisEnum  end
+	if(name=="SMBpddGCM") return SMBpddGCMEnum  end
 	if(name=="SMBsemic") return SMBsemicEnum  end
 	if(name=="SSAApproximation") return SSAApproximationEnum  end
 	if(name=="SSAFSApproximation") return SSAFSApproximationEnum  end
@@ -11370,6 +11426,7 @@ function StringToEnum(name::String)
 	if(name=="TotalSmbRefreeze") return TotalSmbRefreezeEnum  end
 	if(name=="TotalSmbMelt") return TotalSmbMeltEnum  end
 	if(name=="TransientArrayParam") return TransientArrayParamEnum  end
+	if(name=="TransientGriddedFieldParam") return TransientGriddedFieldParamEnum  end
 	if(name=="TransientInput") return TransientInputEnum  end
 	if(name=="TransientFileInput") return TransientFileInputEnum  end
 	if(name=="TransientParam") return TransientParamEnum  end

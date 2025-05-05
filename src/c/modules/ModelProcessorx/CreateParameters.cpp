@@ -432,6 +432,7 @@ void CreateParameters(Parameters* parameters,IoModel* iomodel,char* rootpath,FIL
 		case SMBcomponentsEnum:
 		case SMBmeltcomponentsEnum:
 		case SMBgradientscomponentsEnum:
+		case SMBpddGCMEnum:
 			/*Nothing to add*/
 			break;
 		//case SMBarmaEnum:

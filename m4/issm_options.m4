@@ -470,6 +470,7 @@ AC_DEFUN([ISSM_OPTIONS],[
 		else
 			export CXXFLAGS="${CXXFLAGS} -Wno-deprecated"
 		fi
+		BOOSTROOT="${BOOST_ROOT}"
 		BOOSTINCL="-I${BOOST_ROOT}/include"
 		#BOOSTLIB="-L$BOOST_ROOT/lib -lboost_python"
 		AC_MSG_CHECKING(for Boost version)
@@ -478,6 +479,7 @@ AC_DEFUN([ISSM_OPTIONS],[
 		BOOST_VERSION_MINOR=`expr ${BOOST_VERSION} / 100 % 1000`
 		AC_MSG_RESULT([${BOOST_VERSION_MAJOR}.${BOOST_VERSION_MINOR}])
 		AC_DEFINE([_HAVE_BOOST_], [1], [with Boost in ISSM src])
+		AC_SUBST([BOOSTROOT])
 		AC_SUBST([BOOSTINCL])
 		AC_SUBST([BOOSTLIB])
 	fi
@@ -1185,6 +1187,43 @@ AC_DEFUN([ISSM_OPTIONS],[
 	fi
 	AM_CONDITIONAL([MEDIPACK], [test "x${HAVE_MEDIPACK}" == "xyes"])
 	dnl }}}
+	dnl AdjointPETSc{{{
+	AC_MSG_CHECKING([for AdjointPETSc])
+	AC_ARG_WITH(
+		[adjointpetsc-dir],
+		AS_HELP_STRING([--with-adjointpetsc-dir=DIR], [AdjointPETSc root directory]),
+		[ADJOINTPETSC_ROOT=${withval}],
+		[ADJOINTPETSC_ROOT="no"]
+	)
+	if test "x${ADJOINTPETSC_ROOT}" == "xno"; then
+		HAVE_ADJOINTPETSC=no
+	else
+		HAVE_ADJOINTPETSC=yes
+		if ! test -d "${ADJOINTPETSC_ROOT}"; then
+			AC_MSG_ERROR([AdjointPETSc directory provided (${ADJOINTPETSC_ROOT}) does not exist!]);
+		fi
+	fi
+	AC_MSG_RESULT([${HAVE_ADJOINTPETSC}])
+
+	dnl AdjointPETSc libraries and header files
+	if test "x${HAVE_ADJOINTPETSC}" == "xyes"; then
+		if test "x${CODIPACK_ROOT}" == "xno"; then
+			AC_MSG_ERROR([cannot run AdjointPETSc without CoDiPack]);
+		fi
+		if test "x${PETSC_ROOT}" == "xno"; then
+			AC_MSG_ERROR([cannot run AdjointPETSc without PETSc]);
+		fi
+		ADJOINTPETSCINCL="-I${ADJOINTPETSC_ROOT}/include"
+		ADJOINTPETSCLIB="-L${ADJOINTPETSC_ROOT}/lib -ladjoint_petsc"
+		dnl Also set _HAVE_AMPI_, because the interface is (almost) the same as
+		dnl for AMPI
+		AC_DEFINE([_HAVE_AMPI_], [1], [with AMPI in ISSM src])
+		AC_DEFINE([_HAVE_ADJOINTPETSC_], [1], [with AdjointPETSc in ISSM src])
+		AC_SUBST([ADJOINTPETSCINCL])
+		AC_SUBST([ADJOINTPETSCLIB])
+	fi
+	AM_CONDITIONAL([ADJOINTPETSC], [test "x${HAVE_ADJOINTPETSC}" == "xyes"])
+	dnl }}}
 	dnl HDF5 {{{
 	AC_MSG_CHECKING(for HDF5 libraries)
 	AC_ARG_WITH(
@@ -1621,6 +1660,7 @@ AC_DEFUN([ISSM_OPTIONS],[
 		fi
 	fi
 	AC_MSG_RESULT([${HAVE_PROJ}])
+	AM_CONDITIONAL([PROJ], [test "x${HAVE_PROJ}" == "xyes"])
 
 	dnl PROJ libraries and header files
 	if test "x${HAVE_PROJ}" == "xyes"; then
@@ -1632,7 +1672,6 @@ AC_DEFUN([ISSM_OPTIONS],[
 		AC_SUBST([PROJINCL])
 		AC_SUBST([PROJLIB])
 	fi
-	AM_CONDITIONAL([PROJ], [test "x${HAVE_PROJ}" == "xyes"])
 	dnl }}}
 	dnl shapelib{{{
 	AC_MSG_CHECKING([for shapelib])
@@ -2544,22 +2583,14 @@ AC_DEFUN([ISSM_OPTIONS],[
 	if test "x${HAVE_ADOLC}" == "xyes" && test "x${HAVE_PETSC}" == "xyes"; then
 		AC_MSG_ERROR([cannot compile ISSM with both PETSc and ADOL-C]);
 	fi
-	  if test "x${HAVE_PETSC}" == "xyes" && test "x${HAVE_CODIPACK}" == "xyes"; then
-		AC_MSG_ERROR([cannot compile ISSM with both PETSc and CoDiPack, you probably forgot to remove --with-petsc-dir]);
-	fi
 	if test "x${HAVE_ADOLC}" == "xyes" && test "x${HAVE_CODIPACK}" == "xyes"; then
 		AC_MSG_ERROR([cannot compile ISSM with both ADOL-C and CoDiPack]);
 	fi
 	if test "x${HAVE_ADJOINTMPI}" == "xyes" && test "x${HAVE_MEDIPACK}" == "xyes"; then
 		AC_MSG_ERROR([cannot compile ISSM with both MeDiPack and AdjointMPI]);
 	fi
-	dnl Check that if we run MeteoIO, we have SNOWPACK also
-	if test "x${HAVE_METEOIO}" == "xyes" && test "x${HAVE_SNOWPACK}" == "xno"; then
-		AC_MSG_ERROR([cannot compile MeteoIO package without SNOWPACK]);
-	fi
-	dnl Check that if we run SNOWPACK, we have MeteoIO also
-	if test "${HAVE_METEOIO}" == "xno" && test "${HAVE_SNOWPACK}" == "xyes"; then
-		AC_MSG_ERROR([cannot compile SNOWPACK package without MeteoIO]);
+	if test "x${HAVE_CODIPACK}" == "xyes" && test "x${HAVE_PETSC}" == "xyes" && test "x${HAVE_ADJOINTPETSC}" == "xno" ; then
+		AC_MSG_ERROR([cannot compile ISSM with both CoDiPack and PETSc without adjointpetsc]);
 	fi
 
 	AC_MSG_RESULT([done])

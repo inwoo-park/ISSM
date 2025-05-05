@@ -294,6 +294,8 @@ syn keyword cConstant HydrologyChannelAlphaEnum
 syn keyword cConstant HydrologyChannelBetaEnum
 syn keyword cConstant HydrologyCavitySpacingEnum
 syn keyword cConstant HydrologyChannelSheetWidthEnum
+syn keyword cConstant HydrologyGapHeightMinEnum
+syn keyword cConstant HydrologyGapHeightMaxEnum
 syn keyword cConstant HydrologyEnglacialVoidRatioEnum
 syn keyword cConstant HydrologyIschannelsEnum
 syn keyword cConstant HydrologyIsIncludeSheetThicknessEnum
@@ -576,6 +578,8 @@ syn keyword cConstant SmbAlbedoSnowMaxEnum
 syn keyword cConstant SmbAlbedoSnowMinEnum
 syn keyword cConstant SmbAlbedoIceEnum
 syn keyword cConstant SmbAlbedoLandEnum
+syn keyword cConstant SmbAllSolidTempEnum
+syn keyword cConstant SmbAllLiquidTempEnum
 syn keyword cConstant SmbARMATimestepEnum
 syn keyword cConstant SmbARMAarOrderEnum
 syn keyword cConstant SmbARMAarlagcoefsEnum
@@ -588,6 +592,8 @@ syn keyword cConstant SmbCParamEnum
 syn keyword cConstant SmbDebrisalbedoEnum
 syn keyword cConstant SmbIcealbedoEnum
 syn keyword cConstant SmbSnowalbedoEnum
+syn keyword cConstant SmbDdfSnowEnum
+syn keyword cConstant SmbDdfIceEnum
 syn keyword cConstant SmbDebrisIsAndersonEnum
 syn keyword cConstant SmbDebrisIsCryokarstEnum
 syn keyword cConstant SmbDebrisAndersonD0Enum
@@ -608,6 +614,10 @@ syn keyword cConstant SmbDtEnum
 syn keyword cConstant SmbEnum
 syn keyword cConstant SmbEIdxEnum
 syn keyword cConstant SmbFEnum
+syn keyword cConstant SmbGCMXgridEnum
+syn keyword cConstant SmbGCMYgridEnum
+syn keyword cConstant SmbGCMPrecipitationEnum
+syn keyword cConstant SmbGCMTemperatureEnum
 syn keyword cConstant SmbHumiditygradEnum
 syn keyword cConstant SmbInitDensityScalingEnum
 syn keyword cConstant SmbIsaccumulationEnum
@@ -1137,6 +1147,7 @@ syn keyword cConstant SedimentHeadResidualEnum
 syn keyword cConstant SedimentHeadStackedEnum
 syn keyword cConstant SigmaNNEnum
 syn keyword cConstant SigmaVMEnum
+syn keyword cConstant SmbAblationEnum
 syn keyword cConstant SmbAccumulatedECEnum
 syn keyword cConstant SmbAccumulatedMassBalanceEnum
 syn keyword cConstant SmbAccumulatedMeltEnum
@@ -1197,9 +1208,12 @@ syn keyword cConstant SmbECSubstepEnum
 syn keyword cConstant SmbECDtEnum
 syn keyword cConstant SmbECiniEnum
 syn keyword cConstant SmbElaEnum
+syn keyword cConstant SmbEnhanceFactorEnum
 syn keyword cConstant SmbEvaporationEnum
 syn keyword cConstant SmbFACEnum
 syn keyword cConstant SmbFACSubstepEnum
+syn keyword cConstant SmbGCMLapseratesEnum
+syn keyword cConstant SmbGCMRefSurfaceEnum
 syn keyword cConstant SmbGdnEnum
 syn keyword cConstant SmbGdniniEnum
 syn keyword cConstant SmbGspEnum
@@ -1221,6 +1235,7 @@ syn keyword cConstant SmbMaskEnum
 syn keyword cConstant SmbMeanLHFEnum
 syn keyword cConstant SmbMeanSHFEnum
 syn keyword cConstant SmbMeanULWEnum
+syn keyword cConstant SmbMeanTemperatureEnum
 syn keyword cConstant SmbMeltEnum
 syn keyword cConstant SmbMeltSubstepEnum
 syn keyword cConstant SmbMonthlytemperaturesEnum
@@ -1271,6 +1286,7 @@ syn keyword cConstant SmbTEnum
 syn keyword cConstant SmbTaEnum
 syn keyword cConstant SmbTampEnum
 syn keyword cConstant SmbTeValueEnum
+syn keyword cConstant SmbTemperatureEnum
 syn keyword cConstant SmbTemperaturesAnomalyEnum
 syn keyword cConstant SmbTemperaturesLgmEnum
 syn keyword cConstant SmbTemperaturesPresentdayEnum
@@ -1330,6 +1346,7 @@ syn keyword cConstant SurfaceRelVelMisfitEnum
 syn keyword cConstant SurfaceSlopeXEnum
 syn keyword cConstant SurfaceSlopeYEnum
 syn keyword cConstant TemperatureEnum
+syn keyword cConstant TemperatureObsEnum
 syn keyword cConstant TemperaturePDDEnum
 syn keyword cConstant TemperaturePicardEnum
 syn keyword cConstant TemperatureSEMICEnum
@@ -3713,6 +3730,7 @@ syn keyword cConstant SMBhenningEnum
 syn keyword cConstant SMBmeltcomponentsEnum
 syn keyword cConstant SMBpddEnum
 syn keyword cConstant SMBpddSicopolisEnum
+syn keyword cConstant SMBpddGCMEnum
 syn keyword cConstant SMBsemicEnum
 syn keyword cConstant SSAApproximationEnum
 syn keyword cConstant SSAFSApproximationEnum
@@ -3777,6 +3795,7 @@ syn keyword cConstant TotalSmbScaledEnum
 syn keyword cConstant TotalSmbRefreezeEnum
 syn keyword cConstant TotalSmbMeltEnum
 syn keyword cConstant TransientArrayParamEnum
+syn keyword cConstant TransientGriddedFieldParamEnum
 syn keyword cConstant TransientInputEnum
 syn keyword cConstant TransientFileInputEnum
 syn keyword cConstant TransientParamEnum
@@ -3938,6 +3957,7 @@ syn keyword cType Tetra
 syn keyword cType TetraRef
 syn keyword cType TransientArrayParam
 syn keyword cType TransientFileInput
+syn keyword cType TransientGriddedFieldParam
 syn keyword cType TransientInput
 syn keyword cType TransientParam
 syn keyword cType Tria
