@@ -503,20 +503,18 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	IssmDouble  vx_avg, vy_avg, thickness_avg;
 	IssmDouble  Hvx, Hvy, Hvel;
 	IssmDouble  melt, entrain; /*unit m s-1*/
-	IssmDouble  dentr; /*dentrainement rate: m s-1*/
 	IssmDouble  Cd;
 	IssmDouble  xi,tau;
 	IssmDouble  dvx[2],dvy[2];
 	IssmDouble  dthk[2];
 	IssmDouble  dthkdx, dthkdy;
-	IssmDouble  D[2][2];
+	IssmDouble  D[2][2]={0.0};
 	IssmDouble *xyz_list = NULL;
 	IssmDouble  g; /*gravitational acceleration [m s-2]*/
 
-	IssmDouble rho0; /*Sea water density [kg m-3]*/
-	IssmDouble Ah; /*horizontal viscosity*/
-	IssmDouble coriolis_freq; /*Coriolis frequency [s-1]*/
-	int        isconvection;
+	IssmDouble  Ah; /*horizontal viscosity*/
+	IssmDouble  coriolis_freq; /*Coriolis frequency [s-1]*/
+	int         isconvection;
 
 	/*Get problem dimension*/
 	element->FindParam(&domaintype,DomainTypeEnum);
@@ -543,7 +541,6 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	element->FindParam(&coriolis_freq,BasalforcingsLaddieCoriolisFrequencyEnum);
 	element->FindParam(&Ah,BasalforcingsLaddieHorizontalViscosityEnum);
 	element->FindParam(&Cd,BasalforcingsLaddieCdEnum);
-	element->FindParam(&rho0,MaterialsRhoSeawaterEnum);
 	element->FindParam(&g,ConstantsGEnum);
 	element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
 	element->FindParam(&isconvection,BasalforcingsLaddieIsConvectionEnum);
@@ -554,7 +551,6 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	Input* vy_input        = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
 	Input* rhoa_input      = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(rhoa_input);
 	Input* ga_input        = element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
-	Input* dentr_input     = element->GetInput(BasalforcingsLaddieDEntrainmentRateEnum); _assert_(dentr_input);
 
 	h = element->CharacteristicLength();
 
@@ -568,7 +564,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		
 		/*Retrieve inputs: */
 		thickness_input->GetInputValue(&thickness,gauss);
-		thickness_input->GetInputValue(&thickness_avg,gauss);
+		thickness_input->GetInputAverage(&thickness_avg);
 		thickness_input->GetInputDerivativeValue(&dthk[0],xyz_list,gauss);
 		dthkdx = dthk[0];
 		dthkdy = dthk[1];
@@ -707,38 +703,23 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 			}
 		}
 		
-		/*Dentrainment: \dot{d} (u, v) */
-		dentr_input->GetInputValue(&dentr,gauss);
-		factor = gauss->weight*Jdet*dt*dentr;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				/*term: (f D v) */
-				Ke->values[2*i*2*numnodes+2*j]       += factor*basis[i]*basis[j];
-				/*term: (-f D u)*/
-				Ke->values[(2*i+1)*2*numnodes+2*j+1] += factor*basis[i]*basis[j];
-			}
-		}
-
-
-		factor = gauss->weight*Jdet*dt;
+		D_scalar = gauss->weight*Jdet*dt*thickness_avg;
 		if(stabilization==1){
 			/*Artificial diffusivity: */
-			vx_input->GetInputAverage(&vx_avg);
-			vy_input->GetInputAverage(&vy_avg);
 			factor = D_scalar*h/2.0;
 
 			/*Second-order tensor*/
-			D[0][0]=factor*fabs(vx_avg);  D[0][1]=0.0;
-			D[1][0]=0.0;                  D[1][1]=factor*fabs(vy_avg);
+			D[0][0]=factor*fabs(vx_avg); D[0][1]=0.0;
+			D[1][0]=0.0;                 D[1][1]=factor*fabs(vy_avg);
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
-					Ke->values[2*i*2*numnodes+2*j] += thickness_avg*(
+					Ke->values[2*i*2*numnodes+2*j] += (
 								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
 								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
 								);
 
-					Ke->values[2*(i+1)*2*numnodes+2*j+1] += thickness_avg*(
+					Ke->values[(2*i+1)*2*numnodes+2*j+1] += (
 								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
 								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
 								);
@@ -747,23 +728,21 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 		else if(stabilization==2){
 			/*Stream-upwind scheme: */
-			vx_input->GetInputAverage(&vx_avg);
-			vy_input->GetInputAverage(&vy_avg);
-			vel = sqrt(vx_avg*vx_avg* + vy_avg*vy_avg) + 1e-6;
+			vel = sqrt(vx_avg*vx_avg* + vy_avg*vy_avg) + 1e-14;
 			factor = D_scalar*h/(2.0*vel);
 
 			/*Second-order tensor*/
-			D[0][0]=factor*fabs(vx_avg*vx_avg);  D[0][1]=0.0;
-			D[1][0]=0.0;                  D[1][1]=factor*fabs(vy_avg);
+			D[0][0]=factor*fabs(vx_avg*vx_avg);  D[0][1]=factor*fabs(vx_avg*vy_avg);
+			D[1][0]=factor*fabs(vy_avg*vx_avg);  D[1][1]=factor*fabs(vy_avg*vy_avg);
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
-					Ke->values[2*i*2*numnodes+2*j] += thickness*(
+					Ke->values[2*i*2*numnodes+2*j] += (
 								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
 								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
 								);
 
-					Ke->values[2*(i+1)*2*numnodes+2*j+1] += thickness*(
+					Ke->values[(2*i+1)*2*numnodes+2*j+1] += (
 								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
 								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
 								);
@@ -800,6 +779,7 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 	IssmDouble  g; /* gravitational acceleration [m s-2]*/
 	IssmDouble  rho0; /*seawater density [kg m-3]*/
 	IssmDouble  ga; /*ambient gravitational acceleration [m s-2*/
+	IssmDouble  dentr; /*dentrainment rate*/
 	IssmDouble  Cd;
 	IssmDouble  ddrhoa[2];
 	IssmDouble  ddrhoadx, ddrhoady;
@@ -810,6 +790,7 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 	IssmDouble factor_transient;
 	IssmDouble factor_buoyancy;
 	IssmDouble factor_pgradient;
+	IssmDouble factor_dentr;
 	IssmDouble factor;
 
 	/*Get problem dimension*/
@@ -842,8 +823,9 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 	Input* zb_input        = element->GetInput(BaseEnum); _assert_(zb_input);
 	Input* vx_input        = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
 	Input* vy_input        = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
-	Input* drhoa_input      = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drhoa_input);
+	Input* drhoa_input     = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(drhoa_input);
 	Input* ga_input        = element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+	Input* dentr_input     = element->GetInput(BasalforcingsLaddieDEntrainmentRateEnum); _assert_(dentr_input);
 	h=element->CharacteristicLength();
 
 	/* Start looping on the number of gaussian points: */
@@ -856,6 +838,7 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 		/*Get input values*/
 		thickness_input->GetInputValue(&thickness,gauss);
 		ga_input->GetInputValue(&ga,gauss);
+		dentr_input->GetInputValue(&dentr,gauss);
 
 		drhoa_input->GetInputDerivativeValue(&ddrhoa[0],xyz_list,gauss);
 		thickness_input->GetInputDerivativeValue(&dthk[0],xyz_list,gauss);
@@ -877,10 +860,11 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 		factor_transient= Jdet*gauss->weight;
 		factor_buoyancy = Jdet*gauss->weight*dt*(-g*thickness*thickness/2/rho0);
 		factor_pgradient= Jdet*gauss->weight*dt*(ga*thickness);
+		factor_dentr    = Jdet*gauss->weight*dt*dentr;
 
 		for(int i=0;i<numnodes;i++){
-			pe->values[i*2+0]+=basis[i]*(factor_transient*thickness*vx + factor_buoyancy*ddrhoadx + factor_pgradient*(dzbdx-dthkdx));
-			pe->values[i*2+1]+=basis[i]*(factor_transient*thickness*vy + factor_buoyancy*ddrhoady + factor_pgradient*(dzbdy-dthkdy));
+			pe->values[i*2+0]+=basis[i]*(factor_transient*thickness*vx + factor_buoyancy*ddrhoadx + factor_pgradient*(dzbdx-dthkdx) - factor_dentr*vx);
+			pe->values[i*2+1]+=basis[i]*(factor_transient*thickness*vy + factor_buoyancy*ddrhoady + factor_pgradient*(dzbdy-dthkdy) - factor_dentr*vy);
 		}
 	}
 
