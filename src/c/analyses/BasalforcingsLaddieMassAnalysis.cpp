@@ -34,7 +34,6 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 	int    isgroundingline;
 	int    stabilization;
 	int    finiteelement;
-	int    grdmodel;
 
 	/*Fetch data needed: */
 	iomodel->FindConstant(&stabilization,"md.basalforcings.stabilization");
@@ -61,6 +60,7 @@ void BasalforcingsLaddieMassAnalysis::UpdateElements(Elements* elements,Inputs* 
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.D",BasalforcingsLaddieThicknessEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vx",BasalforcingsLaddieVxEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vy",BasalforcingsLaddieVyEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.vel",BasalforcingsLaddieVelEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.temperature",BasalforcingsLaddieTEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.basalforcings.salinity",BasalforcingsLaddieSEnum);
 
@@ -122,6 +122,7 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Ah",BasalforcingsLaddieHorizontalViscosityEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Dmin",BasalforcingsLaddieThicknessMinEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Utide",BasalforcingsLaddieVelTideEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Ti",BasalforcingsLaddieIceTemperatureEnum));
 
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd",BasalforcingsLaddieCdEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.Cd_top",BasalforcingsLaddieCdTopEnum));
@@ -152,6 +153,7 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismomentum",BasalforcingsLaddieIsMomentumEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isheat",BasalforcingsLaddieIsHeatEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.issalt",BasalforcingsLaddieIsSaltEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isconvection",BasalforcingsLaddieIsConvectionEnum));
 
 	/*Deal with forcing depth: */
 	iomodel->FetchData(&transparam,&M,&N,"md.basalforcings.forcing_depth");
@@ -336,15 +338,16 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 	if(!element->IsOceanInElement() || !element->IsIceInElement()) return NULL;
 
 	/*Intermediaries */
-	int        stabilization;
-	int        domaintype,dim;
-	IssmDouble Jdet,D_scalar,dt,h,factor;
-	IssmDouble vel,vx,vy,dvxdx,dvydy;
-	IssmDouble melt, entrain; /*unit m s-1*/
-	IssmDouble xi,tau;
-	IssmDouble dvx[2],dvy[2];
-	IssmDouble D[4];
-	IssmDouble* xyz_list = NULL;
+	int         stabilization;
+	int         domaintype,dim;
+	IssmDouble  Jdet,D_scalar,dt,h,factor;
+	IssmDouble  vel,vx,vy,dvxdx,dvydy;
+	IssmDouble  vx_avg, vy_avg;
+	IssmDouble  melt, entrain; /*unit m s-1*/
+	IssmDouble  xi,tau;
+	IssmDouble  dvx[2],dvy[2];
+	IssmDouble  D[2][2];
+	IssmDouble *xyz_list = NULL;
 
 	/*Get problem dimension*/
 	element->FindParam(&domaintype,DomainTypeEnum);
@@ -393,9 +396,10 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 		vy_input->GetInputValue(&vy,gauss);
 		vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
 
-		D_scalar=dt*gauss->weight*Jdet;
 		dvxdx=dvx[0];
 		dvydy=dvy[1];
+
+		D_scalar=dt*gauss->weight*Jdet;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				/*\phi_i \phi_j \nabla\cdot v*/
@@ -406,71 +410,43 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 		}
 
 		/*Prepare parameters for advection stabilization scheme*/
-		for(int i=0;i<4;i++) D[i]=0.;
-		switch(stabilization){
-			case 0:
-				/*Nothing to be done*/
-				break;
-			case 1:
-				/*SSA*/
-				vx_input->GetInputAverage(&vx);
-				if(dim==2) vy_input->GetInputAverage(&vy);
-				D[0*dim+0]=h/2.0*fabs(vx);
-				if(dim==2) D[1*dim+1]=h/2.0*fabs(vy);
-				break;
-			case 2:
-				/*Streamline upwinding*/
-				vx_input->GetInputAverage(&vx);
-				vy_input->GetInputAverage(&vy);
-				vel=sqrt(vx*vx+vy*vy)+1.e-8;
-				tau=h/(2*vel);
-				break;
-			case 5:
-				/*SUPG*/
-				if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
-				vx_input->GetInputAverage(&vx);
-				vy_input->GetInputAverage(&vy);
-				vel=sqrt(vx*vx+vy*vy)+1.e-8;
-				//xi=0.3130;
-				xi=1;
-				tau=xi*h/(2*vel);
-				//tau=dt/6; // as implemented in Ua
-				break;
-			default:
-				_error_("Stabilization "<<stabilization<<" not supported yet");
-		}
+		for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) D[i][j]=0.0;
 
-		if(stabilization==1){/*{{{*/
-			/*SSA*/
-			if(dim==1) D[0]=D_scalar*D[0];
-			else{
-				D[0*dim+0]=D_scalar*D[0*dim+0];
-				D[1*dim+0]=D_scalar*D[1*dim+0];
-				D[0*dim+1]=D_scalar*D[0*dim+1];
-				D[1*dim+1]=D_scalar*D[1*dim+1];
+		if(stabilization==0){/*{{{*/
+		}/*}}}*/
+		else if(stabilization==1){/* Artificial diffusion {{{*/
+			/*Artifical diffusion: */
+			//vel=sqrt(vx_avg*vx_avg + vy_avg*vy_avg);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+
+			if(true){
+				factor=h/2.0;
+				D[0][0]=factor*fabs(vx); D[0][1]=0.0;
+				D[1][0]=0.0;             D[1][1]=factor*fabs(vy);
+			}else{
+				factor=h/(2.0*vel);
+				D[0][0]=factor*fabs(vx*vx); D[0][1]=factor*fabs(vx*vy);
+				D[1][0]=factor*fabs(vy*vx); D[1][1]=factor*fabs(vy*vy);
 			}
 
-			if(dim==2){
-				for(int i=0;i<numnodes;i++){
-					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j] += (
-									dbasis[0*numnodes+i] *(D[0*dim+0]*dbasis[0*numnodes+j] + D[0*dim+1]*dbasis[1*numnodes+j]) +
-									dbasis[1*numnodes+i] *(D[1*dim+0]*dbasis[0*numnodes+j] + D[1*dim+1]*dbasis[1*numnodes+j])
-									);
-					}
-				}
-			}
-			else{
-				for(int i=0;i<numnodes;i++){
-					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j] += dbasis[0*numnodes+i]*D[0]*dbasis[0*numnodes+j];
-					}
+			for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) D[i][j]=D_scalar*D[i][j];
+
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[i*numnodes+j] += (
+								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
+								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j])
+								);
 				}
 			}
 		}/*}}}*/
-		if(stabilization==2){/*{{{*/
+		else if(stabilization==2){/* Stream upwind {{{*/
 			/*Streamline upwind*/
-			_assert_(dim==2);
+			//vx_input->GetInputAverage(&vx);
+			//vy_input->GetInputAverage(&vy);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			tau=h/(2*vel);
+
 			factor = dt*gauss->weight*Jdet*tau;
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
@@ -478,7 +454,17 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 				}
 			}
 		}/*}}}*/
-		if(stabilization==5){/*{{{*/
+		else if(stabilization==5){/* Stream upwind Petrov Galerkin (SUPG) {{{*/
+			/*SUPG*/
+			if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			//xi=0.3130;
+			xi=1;
+			tau=xi*h/(2*vel);
+			//tau=dt/6; // as implemented in Ua
+
 			/*Mass matrix - part 2*/
 			factor = gauss->weight*Jdet*tau;
 			for(int i=0;i<numnodes;i++){
@@ -523,6 +509,9 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 					Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(basis[i]*dvxdx+basis[i]*dvydy);
 				}
 			}
+		}/*}}}*/
+		else {/*{{{*/
+			_error_("Stabilization "<<stabilization<<" not supported yet");
 		}/*}}}*/
 	}
 

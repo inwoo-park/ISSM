@@ -130,6 +130,7 @@ syn keyword cConstant BasalforcingsLaddieIsMassEnum
 syn keyword cConstant BasalforcingsLaddieIsMomentumEnum
 syn keyword cConstant BasalforcingsLaddieIsHeatEnum
 syn keyword cConstant BasalforcingsLaddieIsSaltEnum
+syn keyword cConstant BasalforcingsLaddieIsConvectionEnum
 syn keyword cConstant BasalforcingsLaddieKparamEnum
 syn keyword cConstant BasalforcingsLaddieMaxDentrainmentEnum
 syn keyword cConstant BasalforcingsLaddieMuEnum
@@ -139,6 +140,7 @@ syn keyword cConstant BasalforcingsLaddieSubTimestepEnum
 syn keyword cConstant BasalforcingsLaddieSubTimestepDummyEnum
 syn keyword cConstant BasalforcingsLaddieDiagnosticFrequencyEnum
 syn keyword cConstant BasalforcingsLaddieThicknessMinEnum
+syn keyword cConstant BasalforcingsLaddieIceTemperatureEnum
 syn keyword cConstant BasalforcingsLaddieVelTideEnum
 syn keyword cConstant BasalforcingsLaddieVCutEnum
 syn keyword cConstant CalvingADStressThresholdFloatingiceEnum

@@ -72,9 +72,6 @@ void bmb_core(FemModel* femmodel){
 		}
 
 		/*Prepare ambient temperature and salinity*/
-		if(VerboseSolution()) _printf0_("      Preapre ambient temperature and salinity\n");
-		UpdateLaddieAmbientFieldx(femmodel);
-
 		_printf0_("Go to solve LADDIE!\n");
 		while(time < subfinaltime - (yts*DBL_EPSILON)){
 			/*Do not exceed final time of dt ISSM*/
@@ -93,6 +90,10 @@ void bmb_core(FemModel* femmodel){
 			_printf0_("   Laddie iteration: "<< step << "/" << ceil((subfinaltime-time)/dt)+step << \
 							" time [year/days]: " << std::fixed<< setprecision(0) << time_year << " yr " << \
 												 " " << std::fixed << setprecision(6) << time_day << " days\n");
+
+			if(VerboseSolution()) _printf0_("   preapre ambient temperature and salinity\n");
+			UpdateLaddieAmbientFieldx(femmodel);
+
 
 			/*Step#1: Update friction velocity*/
 			if(VerboseSolution()) _printf0_("   computing friction velocity\n");

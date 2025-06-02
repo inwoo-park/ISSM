@@ -224,6 +224,7 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 	IssmDouble mindrho=0.005; /*minmum density difference [kg m-3]*/
 
 	IssmDouble *values;
+	int         iscatch=0;
 
 	femmodel->parameters->FindParam(&rho0,MaterialsRhoSeawaterEnum);
 	femmodel->parameters->FindParam(&g,ConstantsGEnum);
@@ -269,7 +270,8 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 
 			/*Calculate density difference*/
 			drho[iv] = rho0*(-alpha*(Ta-T) + beta*(Sa-S));
-			if(drho[iv]<0){
+			if(drho[iv]<0 & iscatch==0){
+				iscatch+=1;
 				_printf0_("WARNING: drho value encounters the negative value!\n");
 				drho[iv] = max(drho[iv], mindrho/rho0);
 			}
@@ -426,6 +428,7 @@ void UpdateLaddieMeltratex(FemModel* femmodel){/*{{{*/
 	switch(ismelt){
 		case 0: /*two equation formulation*/
 			_error_("Given md.basalforcings.ismelt=0 is not implemented yet.");
+			LaddieMeltrateTwoEquationx(femmodel);
 			break;
 		case 1: /*three equation formulation*/
 			LaddieMeltrateThreeEquationx(femmodel);
@@ -436,9 +439,7 @@ void UpdateLaddieMeltratex(FemModel* femmodel){/*{{{*/
 }/*}}}*/
 void LaddieMeltrateTwoEquationx(FemModel *femmodel){/*{{{*/
 	/*
-	Calculate melt rate with two equation formulation.
-
-	See also
+	Calculate melt rate with two equation formulation from Holland et al. (2006).
 	??
 	 */
 	_error_("Not implemented yet.");
@@ -475,7 +476,9 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 	IssmDouble l2=8.32e-2; /*PMP salinity parameter [degC]*/
 	IssmDouble l3=7.61e-4; /*PMP salinity parameter [degC m-1]*/
 
-	IssmDouble Ti=-5; /*basal ice temperature on ice shelf [degC]*/
+	IssmDouble Ti; /*basal ice temperature on ice shelf [degC]*/
+
+	IssmDouble temp; /*Dummy value*/
 
 	IssmDouble *values; /*value for assigning value*/
 	IssmDouble *melt, *Tb;
@@ -488,6 +491,7 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 
 	/*Get parameters*/
 	femmodel->parameters->FindParam(&Utide,  BasalforcingsLaddieVelTideEnum);
+	femmodel->parameters->FindParam(&Ti,  BasalforcingsLaddieIceTemperatureEnum);
 	femmodel->parameters->FindParam(&Cd_top, BasalforcingsLaddieCdTopEnum);
 	femmodel->parameters->FindParam(&Ci, MaterialsHeatcapacityEnum);
 	femmodel->parameters->FindParam(&Cp, MaterialsMixedLayerCapacityEnum);
@@ -570,10 +574,31 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 			c = Chat*gammaT[iv]*gammaS[iv]*(That-T+l1*S);
 
 			/*Melt rate*/
-			melt[iv]=0.5*(-b + sqrt(pow(b,2.0) - 4*c));
+			temp = b*b - 4.0*c;
+			if (temp < 0.0){
+				melt[iv]=0.0;
+			}else{
+				melt[iv]=0.5*(-b + sqrt(pow(b,2.0) - 4.0*c));
+			}
 
 			/*Temperature at ice shelf base*/
 			Tb[iv] = (Chat*gammaT[iv]*T - melt[iv])/(Chat*gammaT[iv] + Chat*Ctil*melt[iv]);
+			if (xIsNan<IssmDouble>(Tb[iv])){
+				_error_("Error: Tb[" << iv << "]" << " encounters Nan value.\n" << 
+						 "See below values\n" <<  
+						 "b    = " << b << "\n" << 
+						 "c    = " << c << "\n" << 
+						 "That = " << That << "\n" << 
+						 "Chat = " << Chat << "\n" << 
+						 "Ctil = " << Ctil << "\n" <<  
+						 "gammaT= " << gammaT[iv] << "\n" << 
+						 "gammaS= " << gammaS[iv] << "\n" << 
+						 "melt= " << melt[iv]<< "\n"
+						 );
+			}
+			if (xIsInf<IssmDouble>(Tb[iv])){
+				_error_("Error: Tb[" << iv << "]" << " encounters Inf value.\n");
+			}
 		}
 
 		/*Assigne value*/
@@ -706,15 +731,16 @@ void UpdateLaddieEntrainmentRatex(FemModel* femmodel){/*{{{*/
 				ga_input->GetInputValue(&ga,gauss);
 				drho_input->GetInputValue(&drho,gauss);
 
-				if(false){
-					Ri = ga*thickness/(pow(vx,2.0) + pow(vy,2.0));
-					Sc = Ri/(0.725*(Ri + 0.186 - pow(Ri*Ri - 0.316*Ri + 0.0346, 0.5)));
+				if(true){
+					Ri = ga*thickness/(pow(vx,2.0) + pow(vy,2.0) + 1e-8);
+					Sc = Ri/0.725/(Ri + 0.186 - sqrt(Ri*Ri - 0.316*Ri + 0.0346) + 1e-8);
 					
-					entr[iv] = pow(Kparam,2.0)/Sc*pow((vx*vx + vy*vy)*(1 + Ri/Sc), 0.5);
+					entr_dummy[iv] = pow(Kparam,2.0)/Sc*sqrt((vx*vx + vy*vy)*(1 + Ri/Sc));
+					dentr[iv] = 0.0;
 				}else{
 					IssmDouble tmp1, tmp2;
-					tmp1 = Kparam*Kh/(Ah*Ah);
-					tmp2 = pow((vx*vx + vy*vy) - g*drho*Kh/Ah*thickness, 0.5);
+					tmp1 = Kparam*Kparam/(Ah*Ah);
+					tmp2 = sqrt((vx*vx + vy*vy) - g*drho*Kh/Ah*thickness);
 
 					entr_dummy[iv] = tmp1*tmp2;
 					dentr[iv] = 0.0;

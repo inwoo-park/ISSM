@@ -119,6 +119,7 @@
 	BasalforcingsLaddieIsMomentumEnum
 	BasalforcingsLaddieIsHeatEnum
 	BasalforcingsLaddieIsSaltEnum
+	BasalforcingsLaddieIsConvectionEnum
 	BasalforcingsLaddieKparamEnum
 	BasalforcingsLaddieMaxDentrainmentEnum
 	BasalforcingsLaddieMuEnum
@@ -128,6 +129,7 @@
 	BasalforcingsLaddieSubTimestepDummyEnum
 	BasalforcingsLaddieDiagnosticFrequencyEnum
 	BasalforcingsLaddieThicknessMinEnum
+	BasalforcingsLaddieIceTemperatureEnum
 	BasalforcingsLaddieVelTideEnum
 	BasalforcingsLaddieVCutEnum
 	CalvingADStressThresholdFloatingiceEnum
@@ -3940,6 +3942,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieIsMomentumEnum) return "BasalforcingsLaddieIsMomentum" end
 	if(enum==BasalforcingsLaddieIsHeatEnum) return "BasalforcingsLaddieIsHeat" end
 	if(enum==BasalforcingsLaddieIsSaltEnum) return "BasalforcingsLaddieIsSalt" end
+	if(enum==BasalforcingsLaddieIsConvectionEnum) return "BasalforcingsLaddieIsConvection" end
 	if(enum==BasalforcingsLaddieKparamEnum) return "BasalforcingsLaddieKparam" end
 	if(enum==BasalforcingsLaddieMaxDentrainmentEnum) return "BasalforcingsLaddieMaxDentrainment" end
 	if(enum==BasalforcingsLaddieMuEnum) return "BasalforcingsLaddieMu" end
@@ -3949,6 +3952,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieSubTimestepDummyEnum) return "BasalforcingsLaddieSubTimestepDummy" end
 	if(enum==BasalforcingsLaddieDiagnosticFrequencyEnum) return "BasalforcingsLaddieDiagnosticFrequency" end
 	if(enum==BasalforcingsLaddieThicknessMinEnum) return "BasalforcingsLaddieThicknessMin" end
+	if(enum==BasalforcingsLaddieIceTemperatureEnum) return "BasalforcingsLaddieIceTemperature" end
 	if(enum==BasalforcingsLaddieVelTideEnum) return "BasalforcingsLaddieVelTide" end
 	if(enum==BasalforcingsLaddieVCutEnum) return "BasalforcingsLaddieVCut" end
 	if(enum==CalvingADStressThresholdFloatingiceEnum) return "CalvingADStressThresholdFloatingice" end
@@ -7761,6 +7765,7 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieIsMomentum") return BasalforcingsLaddieIsMomentumEnum  end
 	if(name=="BasalforcingsLaddieIsHeat") return BasalforcingsLaddieIsHeatEnum  end
 	if(name=="BasalforcingsLaddieIsSalt") return BasalforcingsLaddieIsSaltEnum  end
+	if(name=="BasalforcingsLaddieIsConvection") return BasalforcingsLaddieIsConvectionEnum  end
 	if(name=="BasalforcingsLaddieKparam") return BasalforcingsLaddieKparamEnum  end
 	if(name=="BasalforcingsLaddieMaxDentrainment") return BasalforcingsLaddieMaxDentrainmentEnum  end
 	if(name=="BasalforcingsLaddieMu") return BasalforcingsLaddieMuEnum  end
@@ -7770,6 +7775,7 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieSubTimestepDummy") return BasalforcingsLaddieSubTimestepDummyEnum  end
 	if(name=="BasalforcingsLaddieDiagnosticFrequency") return BasalforcingsLaddieDiagnosticFrequencyEnum  end
 	if(name=="BasalforcingsLaddieThicknessMin") return BasalforcingsLaddieThicknessMinEnum  end
+	if(name=="BasalforcingsLaddieIceTemperature") return BasalforcingsLaddieIceTemperatureEnum  end
 	if(name=="BasalforcingsLaddieVelTide") return BasalforcingsLaddieVelTideEnum  end
 	if(name=="BasalforcingsLaddieVCut") return BasalforcingsLaddieVCutEnum  end
 	if(name=="CalvingADStressThresholdFloatingice") return CalvingADStressThresholdFloatingiceEnum  end

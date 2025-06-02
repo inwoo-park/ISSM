@@ -319,19 +319,27 @@ void           BasalforcingsLaddieMomentumAnalysis::InputUpdateFromSolution(Issm
 		if(xIsInf<IssmDouble>(vy[i])) _error_("Inf found in solution vector");
 	}
 	
-	/*cut for stability*/
-	for(i=0;i<numnodes;i++){
-		vx[i] = min(vx[i], vcut);
-		vx[i] = max(vx[i], -vcut);
-
-		vy[i] = min(vy[i], vcut);
-		vy[i] = max(vy[i], -vcut);
-	}
-
 	/*Update plume velocity:  */
+	double epsilon=1e-6;
 	for(i=0;i<numnodes;i++){
-		vel[i]=sqrt(pow(vx[i],2.0) + pow(vy[i],2.0));
+		vel[i]=sqrt(vx[i]*vx[i] + vy[i]*vy[i]);
+		/*Cut for stability*/
+		if (vel[i] > vcut){
+			vx[i] = vx[i]*vcut/vel[i];
+			vy[i] = vy[i]*vcut/vel[i];
+			vel[i] = vcut;
+		}
 	}
+
+	/*Cut for stability*/
+	//for(i=0;i<numnodes;i++){
+	//	vx[i] = min(vx[i], vcut);
+	//	vx[i] = max(vx[i], -vcut);
+
+	//	vy[i] = min(vy[i], vcut);
+	//	vy[i] = max(vy[i], -vcut);
+	//}
+
 
 	/*Add vx and vy as inputs to the tria element: */
 	element->AddBasalInput(BasalforcingsLaddieVxEnum,vx,element->GetElementType());
@@ -351,31 +359,130 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 
 	SetActiveNodesLSMx(femmodel);
 
+	int         domaintype;
+	Node       *node;
+	Element    *element;
+	int         numnodes;
+	IssmDouble *mask;
+	IssmDouble *ls_active;
+	IssmDouble  spcvx=0.0, spcvy=0.0;
+
+	IssmDouble *xyz_list=NULL;
+	IssmDouble  xyz_front[2][3];
+	IssmDouble *normal;
+
+	/*Find domain type*/
+	femmodel->parameters->FindParam(&domaintype,DomainTypeEnum);
+
 	/*Constrain all nodes that are grounded and unconstrain the ones that float*/
 	for(Object* & object : femmodel->elements->objects){
-		Element    *element  = xDynamicCast<Element*>(object);
-		int         numnodes  = element->GetNumberOfNodes();
-		IssmDouble *mask      = xNew<IssmDouble>(numnodes);
-		IssmDouble *ls_active = xNew<IssmDouble>(numnodes);
-		IssmDouble  spcvx=0.0, spcvy=0.0;
+		element  = xDynamicCast<Element*>(object);
+		numnodes = element->GetNumberOfNodes();
+
+		/*Get xyz coordinates*/
+		element->GetVerticesCoordinates(&xyz_list);
+
+		mask      = xNew<IssmDouble>(numnodes);
+		ls_active = xNew<IssmDouble>(numnodes);
+		normal    = xNew<IssmDouble>(numnodes);
 
 		element->GetInputListOnNodes(&mask[0],MaskOceanLevelsetEnum);
 		element->GetInputListOnNodes(&ls_active[0],IceMaskNodeActivationEnum);
 
 		for(int in=0;in<numnodes;in++){
-			Node* node=element->GetNode(in);
+			node=element->GetNode(in);
 			if(mask[in]<0. && ls_active[in]==1.){
 				node->Activate();
 			}
 			else{
 				/*Apply plume vector (vx, vy) as zero value along grounding line*/
 				node->Deactivate();
-				node->ApplyConstraint(0,spcvx); /*for vx*/
-				node->ApplyConstraint(1,spcvy); /*for vy*/
+				if(true){
+					node->ApplyConstraint(0,spcvx); /*for vx*/
+					node->ApplyConstraint(1,spcvy); /*for vy*/
+				}
 			}
 		}
+
+		//if(false)/* NOTE: some contraints along the grounding line.. ?? {{{*/
+		//	if(!element->IsIceInElement()){
+		//		/*nothing to do*/
+		//	}else if(!element->IsZeroLevelset(MaskOceanLevelsetEnum)){
+		//		/*nothing to do*/
+		//	}else{
+		//		/*Search grounding line*/
+		//		/*Be sure that values are not zero*/
+		//		if(mask[0]==0.) mask[0]=mask[0]+epsilon;
+		//		if(mask[1]==0.) mask[1]=mask[1]+epsilon;
+		//		if(mask[2]==0.) mask[2]=mask[2]+epsilon;
+
+		//		int pt1 = 0;
+		//		int pt2 = 1;
+		//		if(gl[0]*gl[1]>0){ //Nodes 0 and 1 are similar, so points must be found on segment 0-2 and 1-2
+
+		//			/*Portion of the segments*/
+		//			s1=gl[2]/(gl[2]-gl[1]);
+		//			s2=gl[2]/(gl[2]-gl[0]);
+		//			if(gl[2]<0.){
+		//				pt1 = 1; pt2 = 0;
+		//			}
+		//			xyz_front[pt2][0]=xyz_list[2][0]+s1*(xyz_list[1][0]-xyz_list[2][0]);
+		//			xyz_front[pt2][1]=xyz_list[2][1]+s1*(xyz_list[1][1]-xyz_list[2][1]);
+		//			xyz_front[pt2][2]=xyz_list[2][2]+s1*(xyz_list[1][2]-xyz_list[2][2]);
+		//			xyz_front[pt1][0]=xyz_list[2][0]+s2*(xyz_list[0][0]-xyz_list[2][0]);
+		//			xyz_front[pt1][1]=xyz_list[2][1]+s2*(xyz_list[0][1]-xyz_list[2][1]);
+		//			xyz_front[pt1][2]=xyz_list[2][2]+s2*(xyz_list[0][2]-xyz_list[2][2]);
+		//		}
+		//		else if(gl[1]*gl[2]>0){ //Nodes 1 and 2 are similar, so points must be found on segment 0-1 and 0-2
+
+		//			/*Portion of the segments*/
+		//			s1=gl[0]/(gl[0]-gl[1]);
+		//			s2=gl[0]/(gl[0]-gl[2]);
+		//			if(gl[0]<0.){
+		//				pt1 = 1; pt2 = 0;
+		//			}
+
+		//			xyz_front[pt1][0]=xyz_list[0][0]+s1*(xyz_list[1][0]-xyz_list[0][0]);
+		//			xyz_front[pt1][1]=xyz_list[0][1]+s1*(xyz_list[1][1]-xyz_list[0][1]);
+		//			xyz_front[pt1][2]=xyz_list[0][2]+s1*(xyz_list[1][2]-xyz_list[0][2]);
+		//			xyz_front[pt2][0]=xyz_list[0][0]+s2*(xyz_list[2][0]-xyz_list[0][0]);
+		//			xyz_front[pt2][1]=xyz_list[0][1]+s2*(xyz_list[2][1]-xyz_list[0][1]);
+		//			xyz_front[pt2][2]=xyz_list[0][2]+s2*(xyz_list[2][2]-xyz_list[0][2]);
+		//		}
+		//		else if(gl[0]*gl[2]>0){ //Nodes 0 and 2 are similar, so points must be found on segment 1-0 and 1-2
+
+		//			/*Portion of the segments*/
+		//			s1=gl[1]/(gl[1]-gl[0]);
+		//			s2=gl[1]/(gl[1]-gl[2]);
+		//			if(gl[1]<0.){
+		//				pt1 = 1; pt2 = 0;
+		//			}
+
+		//			xyz_front[pt2][0]=xyz_list[1][0]+s1*(xyz_list[0][0]-xyz_list[1][0]);
+		//			xyz_front[pt2][1]=xyz_list[1][1]+s1*(xyz_list[0][1]-xyz_list[1][1]);
+		//			xyz_front[pt2][2]=xyz_list[1][2]+s1*(xyz_list[0][2]-xyz_list[1][2]);
+		//			xyz_front[pt1][0]=xyz_list[1][0]+s2*(xyz_list[2][0]-xyz_list[1][0]);
+		//			xyz_front[pt1][1]=xyz_list[1][1]+s2*(xyz_list[2][1]-xyz_list[1][1]);
+		//			xyz_front[pt1][2]=xyz_list[1][2]+s2*(xyz_list[2][2]-xyz_list[1][2]);
+		//		}
+		//		else{
+		//			_error_("case not possible");
+		//		}
+
+		//		/*Some checks in debugging mode*/
+		//		_assert_(s1>=0 && s1<=1.);
+		//		_assert_(s2>=0 && s2<=1.);
+
+		//		/*Get normal vector*/
+		//		element->NormalSection(&normal[0],&xyz_front[0][0]);
+		//	}
+		//}/*}}}*/
+
+		/*Find two vertices pair*/	
+		xDelete<IssmDouble>(normal);
 		xDelete<IssmDouble>(mask);
 		xDelete<IssmDouble>(ls_active);
+		xDelete<IssmDouble>(xyz_list);
 	}
 }/*}}}*/
 
@@ -396,6 +503,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	IssmDouble  vx_avg, vy_avg, thickness_avg;
 	IssmDouble  Hvx, Hvy, Hvel;
 	IssmDouble  melt, entrain; /*unit m s-1*/
+	IssmDouble  dentr; /*dentrainement rate: m s-1*/
 	IssmDouble  Cd;
 	IssmDouble  xi,tau;
 	IssmDouble  dvx[2],dvy[2];
@@ -406,8 +514,9 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	IssmDouble  g; /*gravitational acceleration [m s-2]*/
 
 	IssmDouble rho0; /*Sea water density [kg m-3]*/
-	IssmDouble Kh; /*horizontal viscosity*/
+	IssmDouble Ah; /*horizontal viscosity*/
 	IssmDouble coriolis_freq; /*Coriolis frequency [s-1]*/
+	int        isconvection;
 
 	/*Get problem dimension*/
 	element->FindParam(&domaintype,DomainTypeEnum);
@@ -432,11 +541,12 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	element->FindParam(&domaintype,DomainTypeEnum);
 	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationMomentumEnum);
 	element->FindParam(&coriolis_freq,BasalforcingsLaddieCoriolisFrequencyEnum);
-	element->FindParam(&Kh,BasalforcingsLaddieHorizontalViscosityEnum);
+	element->FindParam(&Ah,BasalforcingsLaddieHorizontalViscosityEnum);
 	element->FindParam(&Cd,BasalforcingsLaddieCdEnum);
 	element->FindParam(&rho0,MaterialsRhoSeawaterEnum);
 	element->FindParam(&g,ConstantsGEnum);
 	element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
+	element->FindParam(&isconvection,BasalforcingsLaddieIsConvectionEnum);
 
 	/*Plume thickness D and depth averaged horizontal velocity*/
 	Input* thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
@@ -444,11 +554,12 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 	Input* vy_input        = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
 	Input* rhoa_input      = element->GetInput(BasalforcingsLaddieDRhoEnum); _assert_(rhoa_input);
 	Input* ga_input        = element->GetInput(BasalforcingsLaddieAmbientGEnum); _assert_(ga_input);
+	Input* dentr_input     = element->GetInput(BasalforcingsLaddieDEntrainmentRateEnum); _assert_(dentr_input);
 
 	h = element->CharacteristicLength();
 
 	/* Start looping on the number of gaussian points: */
-	Gauss* gauss=element->NewGauss(4);
+	Gauss* gauss=element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
@@ -487,31 +598,55 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 
 		/*Convection term: */
-		int isconvection=0;
 		D_scalar=gauss->weight*Jdet*dt;
-		for(int i=0;i<numnodes;i++){
-			for(int j=0;j<numnodes;j++){
-				if(isconvection==0){
+		if(isconvection==1){
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
 					/*term: 2u dudx + u dvdy + v dudy -> 2u dudx + v dudy*/
-					Ke->values[2*i*2*numnodes+2*j] += D_scalar*thickness*(
-								+ 2*vx*basis[i]*dbasis[0*numnodes+j] 
-								+ vy*basis[i]*dbasis[1*numnodes+j]
+					Ke->values[2*i*2*numnodes+2*j] += D_scalar*thickness*basis[i]*(
+								+ 2*vx*dbasis[0*numnodes+j] 
+								+ vy*dbasis[1*numnodes+j]
 								);
 					/*term: 2u dudx + u dvdy + v dudy -> u dvdy*/
-					Ke->values[2*i*2*numnodes+2*j+1] += D_scalar*thickness*(
-								vx*basis[i]*dbasis[1*numnodes+j] 
+					Ke->values[2*i*2*numnodes+2*j+1] += D_scalar*thickness*basis[i]*(
+								vx*dbasis[1*numnodes+j] 
 								);
 
 					/*term: u dvdx + v dudx + 2v dvdy -> v dudx */
-					Ke->values[(2*i+1)*2*numnodes+2*j] += D_scalar*thickness*(
-								vy*basis[i]*dbasis[0*numnodes+j] 
+					Ke->values[(2*i+1)*2*numnodes+2*j] += D_scalar*thickness*basis[i]*(
+								vy*dbasis[0*numnodes+j] 
 								);
 					/*term: u dvdx + v dudx + 2v dvdy -> u dvdx + 2v dvdy*/
-					Ke->values[(2*i+1)*2*numnodes+2*j+1] += D_scalar*thickness*(
-								vx*basis[i]*dbasis[0*numnodes+j]
-								+ 2*vy*basis[i]*dbasis[1*numnodes+j]
+					Ke->values[(2*i+1)*2*numnodes+2*j+1] += D_scalar*thickness*basis[i]*(
+								vx*dbasis[0*numnodes+j]
+								+ 2*vy*dbasis[1*numnodes+j]
 								);
-				}else{
+				}
+			}
+		}
+		else if(isconvection==2){
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					/*term: 2u dudx + u dvdy + v dudy -> 2u dudx + v dudy*/
+					Ke->values[2*i*2*numnodes+2*j] += D_scalar*thickness*basis[i]*(
+								+ 2*vx*dbasis[0*numnodes+j] 
+								+ vy*dbasis[1*numnodes+j]
+								+ dvydy*basis[j]
+								);
+
+					/*term: u dvdx + v dudx + 2v dvdy -> u dvdx + 2v dvdy*/
+					Ke->values[(2*i+1)*2*numnodes+2*j+1] += D_scalar*thickness*basis[i]*(
+								+ dvxdx*basis[j]
+								+ vx*dbasis[0*numnodes+j]
+								+ 2*vy*dbasis[1*numnodes+j]
+								);
+
+				}
+			}
+		}
+		else if(isconvection==3){
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
 					/*term: 2u dudx + u dvdy + v dudy -> 2u dudx + v dudy*/
 					Ke->values[2*i*2*numnodes+2*j] += D_scalar*(
 								+ 2*vx*basis[i]*(thickness*dbasis[0*numnodes+j] + dthkdx*basis[j])
@@ -534,9 +669,11 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 				}
 			}
 		}
+		else if(isconvection==4){
+		}
 
 		/*Diffusion term: */
-		factor = gauss->weight*Jdet*Kh*thickness*dt;
+		factor = gauss->weight*Jdet*Ah*thickness*dt;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				Ke->values[2*i*2*numnodes+2*j] += factor*(
@@ -560,7 +697,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 
 		/*Coriolis term: f (v, -u) */
-		factor = gauss->weight*Jdet*coriolis_freq*dt;
+		factor = gauss->weight*Jdet*dt*thickness*coriolis_freq;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				/*term: (f D v) */
@@ -569,11 +706,22 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 				Ke->values[(2*i+1)*2*numnodes+2*j] += +factor*basis[i]*basis[j];
 			}
 		}
+		
+		/*Dentrainment: \dot{d} (u, v) */
+		dentr_input->GetInputValue(&dentr,gauss);
+		factor = gauss->weight*Jdet*dt*dentr;
+		for(int i=0;i<numnodes;i++){
+			for(int j=0;j<numnodes;j++){
+				/*term: (f D v) */
+				Ke->values[2*i*2*numnodes+2*j]       += factor*basis[i]*basis[j];
+				/*term: (-f D u)*/
+				Ke->values[(2*i+1)*2*numnodes+2*j+1] += factor*basis[i]*basis[j];
+			}
+		}
 
-		//int isconvection_stabilization=1;
+
 		factor = gauss->weight*Jdet*dt;
-		if(false){
-		//if(stabilization==1){
+		if(stabilization==1){
 			/*Artificial diffusivity: */
 			vx_input->GetInputAverage(&vx_avg);
 			vy_input->GetInputAverage(&vy_avg);
@@ -598,29 +746,29 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 			}
 		}
 		else if(stabilization==2){
-			///*Stream-upwind scheme: */
-			//vx_input->GetInputAverage(&vx_avg);
-			//vy_input->GetInputAverage(&vy_avg);
-			//vel = sqrt(vx_avg*vx_avg* + vy_avg*vy_avg) + 1e-6;
-			//factor = D_scalar*h/(2.0*vel);
+			/*Stream-upwind scheme: */
+			vx_input->GetInputAverage(&vx_avg);
+			vy_input->GetInputAverage(&vy_avg);
+			vel = sqrt(vx_avg*vx_avg* + vy_avg*vy_avg) + 1e-6;
+			factor = D_scalar*h/(2.0*vel);
 
-			///*Second-order tensor*/
-			//D[0][0]=factor*fabs(vx_avg*vx_avg);  D[0][1]=0.0;
-			//D[1][0]=0.0;                  D[1][1]=factor*fabs(vy_avg);
+			/*Second-order tensor*/
+			D[0][0]=factor*fabs(vx_avg*vx_avg);  D[0][1]=0.0;
+			D[1][0]=0.0;                  D[1][1]=factor*fabs(vy_avg);
 
-			//for(int i=0;i<numnodes;i++){
-			//	for(int j=0;j<numnodes;j++){
-			//		Ke->values[2*i*2*numnodes+2*j] += thickness*(
-			//					dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
-			//					dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
-			//					);
+			for(int i=0;i<numnodes;i++){
+				for(int j=0;j<numnodes;j++){
+					Ke->values[2*i*2*numnodes+2*j] += thickness*(
+								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
+								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
+								);
 
-			//		Ke->values[2*(i+1)*2*numnodes+2*j+1] += thickness*(
-			//					dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
-			//					dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
-			//					);
-			//	}
-			//}
+					Ke->values[2*(i+1)*2*numnodes+2*j+1] += thickness*(
+								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
+								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j]) 
+								);
+				}
+			}
 		}
 	}
 
@@ -699,7 +847,7 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 	h=element->CharacteristicLength();
 
 	/* Start looping on the number of gaussian points: */
-	gauss=element->NewGauss(4);
+	gauss=element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
