@@ -244,6 +244,7 @@ void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDoub
 	basalelement->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
 
 	/*Use the dof list to index into the solution vector: */
+	int iscatch_neg=0;
 	for(i=0;i<numnodes;i++){
 
 		Snew[i]=solution[doflist[i]];
@@ -252,8 +253,9 @@ void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDoub
 		if(xIsInf<IssmDouble>(Snew[i])) _error_("Inf found in solution vector");
 		/*Preventing negative value in salinity*/
 		if(Snew[i] < 0){
-			_printf0_("Catch negative value in salinity!\n");
-			Snew[i] = max(Snew[i], 0.0);
+			iscatch_neg += 1;
+			//if(iscatch_neg == 1) _printf0_("Catch negative value in salinity!\n");
+			Snew[i] = 0.0;
 		}
 	}
 	element->AddBasalInput(BasalforcingsLaddieSEnum,Snew,element->GetElementType());
