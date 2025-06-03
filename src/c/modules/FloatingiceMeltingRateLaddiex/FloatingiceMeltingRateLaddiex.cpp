@@ -591,12 +591,13 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 			c = Chat*gammaT[iv]*gammaS[iv]*(That-T+l1*S);
 
 			/*Melt rate*/
-			temp = b*b - 4.0*c;
-			if (temp < 0.0){
-				melt[iv]=0.0;
-			}else{
-				melt[iv]=0.5*(-b + sqrt(pow(b,2.0) - 4.0*c));
-			}
+			melt[iv]=0.5*(-b + sqrt(pow(b,2.0) - 4.0*c));
+			//temp = b*b - 4.0*c;
+			//if (temp < 0.0){
+			//	melt[iv]=0.0;
+			//}else{
+			//	melt[iv]=0.5*(-b + sqrt(pow(b,2.0) - 4.0*c));
+			//}
 
 			/*Temperature at ice shelf base*/
 			Tb[iv] = (Chat*gammaT[iv]*T - melt[iv])/(Chat*gammaT[iv] + Chat*Ctil*melt[iv]);
