@@ -11,6 +11,7 @@ classdef basalforcingsladdie
 		D = NaN;
 		vx= NaN;
 		vy= NaN;
+		vel=NaN;
 		temperature = NaN;
 		salinity = NaN;
 
@@ -39,6 +40,7 @@ classdef basalforcingsladdie
 		isentrainment = 0;
 		ismelt=0;
 		f_cori=0;
+		Ti=0;
 
 		isgammaTfix=0;
 		gammaT=0;
@@ -55,12 +57,14 @@ classdef basalforcingsladdie
 		vcut=0;
 		stabilization=0;
 		stabilizationMomentum=0;
+		convOption=0;
 
 		%Modules
 		ismass=0;
 		ismomentum=0;
 		isheat=0;
 		issalt=0;
+		isconvection=0;
 	end % }}}
 	methods
 		function self = basalforcingsladdie(varargin) % {{{
@@ -82,14 +86,21 @@ classdef basalforcingsladdie
 			fielddisplay(self,'D','initial plume thickness [m].');
 			fielddisplay(self,'vx','initial depth averaged plume velocity in x-direction [m s-1].');
 			fielddisplay(self,'vy','initial depth averaged plume velocity in y-direction [m s-1].');
+			fielddisplay(self,'vel','initial depth averaged plume velocity [m s-1].');
 			fielddisplay(self,'temperature','initial plume temperature [K].');
 			fielddisplay(self,'salinity','initial plume salinity [psu].');
+
+			%Forcings fields
+			fielddisplay(self,'forcing_temperature','in-situ temperature under the ice shelf [unit: deg C].');
+			fielddisplay(self,'forcing_salinity','in-situ salinity under the ice shelf [unit: psu].');
+			fielddisplay(self,'forcing_depth','elevation of vertical layers (forcing_depth <= 0) in ocean thermal forcing dataset. [unit: m]');
 
 			%parameters
 			fielddisplay(self,'Kh','horizontal diffusivity [unit: m2 s-1]');
 			fielddisplay(self,'Ah','horizontal viscosity [unit: m2 s-1]');
 			fielddisplay(self,'Dmin','minimum plume thickness [unit: m]');
 			fielddisplay(self,'Utide','tidal velocity [unit: m s-1]');
+			fielddisplay(self,'Ti','Basal ice temperature [unit: degC]');
 
 			fielddisplay(self,'f_cori','Coriolis frequency [unit: s-1]');
 			fielddisplay(self,'Cd','momentum drag coefficient [unit: -]')
@@ -110,13 +121,15 @@ classdef basalforcingsladdie
 
 			fielddisplay(self,'vcut','cutoff velocity for u and v [m s-1] (default: 1.414)');
 
-			fielddisplay(self,'stabilization','stabilization scheme for mass, heat and salt.');
-			fielddisplay(self,'stabilizationMomentum','stabilization scheme for momentum.'); 
+			fielddisplay(self,'stabilization','stabilization scheme for mass, heat and salt. 0: no, 1: artificial diffusion, 2: stream-upwind, 5: SUPG (stream upwind petrov galerkin.');
+			fielddisplay(self,'stabilizationMomentum','stabilization scheme for momentum. (0: no stabilization, 1: artificial diffusion. 2: stream-upwind'); 
 
 			fielddisplay(self,'ismass','boolean to use mass analysis in Laddie (default: true).');
 			fielddisplay(self,'ismomentum','boolean to use momentum analysis in Laddie (default: true).');
 			fielddisplay(self,'isheat','boolean to use heat analysis in Laddie (default: true).');
 			fielddisplay(self,'issalt','boolean to use salt analysis in Laddie (default: true).');
+			fielddisplay(self,'isconvection','Choose convection scheme in momentum analysis of plume model. (default: 1). 1, 2, 3 are available');
+			fielddisplay(self,'convOption','Option for convection when stratification is unstable. 0: prescribe mindrho. 1: instantaneous convection.');
 		end % }}}
 		function self = extrude(self,md) % {{{
 			self.groundedice_melting_rate=project3d(md,'vector',self.groundedice_melting_rate,'type','node','layer',1); 
@@ -163,6 +176,7 @@ classdef basalforcingsladdie
 			self.ismelt = 1;
 			self.isgammaTfix=0;
 			self.gammaT = 1.47e-4; % unit: m s-1
+			self.Ti=-25; %unit: degC
 
 			%Time stepping specials
 			self.subtimestep = 72; % unit: s-1
@@ -178,6 +192,8 @@ classdef basalforcingsladdie
 			self.ismomentum=1;
 			self.isheat=1;
 			self.issalt=1;
+			self.isconvection=2;
+			self.convOption=0;
 		end % }}}
 		function md = checkconsistency(self,md,solution,analyses) % {{{
 
@@ -197,6 +213,7 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.D','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
 			md = checkfield(md,'fieldname','basalforcings.vx','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
 			md = checkfield(md,'fieldname','basalforcings.vy','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
+			md = checkfield(md,'fieldname','basalforcings.vel','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
 			md = checkfield(md,'fieldname','basalforcings.temperature','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
 			md = checkfield(md,'fieldname','basalforcings.salinity','NaN',1,'Inf',1,'size',[md.mesh.numberofvertices, 1]);
 
@@ -221,6 +238,7 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.Cd_top','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.Kparam','numel',1,'NaN',1,'Inf',1,'>',0);
 			md = checkfield(md,'fieldname','basalforcings.f_cori','numel',1,'NaN',1,'Inf',1);
+			md = checkfield(md,'fieldname','basalforcings.Ti','numel',1,'NaN',1,'Inf',1);
 
 			%For entrainment rate
 			md = checkfield(md,'fieldname','basalforcings.maxdentr','numel',1,'NaN',1,'Inf',1,'>',0);
@@ -246,6 +264,8 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.ismomentum','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.isheat','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.issalt','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.isconvection','values',[0,1,2,3]);
+			md = checkfield(md,'fieldname','basalforcings.convOption','values',[0,1]);
 		end % }}}
 		function marshall(self,prefix,md,fid) % {{{
 
@@ -256,6 +276,7 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','D','format','DoubleMat','mattype',1);
 			WriteData(fid,prefix,'object',self,'fieldname','vx','format','DoubleMat','mattype',1);
 			WriteData(fid,prefix,'object',self,'fieldname','vy','format','DoubleMat','mattype',1);
+			WriteData(fid,prefix,'object',self,'fieldname','vel','format','DoubleMat','mattype',1);
 			WriteData(fid,prefix,'object',self,'fieldname','temperature','format','DoubleMat','mattype',1)
 			WriteData(fid,prefix,'object',self,'fieldname','salinity','format','DoubleMat','mattype',1)
 
@@ -271,6 +292,7 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','Kh','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Dmin','format','Double');
 			WriteData(fid,prefix,'object',self,'fieldname','Utide','format','Double');
+			WriteData(fid,prefix,'object',self,'fieldname','Ti','format','Double');
 
 			WriteData(fid,prefix,'object',self,'fieldname','isentrainment','format','Integer');
 			WriteData(fid,prefix,'object',self,'fieldname','ismelt','format','Integer');
@@ -300,6 +322,8 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','ismomentum','format','Boolean');
 			WriteData(fid,prefix,'object',self,'fieldname','isheat','format','Boolean');
 			WriteData(fid,prefix,'object',self,'fieldname','issalt','format','Boolean');
+			WriteData(fid,prefix,'object',self,'fieldname','isconvection','format','Integer');
+			WriteData(fid,prefix,'object',self,'fieldname','convOption','format','Integer');
 		end % }}}
 		function savemodeljs(self,fid,modelname) % {{{
 		
