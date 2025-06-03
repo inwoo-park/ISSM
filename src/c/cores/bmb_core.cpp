@@ -112,7 +112,7 @@ void bmb_core(FemModel* femmodel){
 			UpdateLaddieEntrainmentRatex(femmodel);
 
 			/*Step#1: Calculate mass transport model of Laddie*/
-			InputDuplicatex(femmodel,BasalforcingsLaddieThicknessEnum,BasalforcingsLaddieThicknessOldEnum);
+			//InputDuplicatex(femmodel,BasalforcingsLaddieThicknessEnum,BasalforcingsLaddieThicknessOldEnum);
 			if (ismass){
 				if(VerboseSolution()) _printf0_("   computing Laddie mass transport\n");
 				femmodel->SetCurrentConfiguration(BasalforcingsLaddieMassAnalysisEnum);
