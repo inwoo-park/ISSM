@@ -131,6 +131,7 @@ syn keyword cConstant BasalforcingsLaddieIsMomentumEnum
 syn keyword cConstant BasalforcingsLaddieIsHeatEnum
 syn keyword cConstant BasalforcingsLaddieIsSaltEnum
 syn keyword cConstant BasalforcingsLaddieIsConvectionEnum
+syn keyword cConstant BasalforcingsLaddieConvOptionEnum
 syn keyword cConstant BasalforcingsLaddieKparamEnum
 syn keyword cConstant BasalforcingsLaddieMaxDentrainmentEnum
 syn keyword cConstant BasalforcingsLaddieMuEnum

@@ -125,6 +125,7 @@ enum definitions{
 	BasalforcingsLaddieIsHeatEnum,
 	BasalforcingsLaddieIsSaltEnum,
 	BasalforcingsLaddieIsConvectionEnum,
+	BasalforcingsLaddieConvOptionEnum,
 	BasalforcingsLaddieKparamEnum,
 	BasalforcingsLaddieMaxDentrainmentEnum,
 	BasalforcingsLaddieMuEnum,
