@@ -128,16 +128,16 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		int      numvertices = element->GetNumberOfVertices();
 
 		/*Set melt to 0 if non floating*/
-		if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
-			values = xNewZeroInit<IssmDouble>(numvertices);
-			element->AddInput(BasalforcingsLaddieAmbientTemperatureEnum,values,P1DGEnum);
-			xDelete<IssmDouble>(values);
+		//if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
+		//	values = xNewZeroInit<IssmDouble>(numvertices);
+		//	element->AddInput(BasalforcingsLaddieAmbientTemperatureEnum,values,P1DGEnum);
+		//	xDelete<IssmDouble>(values);
 
-			values = xNewZeroInit<IssmDouble>(numvertices);
-			element->AddInput(BasalforcingsLaddieAmbientSalinityEnum,values,P1DGEnum);
-			xDelete<IssmDouble>(values);
-			continue;
-		}
+		//	values = xNewZeroInit<IssmDouble>(numvertices);
+		//	element->AddInput(BasalforcingsLaddieAmbientSalinityEnum,values,P1DGEnum);
+		//	xDelete<IssmDouble>(values);
+		//	continue;
+		//}
 		
 		/*Get ambient ocean temeprature and salinity on all vertices*/
 		IssmDouble *Ttmp           = xNew<IssmDouble>(numvertices);
@@ -152,6 +152,7 @@ void UpdateLaddieAmbientFieldx(FemModel* femmodel){/*{{{*/
 		DatasetInput* sf_input = element->GetDatasetInput(BasalforcingsLaddieForcingSalinityEnum); _assert_(sf_input);
 
 		element->GetInputListOnVertices(&depth_vertices[0],BaseEnum);
+		// NOTE: If the vertices are located in grounded ice, thickness_vertices are assigned zeros, as plume thickness over grounded ice is set to zero.
 		element->GetInputListOnVertices(&thickness_vertices[0],BasalforcingsLaddieThicknessEnum);
 
 		Gauss* gauss=element->NewGauss();
@@ -215,17 +216,19 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 	Eq. 6 and Eq. 7 in Lambert et al. (2023): https://tc.copernicus.org/articles/17/3203/2023/
 	 */
 
-	IssmDouble rho0; /*default ocean density [kg m-3]*/
-	IssmDouble g; /*gravitaional acceleration [m s-1]*/
-	IssmDouble T,S; /*plume temperature and salinity*/
-	IssmDouble Ta, Sa; /*ambient ocean forcing for temperature [degC] and salinity [psu]*/
-	IssmDouble alpha=3.733e-5; /*thermal expansion coefficient [degC -1]*/
-	IssmDouble beta=7.843e-4; /*haline contraction coefficient [psu-1]*/
-	IssmDouble mindrho=0.005; /*minmum density difference [kg m-3]*/
+	IssmDouble  rho0; /*default ocean density [kg m-3]*/
+	IssmDouble  g; /*gravitaional acceleration [m s-1]*/
+	IssmDouble  T,S; /*plume temperature and salinity*/
+	IssmDouble  Ta, Sa; /*ambient ocean forcing for temperature [degC] and salinity [psu]*/
+	IssmDouble  alpha=3.733e-5; /*thermal expansion coefficient [degC -1]*/
+	IssmDouble  beta=7.843e-4; /*haline contraction coefficient [psu-1]*/
+	IssmDouble  mindrho=0.005; /*minmum density difference [kg m-3]*/
+	int         convop;
 
 	IssmDouble *values;
 	int         iscatch=0;
 
+	femmodel->parameters->FindParam(&convop,BasalforcingsLaddieConvOptionEnum);
 	femmodel->parameters->FindParam(&rho0,MaterialsRhoSeawaterEnum);
 	femmodel->parameters->FindParam(&g,ConstantsGEnum);
 
@@ -257,6 +260,8 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 		/*Initialize variable*/
 		IssmDouble* ga=xNew<IssmDouble>(numvertices);
 		IssmDouble* drho=xNew<IssmDouble>(numvertices);
+		IssmDouble* Tnew=xNew<IssmDouble>(numvertices);
+		IssmDouble* Snew=xNew<IssmDouble>(numvertices);
 
 		Gauss* gauss=element->NewGauss();
 		for (int iv=0;iv<numvertices;iv++){
@@ -269,11 +274,19 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 			Sa_input->GetInputValue(&Sa, gauss);
 
 			/*Calculate density difference*/
+			Tnew[iv] = T;
+			Snew[iv] = S;
 			drho[iv] = rho0*(-alpha*(Ta-T) + beta*(Sa-S));
-			if(drho[iv]<0 & iscatch==0){
-				iscatch+=1;
-				_printf0_("WARNING: drho value encounters the negative value!\n");
-				drho[iv] = max(drho[iv], mindrho/rho0);
+			if (convop == 0){
+				/*Prescribe minimum stratification*/
+				drho[iv] = max(drho[iv], mindrho);
+			}else if (convop == 1){
+				/*Apply instaneous convection*/
+				if (drho[iv] < mindrho){
+					Tnew[iv] = Ta;
+					Snew[iv] = Sa-mindrho/(rho0*beta);
+					drho[iv] = rho0*(-alpha*(Ta-Tnew[iv]) + beta*(Sa-Snew[iv]));
+				}
 			}
 			ga[iv] = g*drho[iv]/rho0;
 		}
@@ -281,10 +294,14 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 		/*Assign value in: */
 		element->AddInput(BasalforcingsLaddieDRhoEnum,&drho[0],P1DGEnum);
 		element->AddInput(BasalforcingsLaddieAmbientGEnum,&ga[0],P1DGEnum);
+		element->AddInput(BasalforcingsLaddieTEnum,&Tnew[0],P1DGEnum);
+		element->AddInput(BasalforcingsLaddieSEnum,&Snew[0],P1DGEnum);
 		
 		/*Clear memory*/
 		xDelete<IssmDouble>(ga);
 		xDelete<IssmDouble>(drho);
+		xDelete<IssmDouble>(Tnew);
+		xDelete<IssmDouble>(Snew);
 	}
 }/*}}}*/
 
