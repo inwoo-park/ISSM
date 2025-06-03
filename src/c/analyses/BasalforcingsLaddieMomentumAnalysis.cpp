@@ -860,7 +860,8 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 		factor_transient= Jdet*gauss->weight;
 		factor_buoyancy = Jdet*gauss->weight*dt*(-g*thickness*thickness/2/rho0);
 		factor_pgradient= Jdet*gauss->weight*dt*(ga*thickness);
-		factor_dentr    = Jdet*gauss->weight*dt*dentr;
+		factor_dentr = 0.0;
+		//factor_dentr    = Jdet*gauss->weight*dt*dentr;
 
 		for(int i=0;i<numnodes;i++){
 			pe->values[i*2+0]+=basis[i]*(factor_transient*thickness*vx + factor_buoyancy*ddrhoadx + factor_pgradient*(dzbdx-dthkdx) - factor_dentr*vx);
