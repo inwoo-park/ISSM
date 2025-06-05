@@ -732,8 +732,8 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 			factor = D_scalar*h/(2.0*vel);
 
 			/*Second-order tensor*/
-			D[0][0]=factor*fabs(vx_avg*vx_avg);  D[0][1]=factor*fabs(vx_avg*vy_avg);
-			D[1][0]=factor*fabs(vy_avg*vx_avg);  D[1][1]=factor*fabs(vy_avg*vy_avg);
+			D[0][0]=factor*vx_avg*vx_avg;  D[0][1]=factor*vx_avg*vy_avg;
+			D[1][0]=factor*vy_avg*vx_avg;  D[1][1]=factor*vy_avg*vy_avg;
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
