@@ -274,13 +274,15 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 			Sa_input->GetInputValue(&Sa, gauss);
 
 			/*Calculate density difference*/
-			Tnew[iv] = T;
-			Snew[iv] = S;
+			//Tnew[iv] = T;
+			//Snew[iv] = S;
 			drho[iv] = rho0*(-alpha*(Ta-T) + beta*(Sa-S));
-			if (convop == 0){
+			if(convop == 0){
+				/*NOTE: nothing to do*/
+			}else if (convop == 1){
 				/*Prescribe minimum stratification*/
 				drho[iv] = max(drho[iv], mindrho);
-			}else if (convop == 1){
+			}else if (convop == 2){
 				/*Apply instaneous convection*/
 				if (drho[iv] < mindrho){
 					Tnew[iv] = Ta;
@@ -294,8 +296,8 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 		/*Assign value in: */
 		element->AddInput(BasalforcingsLaddieDRhoEnum,&drho[0],P1DGEnum);
 		element->AddInput(BasalforcingsLaddieAmbientGEnum,&ga[0],P1DGEnum);
-		element->AddInput(BasalforcingsLaddieTEnum,&Tnew[0],P1DGEnum);
-		element->AddInput(BasalforcingsLaddieSEnum,&Snew[0],P1DGEnum);
+		//element->AddInput(BasalforcingsLaddieTEnum,&Tnew[0],P1DGEnum);
+		//element->AddInput(BasalforcingsLaddieSEnum,&Snew[0],P1DGEnum);
 		
 		/*Clear memory*/
 		xDelete<IssmDouble>(ga);
