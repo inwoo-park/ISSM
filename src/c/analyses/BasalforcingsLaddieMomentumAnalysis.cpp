@@ -703,7 +703,8 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 			}
 		}
 		
-		D_scalar = gauss->weight*Jdet*dt*thickness_avg;
+		D_scalar = gauss->weight*Jdet*dt*thickness;
+		//D_scalar = gauss->weight*Jdet*dt*thickness_avg;
 		if(stabilization==1){
 			/*Artificial diffusivity: */
 			factor = D_scalar*h/2.0;
@@ -728,12 +729,15 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 		else if(stabilization==2){
 			/*Stream-upwind scheme: */
-			vel = sqrt(vx_avg*vx_avg* + vy_avg*vy_avg) + 1e-14;
+			vel = sqrt(vx*vx* + vy*vy) + 1e-14;
+			//vel = sqrt(vx_avg*vx_avg* + vy_avg*vy_avg) + 1e-14;
 			factor = D_scalar*h/(2.0*vel);
 
 			/*Second-order tensor*/
-			D[0][0]=factor*vx_avg*vx_avg;  D[0][1]=factor*vx_avg*vy_avg;
-			D[1][0]=factor*vy_avg*vx_avg;  D[1][1]=factor*vy_avg*vy_avg;
+			D[0][0]=factor*vx*vx;  D[0][1]=factor*vx*vy;
+			D[1][0]=factor*vy*vx;  D[1][1]=factor*vy*vy;
+			//D[0][0]=factor*vx_avg*vx_avg;  D[0][1]=factor*vx_avg*vy_avg;
+			//D[1][0]=factor*vy_avg*vx_avg;  D[1][1]=factor*vy_avg*vy_avg;
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
