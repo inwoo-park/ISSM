@@ -12,6 +12,7 @@ IssmDouble GetDensityDifferencex(IssmDouble rho0, IssmDouble T, IssmDouble S, Is
 IssmDouble GetEffectiveGravitationAccelerationx(IssmDouble g, IssmDouble rho0, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa);
 void FloatingiceMeltingRateLaddiex(FemModel* femmodel);
 
+void UpdateLaddieDThicknessDtx(FemModel* femmodel);
 void UpdateLaddieAmbientFieldx(FemModel* femmodel);
 void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel);
 
