@@ -244,6 +244,7 @@ void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDoub
 	basalelement->GetDofListLocal(&doflist,NoneApproximationEnum,GsetEnum);
 
 	/*Use the dof list to index into the solution vector: */
+	int iscatch_neg=0;
 	for(i=0;i<numnodes;i++){
 
 		Snew[i]=solution[doflist[i]];
@@ -252,8 +253,9 @@ void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDoub
 		if(xIsInf<IssmDouble>(Snew[i])) _error_("Inf found in solution vector");
 		/*Preventing negative value in salinity*/
 		if(Snew[i] < 0){
-			_printf0_("Catch negative value in salinity!\n");
-			Snew[i] = max(Snew[i], 0.0);
+			iscatch_neg += 1;
+			//if(iscatch_neg == 1) _printf0_("Catch negative value in salinity!\n");
+			Snew[i] = 0.0;
 		}
 	}
 	element->AddBasalInput(BasalforcingsLaddieSEnum,Snew,element->GetElementType());
@@ -350,7 +352,7 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 	h = element->CharacteristicLength();
 
 	/* Start  looping on the number of gaussian points: */
-	Gauss* gauss=element->NewGauss(4);
+	Gauss* gauss=element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
@@ -382,18 +384,14 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 		}
 
 		/*Diffusion term: */
-		D_scalar=gauss->weight*Jdet*dt*Kh;
+		D_scalar=gauss->weight*Jdet*dt*Kh*thickness;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
 				/* thickness * dphi_i * dphi_j * T_j */
 				Ke->values[i*numnodes+j] += D_scalar*(
-							thickness*dbasis[0*numnodes+j]*dbasis[0*numnodes+i] + thickness*dbasis[1*numnodes+j]*dbasis[1*numnodes+j]
+							+ dbasis[0*numnodes+i]*dbasis[0*numnodes+j]
+							+ dbasis[1*numnodes+i]*dbasis[1*numnodes+j]
 							);
-
-				/* dthkdx * dphi_i phi_j T_j */
-				//Ke->values[i*numnodes+j] += D_scalar*(
-				//			dthkdx*dbasis[0*numnodes+i]*basis[j] + dthkdy*dbasis[1*numnodes+i]*basis[j]
-				//			);
 			}
 		}
 
@@ -401,56 +399,34 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 		D_scalar=gauss->weight*Jdet*dt;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
-				/*\phi_i \phi_j \nabla\cdot v*/
-				Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j]*((vx*dthkdx + vy*dthkdy) + (thickness*dvxdx + thickness*dvydy));
-				/*\phi_i v\cdot\nabla\phi_j*/
-				Ke->values[i*numnodes+j] += D_scalar*basis[i]*thickness*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
+				if(true){
+					/*\phi_i \phi_j \nabla\cdot v*/
+					Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j]*((vx*dthkdx + vy*dthkdy) + (thickness*dvxdx + thickness*dvydy));
+					/*\phi_i v\cdot\nabla\phi_j*/
+					Ke->values[i*numnodes+j] += D_scalar*basis[i]*thickness*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
+				}
+				else{
+					/*\phi_i \phi_j \nabla\cdot v*/
+					Ke->values[i*numnodes+j] += D_scalar*thickness*basis[i]*basis[j]*(dvxdx + dvydy);
+					/*\phi_i v\cdot\nabla\phi_j*/
+					Ke->values[i*numnodes+j] += D_scalar*thickness*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
+				}
 			}
 		}
 
 		/*Prepare parameters for advection stabilization scheme*/
-		switch(stabilization){
-			case 0:
-				/*Nothing to be done*/
-				break;
-			case 1:
-				/*SSA*/
-				vx_input->GetInputAverage(&vx);
-				vy_input->GetInputAverage(&vy);
-				thickness_input->GetInputAverage(&thickness);
-				D[0][0]=h/2.0*fabs(vx); D[0][1]=0.0;
-				D[1][0]=0.0;            D[1][1]=h/2.0*fabs(vy);
-				break;
-			case 2:
-				/*Streamline upwinding*/
-				vx_input->GetInputAverage(&vx);
-				vy_input->GetInputAverage(&vy);
-				vel=sqrt(vx*vx+vy*vy)+1.e-14;
-				tau=h/(2*vel);
-				D[0][0]=tau*fabs(vx*vx); D[0][1]=tau*fabs(vx*vy);
-				D[1][0]=tau*fabs(vy*vx); D[1][1]=tau*fabs(vy*vy);
-				break;
-			case 5:
-				/*SUPG*/
-				if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
-				vx_input->GetInputAverage(&vx);
-				vy_input->GetInputAverage(&vy);
-				thickness_input->GetInputAverage(&thickness);
-				vel=sqrt(vx*vx+vy*vy)+1.e-14;
-				//xi=0.3130;
-				xi=1;
-				tau=xi*h/(2*vel);
-				//tau=dt/6; // as implemented in Ua
-				break;
-			default:
-				_error_("Stabilization "<<stabilization<<" not supported yet");
-		}
+		for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) D[i][j]=0.0;
 
-		D_scalar=gauss->weight*Jdet*dt;
-		if(stabilization==1){/*{{{*/
-			/*SSA*/
-			D[0][0]=D_scalar*D[0][0]; D[0][1]=D_scalar*D[0][1];
-			D[1][0]=D_scalar*D[1][0]; D[1][1]=D_scalar*D[1][1];
+		if(stabilization==0){/*{{{*/
+		}/*}}}*/
+		else if(stabilization==1){/* Artificial diffusion {{{*/
+			/*Artifical diffusion: */
+			//vel=sqrt(vx_avg*vx_avg + vy_avg*vy_avg);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+
+			factor=D_scalar*h/(2.*vel);
+			D[0][0]=factor*fabs(vx*vx); D[0][1]=factor*fabs(vx*vy);
+			D[1][0]=factor*fabs(vy*vx); D[1][1]=factor*fabs(vy*vy);
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
@@ -461,21 +437,33 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 				}
 			}
 		}/*}}}*/
-		if(stabilization==2){/*{{{*/
-			/*Streamline upwind*/
+		else if(stabilization==2){/* Stream upwind {{{*/
 			_assert_(dim==2);
 
+			/*Streamline upwind*/
+			//vx_input->GetInputAverage(&vx);
+			//vy_input->GetInputAverage(&vy);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			tau=h/(2*vel);
+
+			factor = dt*gauss->weight*Jdet*tau*thickness;
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j]+=D_scalar*(
-							(dbasis[0*numnodes+i]*D[0][0]+dbasis[1*numnodes+i]*D[1][0])*(thickness*dbasis[0*numnodes+j] + dthkdx*basis[j])
-							+
-							(dbasis[0*numnodes+i]*D[0][1]+dbasis[1*numnodes+i]*D[1][1])*(thickness*dbasis[1*numnodes+j] + dthkdy*basis[j])
-							);
+					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i])*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]);
 				}
 			}
 		}/*}}}*/
-		if(stabilization==5){/*{{{*/
+		else if(stabilization==5){/* Stream upwind Petrov Galerkin (SUPG) {{{*/
+			/*SUPG*/
+			if(dim!=2) _error_("Stabilization "<<stabilization<<" not supported yet for dim != 2");
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			//xi=0.3130;
+			xi=1;
+			tau=xi*h/(2*vel);
+			//tau=dt/6; // as implemented in Ua
+
 			/*Mass matrix - part 2*/
 			factor = gauss->weight*Jdet*tau;
 			for(int i=0;i<numnodes;i++){
@@ -520,6 +508,9 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 					Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy)*(basis[i]*dvxdx+basis[i]*dvydy);
 				}
 			}
+		}/*}}}*/
+		else {/*{{{*/
+			_error_("Stabilization "<<stabilization<<" not supported yet");
 		}/*}}}*/
 	}
 
@@ -578,7 +569,7 @@ ElementVector* BasalforcingsLaddieSaltAnalysis::CreatePVectorCG(Element* element
 	element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
 	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationEnum);
 
-	Input* thickness_input= element->GetInput(BasalforcingsLaddieThicknessOldEnum); _assert_(thickness_input);
+	Input* thickness_input= element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
 	Input* S_input        = element->GetInput(BasalforcingsLaddieSEnum); _assert_(S_input);
 	Input* entr_input     = element->GetInput(BasalforcingsLaddieEntrainmentRateEnum); _assert_(entr_input);
 	/*Ambient temperature*/
@@ -588,7 +579,7 @@ ElementVector* BasalforcingsLaddieSaltAnalysis::CreatePVectorCG(Element* element
 	h=element->CharacteristicLength();
 
 	/* Start looping on the number of gaussian points: */
-	gauss = element->NewGauss(4);
+	gauss = element->NewGauss(3);
 	while(gauss->next()){
 
 		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
