@@ -1214,6 +1214,7 @@ syn keyword cConstant SmbFACEnum
 syn keyword cConstant SmbFACSubstepEnum
 syn keyword cConstant SmbGCMLapseratesEnum
 syn keyword cConstant SmbGCMRefSurfaceEnum
+syn keyword cConstant SmbDownscaleTemperatureEnum
 syn keyword cConstant SmbGdnEnum
 syn keyword cConstant SmbGdniniEnum
 syn keyword cConstant SmbGspEnum
