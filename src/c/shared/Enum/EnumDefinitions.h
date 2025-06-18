@@ -629,6 +629,7 @@ enum definitions{
 	SmbIsmappedforcingEnum,
 	SmbIsmeltEnum,
 	SmbIsmungsmEnum,
+	SmbIsprecipforcingremappedEnum,
 	SmbIsprecipscaledEnum,
 	SmbIssetpddfacEnum,
 	SmbIsshortwaveEnum,
