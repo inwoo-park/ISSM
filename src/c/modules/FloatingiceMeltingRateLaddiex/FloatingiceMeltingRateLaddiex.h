@@ -8,9 +8,14 @@
 #include "../../classes/classes.h"
 #include "../FloatingiceMeltingRatex/FloatingiceMeltingRatex.h"
 
+void FloatingiceMeltingRateLaddiex(FemModel* femmodel);
+
 IssmDouble GetDensityDifferencex(IssmDouble rho0, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa);
 IssmDouble GetEffectiveGravitationAccelerationx(IssmDouble g, IssmDouble rho0, IssmDouble T, IssmDouble S, IssmDouble Ta, IssmDouble Sa);
-void FloatingiceMeltingRateLaddiex(FemModel* femmodel);
+
+void LaddieDiagnosisInitialize(FemModel *femmodel);
+void LaddieDiagnosisAdd(FemModel *femmodel);
+void LaddieDiagnosisValues(FemModel *femmodel, IssmDouble timestep);
 
 void UpdateLaddieDThicknessDtx(FemModel* femmodel);
 void UpdateLaddieAmbientFieldx(FemModel* femmodel);

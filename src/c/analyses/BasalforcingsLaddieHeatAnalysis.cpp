@@ -255,7 +255,6 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 
 	/*Plume thickness D and depth averaged horizontal velocity*/
 	Input* thickness_input = element->GetInput(BasalforcingsLaddieThicknessEnum); _assert_(thickness_input);
-	Input* T_input  = element->GetInput(BasalforcingsLaddieTEnum); _assert_(T_input);
 	Input* vx_input = element->GetInput(BasalforcingsLaddieVxEnum); _assert_(vx_input);
 	Input* vy_input = element->GetInput(BasalforcingsLaddieVyEnum); _assert_(vy_input);
 
@@ -271,14 +270,17 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 
 		/*Prepare inputs: */
 		thickness_input->GetInputValue(&thickness,gauss);
+		thickness_input->GetInputAverage(&thickness_avg);
 		thickness_input->GetInputDerivativeValue(&dthk[0],xyz_list,gauss);
 		dthkdx = dthk[0];
 		dthkdy = dthk[1];
 
 		vx_input->GetInputValue(&vx,gauss);
+		vx_input->GetInputAverage(&vx_avg);
 		vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
 
 		vy_input->GetInputValue(&vy,gauss);
+		vy_input->GetInputAverage(&vy_avg);
 		vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
 
 		dvxdx=dvx[0];
@@ -309,16 +311,17 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 		D_scalar=gauss->weight*Jdet*dt;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
-				if(false){
-					/*\phi_i \phi_j \nabla\cdot v*/
+				if(true){
+					/*NOTE: d(u D T)/dx = u D dTdx + u T dDdx +  D T dudx =  u D dTdx + (u dDdx + D dudx) T*/
+					
+					/* (u dDdx + D dudx) T */
 					Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j]*((vx*dthkdx + vy*dthkdy) + (thickness*dvxdx + thickness*dvydy));
-					/*\phi_i v\cdot\nabla\phi_j*/
+					/* u D dTdx */
 					Ke->values[i*numnodes+j] += D_scalar*basis[i]*thickness*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
 				}
 				else{
-					/*\phi_i \phi_j \nabla\cdot v*/
 					Ke->values[i*numnodes+j] += D_scalar*thickness*basis[i]*basis[j]*(dvxdx + dvydy);
-					/*\phi_i v\cdot\nabla\phi_j*/
+
 					Ke->values[i*numnodes+j] += D_scalar*thickness*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
 				}
 			}
@@ -331,16 +334,20 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 		}/*}}}*/
 		else if(stabilization==1){/* Artificial diffusion {{{*/
 			/*Artifical diffusion: */
-			//vel=sqrt(vx_avg*vx_avg + vy_avg*vy_avg);
-			vel=sqrt(vx*vx+vy*vy)+1.e-14;
+			vx_input->GetInputValue(&vx,gauss);
+			vy_input->GetInputValue(&vy,gauss);
+			thickness_input->GetInputValue(&thickness,gauss);
+			//vx_input->GetInputAverage(&vx);
+			//vy_input->GetInputAverage(&vy);
+			//thickness_input->GetInputAverage(&thickness);
 
-			factor=D_scalar*h/(2.*vel);
-			D[0][0]=factor*fabs(vx*vx); D[0][1]=factor*fabs(vx*vy);
-			D[1][0]=factor*fabs(vy*vx); D[1][1]=factor*fabs(vy*vy);
+			factor=D_scalar*h/2.0*thickness;
+			D[0][0]=factor*fabs(vx); D[0][1]=0.0;
+			D[1][0]=0.0;             D[1][1]=factor*fabs(vy);
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j] += thickness*(
+					Ke->values[i*numnodes+j] += (
 								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
 								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j])
 								);
@@ -349,14 +356,15 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 		}/*}}}*/
 		else if(stabilization==2){/* Stream upwind {{{*/
 			_assert_(dim==2);
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			thickness_input->GetInputAverage(&thickness);
 
 			/*Streamline upwind*/
-			//vx_input->GetInputAverage(&vx);
-			//vy_input->GetInputAverage(&vy);
-			vel=sqrt(vx*vx+vy*vy)+1.e-8;
+			vel=sqrt(vx*vx+vy*vy)+1.e-14;
 			tau=h/(2*vel);
 
-			factor = dt*gauss->weight*Jdet*tau;
+			factor = dt*gauss->weight*Jdet*tau*thickness;
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
 					Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i])*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]);
@@ -477,12 +485,12 @@ ElementVector* BasalforcingsLaddieHeatAnalysis::CreatePVectorCG(Element* element
 	element->FindParam(&dt,BasalforcingsLaddieSubTimestepEnum);
 	element->FindParam(&stabilization,BasalforcingsLaddieStabilizationEnum);
 
-	Input* thickness_input= element->GetInput(BasalforcingsLaddieThicknessEnum);   _assert_(thickness_input);
+	Input* thickness_input= element->GetInput(BasalforcingsLaddieThicknessOldEnum);   _assert_(thickness_input);
 	Input* vx_input       = element->GetInput(BasalforcingsLaddieVxEnum);		  _assert_(vx_input);
 	Input* vy_input       = element->GetInput(BasalforcingsLaddieVyEnum);	     _assert_(vy_input);
 	Input* T_input        = element->GetInput(BasalforcingsLaddieTEnum);   _assert_(T_input);
 	Input* Tb_input       = element->GetInput(BasalforcingsLaddieTbEnum);   _assert_(Tb_input);
-	Input* melt_input     = element->GetInput(BasalforcingsFloatingiceMeltingRateEnum); _assert_(melt_input);
+	Input* melt_input     = element->GetInput(BasalforcingsLaddieMeltingRateEnum); _assert_(melt_input);
 	Input* entr_input     = element->GetInput(BasalforcingsLaddieEntrainmentRateEnum); _assert_(melt_input);
 	Input* gammaT_input   = element->GetInput(BasalforcingsLaddieGammaTEnum); _assert_(gammaT_input);
 	/*Ambient temperature*/
