@@ -98,6 +98,11 @@
 	BasalforcingsPlumeradiusEnum
 	BasalforcingsPlumexEnum
 	BasalforcingsPlumeyEnum
+	BasalforcingsIsNonlinearEnum
+	BasalforcingsMaxiterEnum
+	BasalforcingsRestolEnum
+	BasalforcingsReltolEnum
+	BasalforcingsAbstolEnum
 	BasalforcingsThresholdThicknessEnum
 	BasalforcingsTopplumedepthEnum
 	BasalforcingsUppercrustheatEnum
@@ -812,12 +817,15 @@
 	BasalforcingsPicoSubShelfOceanOverturningEnum
 	BasalforcingsPicoSubShelfOceanSalinityEnum
 	BasalforcingsPicoSubShelfOceanTempEnum
+	BasalforcingsLaddieDiagMeltingRateEnum
 	BasalforcingsLaddieThicknessEnum
 	BasalforcingsLaddieThicknessResidualEnum
 	BasalforcingsLaddieThicknessOldEnum
 	BasalforcingsLaddieDThicknessDtEnum
 	BasalforcingsLaddieVxEnum
 	BasalforcingsLaddieVyEnum
+	BasalforcingsLaddieVxOldEnum
+	BasalforcingsLaddieVyOldEnum
 	BasalforcingsLaddieVelEnum
 	BasalforcingsLaddieTEnum
 	BasalforcingsLaddieTbEnum
@@ -3420,6 +3428,7 @@
 	BalancevelocitySolutionEnum
 	BasalforcingsIsmip6Enum
 	BasalforcingsPicoEnum
+	BasalforcingsConvergenceNumStepsEnum
 	BasalforcingsLaddieEnum
 	BasalforcingsLaddieMassAnalysisEnum
 	BasalforcingsLaddieMassSolutionEnum
@@ -3924,6 +3933,11 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsPlumeradiusEnum) return "BasalforcingsPlumeradius" end
 	if(enum==BasalforcingsPlumexEnum) return "BasalforcingsPlumex" end
 	if(enum==BasalforcingsPlumeyEnum) return "BasalforcingsPlumey" end
+	if(enum==BasalforcingsIsNonlinearEnum) return "BasalforcingsIsNonlinear" end
+	if(enum==BasalforcingsMaxiterEnum) return "BasalforcingsMaxiter" end
+	if(enum==BasalforcingsRestolEnum) return "BasalforcingsRestol" end
+	if(enum==BasalforcingsReltolEnum) return "BasalforcingsReltol" end
+	if(enum==BasalforcingsAbstolEnum) return "BasalforcingsAbstol" end
 	if(enum==BasalforcingsThresholdThicknessEnum) return "BasalforcingsThresholdThickness" end
 	if(enum==BasalforcingsTopplumedepthEnum) return "BasalforcingsTopplumedepth" end
 	if(enum==BasalforcingsUppercrustheatEnum) return "BasalforcingsUppercrustheat" end
@@ -4638,12 +4652,15 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsPicoSubShelfOceanOverturningEnum) return "BasalforcingsPicoSubShelfOceanOverturning" end
 	if(enum==BasalforcingsPicoSubShelfOceanSalinityEnum) return "BasalforcingsPicoSubShelfOceanSalinity" end
 	if(enum==BasalforcingsPicoSubShelfOceanTempEnum) return "BasalforcingsPicoSubShelfOceanTemp" end
+	if(enum==BasalforcingsLaddieDiagMeltingRateEnum) return "BasalforcingsLaddieDiagMeltingRate" end
 	if(enum==BasalforcingsLaddieThicknessEnum) return "BasalforcingsLaddieThickness" end
 	if(enum==BasalforcingsLaddieThicknessResidualEnum) return "BasalforcingsLaddieThicknessResidual" end
 	if(enum==BasalforcingsLaddieThicknessOldEnum) return "BasalforcingsLaddieThicknessOld" end
 	if(enum==BasalforcingsLaddieDThicknessDtEnum) return "BasalforcingsLaddieDThicknessDt" end
 	if(enum==BasalforcingsLaddieVxEnum) return "BasalforcingsLaddieVx" end
 	if(enum==BasalforcingsLaddieVyEnum) return "BasalforcingsLaddieVy" end
+	if(enum==BasalforcingsLaddieVxOldEnum) return "BasalforcingsLaddieVxOld" end
+	if(enum==BasalforcingsLaddieVyOldEnum) return "BasalforcingsLaddieVyOld" end
 	if(enum==BasalforcingsLaddieVelEnum) return "BasalforcingsLaddieVel" end
 	if(enum==BasalforcingsLaddieTEnum) return "BasalforcingsLaddieT" end
 	if(enum==BasalforcingsLaddieTbEnum) return "BasalforcingsLaddieTb" end
@@ -7246,6 +7263,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BalancevelocitySolutionEnum) return "BalancevelocitySolution" end
 	if(enum==BasalforcingsIsmip6Enum) return "BasalforcingsIsmip6" end
 	if(enum==BasalforcingsPicoEnum) return "BasalforcingsPico" end
+	if(enum==BasalforcingsConvergenceNumStepsEnum) return "BasalforcingsConvergenceNumSteps" end
 	if(enum==BasalforcingsLaddieEnum) return "BasalforcingsLaddie" end
 	if(enum==BasalforcingsLaddieMassAnalysisEnum) return "BasalforcingsLaddieMassAnalysis" end
 	if(enum==BasalforcingsLaddieMassSolutionEnum) return "BasalforcingsLaddieMassSolution" end
@@ -7750,6 +7768,11 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsPlumeradius") return BasalforcingsPlumeradiusEnum  end
 	if(name=="BasalforcingsPlumex") return BasalforcingsPlumexEnum  end
 	if(name=="BasalforcingsPlumey") return BasalforcingsPlumeyEnum  end
+	if(name=="BasalforcingsIsNonlinear") return BasalforcingsIsNonlinearEnum  end
+	if(name=="BasalforcingsMaxiter") return BasalforcingsMaxiterEnum  end
+	if(name=="BasalforcingsRestol") return BasalforcingsRestolEnum  end
+	if(name=="BasalforcingsReltol") return BasalforcingsReltolEnum  end
+	if(name=="BasalforcingsAbstol") return BasalforcingsAbstolEnum  end
 	if(name=="BasalforcingsThresholdThickness") return BasalforcingsThresholdThicknessEnum  end
 	if(name=="BasalforcingsTopplumedepth") return BasalforcingsTopplumedepthEnum  end
 	if(name=="BasalforcingsUppercrustheat") return BasalforcingsUppercrustheatEnum  end
@@ -8464,12 +8487,15 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsPicoSubShelfOceanOverturning") return BasalforcingsPicoSubShelfOceanOverturningEnum  end
 	if(name=="BasalforcingsPicoSubShelfOceanSalinity") return BasalforcingsPicoSubShelfOceanSalinityEnum  end
 	if(name=="BasalforcingsPicoSubShelfOceanTemp") return BasalforcingsPicoSubShelfOceanTempEnum  end
+	if(name=="BasalforcingsLaddieDiagMeltingRate") return BasalforcingsLaddieDiagMeltingRateEnum  end
 	if(name=="BasalforcingsLaddieThickness") return BasalforcingsLaddieThicknessEnum  end
 	if(name=="BasalforcingsLaddieThicknessResidual") return BasalforcingsLaddieThicknessResidualEnum  end
 	if(name=="BasalforcingsLaddieThicknessOld") return BasalforcingsLaddieThicknessOldEnum  end
 	if(name=="BasalforcingsLaddieDThicknessDt") return BasalforcingsLaddieDThicknessDtEnum  end
 	if(name=="BasalforcingsLaddieVx") return BasalforcingsLaddieVxEnum  end
 	if(name=="BasalforcingsLaddieVy") return BasalforcingsLaddieVyEnum  end
+	if(name=="BasalforcingsLaddieVxOld") return BasalforcingsLaddieVxOldEnum  end
+	if(name=="BasalforcingsLaddieVyOld") return BasalforcingsLaddieVyOldEnum  end
 	if(name=="BasalforcingsLaddieVel") return BasalforcingsLaddieVelEnum  end
 	if(name=="BasalforcingsLaddieT") return BasalforcingsLaddieTEnum  end
 	if(name=="BasalforcingsLaddieTb") return BasalforcingsLaddieTbEnum  end
@@ -11072,6 +11098,7 @@ function StringToEnum(name::String)
 	if(name=="BalancevelocitySolution") return BalancevelocitySolutionEnum  end
 	if(name=="BasalforcingsIsmip6") return BasalforcingsIsmip6Enum  end
 	if(name=="BasalforcingsPico") return BasalforcingsPicoEnum  end
+	if(name=="BasalforcingsConvergenceNumSteps") return BasalforcingsConvergenceNumStepsEnum  end
 	if(name=="BasalforcingsLaddie") return BasalforcingsLaddieEnum  end
 	if(name=="BasalforcingsLaddieMassAnalysis") return BasalforcingsLaddieMassAnalysisEnum  end
 	if(name=="BasalforcingsLaddieMassSolution") return BasalforcingsLaddieMassSolutionEnum  end

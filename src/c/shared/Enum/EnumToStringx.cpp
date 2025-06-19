@@ -111,6 +111,11 @@ const char* EnumToStringx(int en){
 		case BasalforcingsPlumeradiusEnum : return "BasalforcingsPlumeradius";
 		case BasalforcingsPlumexEnum : return "BasalforcingsPlumex";
 		case BasalforcingsPlumeyEnum : return "BasalforcingsPlumey";
+		case BasalforcingsIsNonlinearEnum : return "BasalforcingsIsNonlinear";
+		case BasalforcingsMaxiterEnum : return "BasalforcingsMaxiter";
+		case BasalforcingsRestolEnum : return "BasalforcingsRestol";
+		case BasalforcingsReltolEnum : return "BasalforcingsReltol";
+		case BasalforcingsAbstolEnum : return "BasalforcingsAbstol";
 		case BasalforcingsThresholdThicknessEnum : return "BasalforcingsThresholdThickness";
 		case BasalforcingsTopplumedepthEnum : return "BasalforcingsTopplumedepth";
 		case BasalforcingsUppercrustheatEnum : return "BasalforcingsUppercrustheat";
@@ -825,12 +830,15 @@ const char* EnumToStringx(int en){
 		case BasalforcingsPicoSubShelfOceanOverturningEnum : return "BasalforcingsPicoSubShelfOceanOverturning";
 		case BasalforcingsPicoSubShelfOceanSalinityEnum : return "BasalforcingsPicoSubShelfOceanSalinity";
 		case BasalforcingsPicoSubShelfOceanTempEnum : return "BasalforcingsPicoSubShelfOceanTemp";
+		case BasalforcingsLaddieDiagMeltingRateEnum : return "BasalforcingsLaddieDiagMeltingRate";
 		case BasalforcingsLaddieThicknessEnum : return "BasalforcingsLaddieThickness";
 		case BasalforcingsLaddieThicknessResidualEnum : return "BasalforcingsLaddieThicknessResidual";
 		case BasalforcingsLaddieThicknessOldEnum : return "BasalforcingsLaddieThicknessOld";
 		case BasalforcingsLaddieDThicknessDtEnum : return "BasalforcingsLaddieDThicknessDt";
 		case BasalforcingsLaddieVxEnum : return "BasalforcingsLaddieVx";
 		case BasalforcingsLaddieVyEnum : return "BasalforcingsLaddieVy";
+		case BasalforcingsLaddieVxOldEnum : return "BasalforcingsLaddieVxOld";
+		case BasalforcingsLaddieVyOldEnum : return "BasalforcingsLaddieVyOld";
 		case BasalforcingsLaddieVelEnum : return "BasalforcingsLaddieVel";
 		case BasalforcingsLaddieTEnum : return "BasalforcingsLaddieT";
 		case BasalforcingsLaddieTbEnum : return "BasalforcingsLaddieTb";
@@ -3433,6 +3441,7 @@ const char* EnumToStringx(int en){
 		case BalancevelocitySolutionEnum : return "BalancevelocitySolution";
 		case BasalforcingsIsmip6Enum : return "BasalforcingsIsmip6";
 		case BasalforcingsPicoEnum : return "BasalforcingsPico";
+		case BasalforcingsConvergenceNumStepsEnum : return "BasalforcingsConvergenceNumSteps";
 		case BasalforcingsLaddieEnum : return "BasalforcingsLaddie";
 		case BasalforcingsLaddieMassAnalysisEnum : return "BasalforcingsLaddieMassAnalysis";
 		case BasalforcingsLaddieMassSolutionEnum : return "BasalforcingsLaddieMassSolution";

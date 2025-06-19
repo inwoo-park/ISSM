@@ -102,6 +102,11 @@ syn keyword juliaConstC BasalforcingsPicoNumBasinsEnum
 syn keyword juliaConstC BasalforcingsPlumeradiusEnum
 syn keyword juliaConstC BasalforcingsPlumexEnum
 syn keyword juliaConstC BasalforcingsPlumeyEnum
+syn keyword juliaConstC BasalforcingsIsNonlinearEnum
+syn keyword juliaConstC BasalforcingsMaxiterEnum
+syn keyword juliaConstC BasalforcingsRestolEnum
+syn keyword juliaConstC BasalforcingsReltolEnum
+syn keyword juliaConstC BasalforcingsAbstolEnum
 syn keyword juliaConstC BasalforcingsThresholdThicknessEnum
 syn keyword juliaConstC BasalforcingsTopplumedepthEnum
 syn keyword juliaConstC BasalforcingsUppercrustheatEnum
@@ -816,12 +821,15 @@ syn keyword juliaConstC BasalforcingsPicoOverturningCoeffEnum
 syn keyword juliaConstC BasalforcingsPicoSubShelfOceanOverturningEnum
 syn keyword juliaConstC BasalforcingsPicoSubShelfOceanSalinityEnum
 syn keyword juliaConstC BasalforcingsPicoSubShelfOceanTempEnum
+syn keyword juliaConstC BasalforcingsLaddieDiagMeltingRateEnum
 syn keyword juliaConstC BasalforcingsLaddieThicknessEnum
 syn keyword juliaConstC BasalforcingsLaddieThicknessResidualEnum
 syn keyword juliaConstC BasalforcingsLaddieThicknessOldEnum
 syn keyword juliaConstC BasalforcingsLaddieDThicknessDtEnum
 syn keyword juliaConstC BasalforcingsLaddieVxEnum
 syn keyword juliaConstC BasalforcingsLaddieVyEnum
+syn keyword juliaConstC BasalforcingsLaddieVxOldEnum
+syn keyword juliaConstC BasalforcingsLaddieVyOldEnum
 syn keyword juliaConstC BasalforcingsLaddieVelEnum
 syn keyword juliaConstC BasalforcingsLaddieTEnum
 syn keyword juliaConstC BasalforcingsLaddieTbEnum
@@ -3424,6 +3432,7 @@ syn keyword juliaConstC BalancevelocityAnalysisEnum
 syn keyword juliaConstC BalancevelocitySolutionEnum
 syn keyword juliaConstC BasalforcingsIsmip6Enum
 syn keyword juliaConstC BasalforcingsPicoEnum
+syn keyword juliaConstC BasalforcingsConvergenceNumStepsEnum
 syn keyword juliaConstC BasalforcingsLaddieEnum
 syn keyword juliaConstC BasalforcingsLaddieMassAnalysisEnum
 syn keyword juliaConstC BasalforcingsLaddieMassSolutionEnum
