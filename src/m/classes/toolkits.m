@@ -113,6 +113,10 @@ classdef toolkits < dynamicprops
 					case 'L2ProjectionBaseAnalysis'
 					case 'ExtrudeFromBaseAnalysis'
 					case 'ExtrudeFromTopAnalysis'
+					case 'BasalforcingsLaddieMassAnalysis'
+					case 'BasalforcingsLaddieMomentumAnalysis'
+					case 'BasalforcingsLaddieHeatAnalysis'
+					case 'BasalforcingsLaddieSaltAnalysis'
 					otherwise
 						md = checkmessage(md,['md.toolkits.' analyses{i} ' not supported yet']);
 				end
