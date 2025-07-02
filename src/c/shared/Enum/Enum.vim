@@ -109,6 +109,11 @@ syn keyword cConstant BasalforcingsPicoNumBasinsEnum
 syn keyword cConstant BasalforcingsPlumeradiusEnum
 syn keyword cConstant BasalforcingsPlumexEnum
 syn keyword cConstant BasalforcingsPlumeyEnum
+syn keyword cConstant BasalforcingsIsNonlinearEnum
+syn keyword cConstant BasalforcingsMaxiterEnum
+syn keyword cConstant BasalforcingsRestolEnum
+syn keyword cConstant BasalforcingsReltolEnum
+syn keyword cConstant BasalforcingsAbstolEnum
 syn keyword cConstant BasalforcingsThresholdThicknessEnum
 syn keyword cConstant BasalforcingsTopplumedepthEnum
 syn keyword cConstant BasalforcingsUppercrustheatEnum
@@ -823,12 +828,15 @@ syn keyword cConstant BasalforcingsPicoOverturningCoeffEnum
 syn keyword cConstant BasalforcingsPicoSubShelfOceanOverturningEnum
 syn keyword cConstant BasalforcingsPicoSubShelfOceanSalinityEnum
 syn keyword cConstant BasalforcingsPicoSubShelfOceanTempEnum
+syn keyword cConstant BasalforcingsLaddieDiagMeltingRateEnum
 syn keyword cConstant BasalforcingsLaddieThicknessEnum
 syn keyword cConstant BasalforcingsLaddieThicknessResidualEnum
 syn keyword cConstant BasalforcingsLaddieThicknessOldEnum
 syn keyword cConstant BasalforcingsLaddieDThicknessDtEnum
 syn keyword cConstant BasalforcingsLaddieVxEnum
 syn keyword cConstant BasalforcingsLaddieVyEnum
+syn keyword cConstant BasalforcingsLaddieVxOldEnum
+syn keyword cConstant BasalforcingsLaddieVyOldEnum
 syn keyword cConstant BasalforcingsLaddieVelEnum
 syn keyword cConstant BasalforcingsLaddieTEnum
 syn keyword cConstant BasalforcingsLaddieTbEnum
@@ -3432,6 +3440,7 @@ syn keyword cConstant BalancevelocityAnalysisEnum
 syn keyword cConstant BalancevelocitySolutionEnum
 syn keyword cConstant BasalforcingsIsmip6Enum
 syn keyword cConstant BasalforcingsPicoEnum
+syn keyword cConstant BasalforcingsConvergenceNumStepsEnum
 syn keyword cConstant BasalforcingsLaddieEnum
 syn keyword cConstant BasalforcingsLaddieMassAnalysisEnum
 syn keyword cConstant BasalforcingsLaddieMassSolutionEnum

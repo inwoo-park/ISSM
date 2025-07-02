@@ -65,6 +65,13 @@ classdef basalforcingsladdie
 		isheat=0;
 		issalt=0;
 		isconvection=0;
+
+		%Solvers
+		isnonlinear =0;
+		maxiter  =0;
+		restol   =0;	
+		reltol   =0;
+		abstol   =0;
 	end % }}}
 	methods
 		function self = basalforcingsladdie(varargin) % {{{
@@ -128,8 +135,15 @@ classdef basalforcingsladdie
 			fielddisplay(self,'ismomentum','boolean to use momentum analysis in Laddie (default: true).');
 			fielddisplay(self,'isheat','boolean to use heat analysis in Laddie (default: true).');
 			fielddisplay(self,'issalt','boolean to use salt analysis in Laddie (default: true).');
-			fielddisplay(self,'isconvection','Choose convection scheme in momentum analysis of plume model. (default: 1). 1, 2, 3 are available');
+			fielddisplay(self,'isconvection','Choose convection scheme in momentum analysis of plume model. (default: 0). 0,1,2,3 are available');
 			fielddisplay(self,'convOption','Option for convection when stratification is unstable. 0: prescribe mindrho. 1: instantaneous convection.');
+
+			disp(sprintf('\n      %s','Convergence criteria:'));
+			fielddisplay(self,'restol','mechanical equilibrium residual convergence criterion');
+			fielddisplay(self,'reltol','velocity relative convergence criterion, NaN: not applied');
+			fielddisplay(self,'abstol','velocity absolute convergence criterion, NaN: not applied');
+			fielddisplay(self,'isnonlinear','0: use solutionsequence_nonliner, 1: solutionsequence_laddie_nonlinear');
+			fielddisplay(self,'maxiter','maximum number of nonlinear iterations');
 		end % }}}
 		function self = extrude(self,md) % {{{
 			self.groundedice_melting_rate=project3d(md,'vector',self.groundedice_melting_rate,'type','node','layer',1); 
@@ -193,7 +207,16 @@ classdef basalforcingsladdie
 			self.isheat=1;
 			self.issalt=1;
 			self.isconvection=2;
-			self.convOption=0;
+			self.convOption=2;
+
+			self.isnonlinear=1;
+			%maximum of non-linear iterations.
+			self.maxiter=500;
+
+			%Convergence criterion: absolute, relative and residual
+			self.restol =1e-4;
+			self.reltol =0.01;
+			self.abstol =0.01;
 		end % }}}
 		function md = checkconsistency(self,md,solution,analyses) % {{{
 
@@ -266,6 +289,14 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.issalt','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.isconvection','values',[0,1,2,3]);
 			md = checkfield(md,'fieldname','basalforcings.convOption','values',[0,1]);
+
+			%Convergence criterion: absolute, relative and residual
+			md = checkfield(md,'fieldname','basalforcings.isnonlinear','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.maxiter','>',0,'numel',1);
+
+			md = checkfield(md,'fieldname','basalforcings.restol','>',0,'numel',1);
+			md = checkfield(md,'fieldname','basalforcings.reltol','>',0,'numel',1);
+			md = checkfield(md,'fieldname','basalforcings.abstol','>',0,'numel',1);
 		end % }}}
 		function marshall(self,prefix,md,fid) % {{{
 
@@ -324,6 +355,12 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','issalt','format','Boolean');
 			WriteData(fid,prefix,'object',self,'fieldname','isconvection','format','Integer');
 			WriteData(fid,prefix,'object',self,'fieldname','convOption','format','Integer');
+
+			WriteData(fid,prefix,'object',self,'fieldname','isnonlinear','format','Integer');
+			WriteData(fid,prefix,'object',self,'fieldname','maxiter','format','Integer');
+			WriteData(fid,prefix,'object',self,'fieldname','abstol','format','Double');
+			WriteData(fid,prefix,'object',self,'fieldname','restol','format','Double');
+			WriteData(fid,prefix,'object',self,'fieldname','reltol','format','Double');
 		end % }}}
 		function savemodeljs(self,fid,modelname) % {{{
 		

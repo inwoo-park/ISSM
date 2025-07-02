@@ -14,6 +14,7 @@ template <class doubletype> class Vector;
 void solutionsequence_thermal_nonlinear(FemModel* femmodel);
 void solutionsequence_hydro_nonlinear(FemModel* femmodel, bool* conv_fail);
 void solutionsequence_shakti_nonlinear(FemModel* femmodel);
+void solutionsequence_laddie_nonlinear(FemModel* femmodel);
 void solutionsequence_glads_nonlinear(FemModel* femmodel);
 void solutionsequence_nonlinear(FemModel* femmodel,bool conserve_loads);
 void solutionsequence_newton(FemModel* femmodel);
