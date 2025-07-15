@@ -301,6 +301,8 @@ void           BasalforcingsLaddieMassAnalysis::InputUpdateFromSolution(IssmDoub
 			Dresidual[i]=Dmin-Dnew[i];
 			Dnew[i]=Dmin;
 		}
+		
+		/*NOTE: Preventing large thickness value*/
 		//if(Dnew[i]>Dmax){
 		//	Dresidual[i]=Dmax-Dnew[i];
 		//	Dnew[i] = Dmax;
@@ -321,6 +323,9 @@ void           BasalforcingsLaddieMassAnalysis::UpdateConstraints(FemModel* femm
 	/*Deal with ocean constraint*/
 	SetActiveNodesLSMx(femmodel);
 
+	int isspc;	
+	femmodel->parameters->FindParam(&isspc,BasalforcingsLaddieIsMassSpcEnum);
+
 	/*Constrain all nodes that are grounded and unconstrain the ones that float*/
 	for(Object* & object : femmodel->elements->objects){
 		Element    *element  = xDynamicCast<Element*>(object);
@@ -340,7 +345,7 @@ void           BasalforcingsLaddieMassAnalysis::UpdateConstraints(FemModel* femm
 			else{
 				/*Apply plume thickness as zero value along grounding line*/
 				node->Deactivate();
-				if(true) node->ApplyConstraint(0,Dmin);
+				if(isspc==1) node->ApplyConstraint(0,Dmin);
 			}
 		}
 		xDelete<IssmDouble>(mask);
@@ -439,6 +444,7 @@ ElementMatrix* BasalforcingsLaddieMassAnalysis::CreateKMatrixCG(Element* element
 			  break;
 			case 1:
 				/* Artificial diffusion {{{*/
+				D_scalar=dt*gauss->weight*Jdet;
 				factor=D_scalar*h/2.0;
 				//vx_input->GetInputValue(&vx,gauss);
 				//vy_input->GetInputValue(&vy,gauss);
