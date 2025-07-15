@@ -36,7 +36,6 @@ void bmb_core(FemModel* femmodel){
 		/*Sub-ice shelf melting with LADDIE simulation*/
 		int        timestepping; /*check TimeSteppingEnum*/
 		int        step=0;
-		int        stabilization;
 		int        stabilizationMomentum;
 		bool       ismass, ismomentum, isheat, issalt;
 		IssmDouble time=0.0;
@@ -58,7 +57,7 @@ void bmb_core(FemModel* femmodel){
 		femmodel->parameters->FindParam(&ismomentum,BasalforcingsLaddieIsMomentumEnum);
 		femmodel->parameters->FindParam(&isheat,BasalforcingsLaddieIsHeatEnum);
 		femmodel->parameters->FindParam(&issalt,BasalforcingsLaddieIsSaltEnum);
-		femmodel->parameters->FindParam(&stabilization,BasalforcingsLaddieStabilizationMomentumEnum);
+		femmodel->parameters->FindParam(&stabilizationMomentum,BasalforcingsLaddieStabilizationMomentumEnum);
 
 		femmodel->parameters->FindParam(&isnonlinear,BasalforcingsIsNonlinearEnum);
 
@@ -131,9 +130,15 @@ void bmb_core(FemModel* femmodel){
 				if(VerboseSolution()) _printf0_("   computing Laddie momentum equation\n");
 				femmodel->SetCurrentConfiguration(BasalforcingsLaddieMomentumAnalysisEnum);
 				if(stabilizationMomentum==4){
+					if(VerboseSolution()) _printf0_("   -- stabiliation = 4\n");
 					solutionsequence_fct(femmodel);
+				}else if(stabilizationMomentum==6){
+					/*RK2 (Runge-Kutta2)*/
+					if(VerboseSolution()) _printf0_("   -- RK2 method\n");
+					solutionsequence_laddie_rk(femmodel);	
 				}
 				else{
+					if(VerboseSolution()) _printf0_("   -- stabilization otherwise\n");
 					//solutionsequence_newton(femmodel);
 					if(isnonlinear==0) solutionsequence_nonlinear(femmodel,true);
 					else if(isnonlinear==1) solutionsequence_laddie_nonlinear(femmodel);
