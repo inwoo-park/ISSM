@@ -286,6 +286,7 @@ issm_sources += \
 	./cores/smb_core.cpp \
 	./cores/bmb_core.cpp \
 	./solutionsequences/solutionsequence_laddie_nonlinear.cpp \
+	./solutionsequences/solutionsequence_laddie_rk.cpp \
 	./cores/debris_core.cpp \
 	./solutionsequences/solutionsequence_thermal_nonlinear.cpp \
 	./modules/ControlInputSetGradientx/ControlInputSetGradientx.cpp \
