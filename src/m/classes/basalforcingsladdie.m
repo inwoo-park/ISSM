@@ -198,7 +198,7 @@ classdef basalforcingsladdie
 
 			%Stability for momentum equation
 			self.vcut = 1.414; % unit: m s-1
-			self.stabilization=1;
+			self.stabilization=2;
 			self.stabilizationMomentum=1;
 
 			%Anlayses
@@ -206,12 +206,12 @@ classdef basalforcingsladdie
 			self.ismomentum=1;
 			self.isheat=1;
 			self.issalt=1;
-			self.isconvection=2;
-			self.convOption=2;
+			self.isconvection=1;
+			self.convOption=1;
 
 			self.isnonlinear=1;
 			%maximum of non-linear iterations.
-			self.maxiter=500;
+			self.maxiter=1000;
 
 			%Convergence criterion: absolute, relative and residual
 			self.restol =1e-4;
@@ -281,7 +281,7 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.vcut','numel',1,'NaN',1,'Inf',1,'>',0,'<',1e+10);
 
 			md = checkfield(md,'fieldname','basalforcings.stabilization','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,5]);
-			md = checkfield(md,'fieldname','basalforcings.stabilizationMomentum','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,3,5]);
+			md = checkfield(md,'fieldname','basalforcings.stabilizationMomentum','numel',1,'NaN',1,'Inf',1,'values',[0,1,2,3,5,6]);
 
 			md = checkfield(md,'fieldname','basalforcings.ismass','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.ismomentum','values',[0,1]);
