@@ -433,20 +433,20 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 		}/*}}}*/
 		else if(stabilization==1){/* Artificial diffusion {{{*/
 			/*Artifical diffusion: */
-			vx_input->GetInputValue(&vx,gauss);
-			vy_input->GetInputValue(&vy,gauss);
-			thickness_input->GetInputValue(&thickness,gauss);
-			//vx_input->GetInputAverage(&vx);
-			//vy_input->GetInputAverage(&vy);
-			//thickness_input->GetInputAverage(&thickness);
+			//vx_input->GetInputValue(&vx,gauss);
+			//vy_input->GetInputValue(&vy,gauss);
+			//thickness_input->GetInputValue(&thickness,gauss);
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			thickness_input->GetInputAverage(&thickness);
 
 			factor=D_scalar*h/2.0*thickness;
-			D[0][0]=factor*fabs(vx); D[0][1]=0.0;
-			D[2][0]=0.0;             D[1][1]=factor*fabs(vy);
+			D[0][0]=fabs(vx); D[0][1]=0.0;
+			D[2][0]=0.0;             D[1][1]=fabs(vy);
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j] += (
+					Ke->values[i*numnodes+j] += factor*(
 								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
 								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j])
 								);
@@ -455,9 +455,12 @@ ElementMatrix* BasalforcingsLaddieSaltAnalysis::CreateKMatrixCG(Element* element
 		}/*}}}*/
 		else if(stabilization==2){/* Stream upwind {{{*/
 			_assert_(dim==2);
-			vx_input->GetInputAverage(&vx);
-			vy_input->GetInputAverage(&vy);
-			thickness_input->GetInputAverage(&thickness);
+			//vx_input->GetInputAverage(&vx);
+			//vy_input->GetInputAverage(&vy);
+			//thickness_input->GetInputAverage(&thickness);
+			vx_input->GetInputValue(&vx,gauss);
+			vy_input->GetInputValue(&vy,gauss);
+			thickness_input->GetInputValue(&thickness,gauss);
 
 			/*Streamline upwind*/
 			vel=sqrt(vx*vx+vy*vy)+1.e-14;
