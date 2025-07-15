@@ -383,6 +383,7 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 	Node       *node;
 	Element    *element;
 	int         numnodes;
+	int         isspc;
 	IssmDouble *mask;
 	IssmDouble *mask_ice;
 	IssmDouble *ls_active;
@@ -394,6 +395,7 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 
 	/*Find domain type*/
 	femmodel->parameters->FindParam(&domaintype,DomainTypeEnum);
+	femmodel->parameters->FindParam(&isspc,BasalforcingsLaddieIsMomentumSpcEnum);
 
 	/*Constrain all nodes that are grounded and unconstrain the ones that float*/
 	for(Object* & object : femmodel->elements->objects){
@@ -425,10 +427,12 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 			}
 
 			/*NOTE: apply zero velocity at ice front position?*/
-			if(mask_ice[in]>0.0 & mask[in]<0.0 && ls_active[in]==1.0){
-				node->Deactivate();
-				node->ApplyConstraint(0,0.0);
-				node->ApplyConstraint(1,0.0);
+			if(isspc==1){
+				if(mask_ice[in]>0.0 & mask[in]<0.0 && ls_active[in]==1.0){
+					node->Deactivate();
+					node->ApplyConstraint(0,0.0);
+					node->ApplyConstraint(1,0.0);
+				}
 			}
 		}
 

@@ -266,7 +266,14 @@ void           BasalforcingsLaddieSaltAnalysis::InputUpdateFromSolution(IssmDoub
 	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
 }/*}}}*/
 void           BasalforcingsLaddieSaltAnalysis::UpdateConstraints(FemModel* femmodel){/*{{{*/
+
+	/*Deal with ocean constraint*/
 	SetActiveNodesLSMx(femmodel);
+
+	int isspc;
+
+	/*Retrieve all parameters: */
+	femmodel->parameters->FindParam(&isspc,BasalforcingsLaddieIsSaltSpcEnum);
 
 	/*Constrain all nodes that are grounded and unconstrain the ones that float*/
 	for(Object* & object : femmodel->elements->objects){
@@ -288,7 +295,7 @@ void           BasalforcingsLaddieSaltAnalysis::UpdateConstraints(FemModel* femm
 			else{
 				/*Apply plume salt as zero value along grounding line*/
 				node->Deactivate();
-				if(true) node->ApplyConstraint(0,Sa[in]);
+				if(isspc==1) node->ApplyConstraint(0,Sa[in]);
 			}
 		}
 		xDelete<IssmDouble>(mask);

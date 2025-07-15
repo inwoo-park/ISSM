@@ -124,6 +124,10 @@
 	BasalforcingsLaddieIsMomentumEnum
 	BasalforcingsLaddieIsHeatEnum
 	BasalforcingsLaddieIsSaltEnum
+	BasalforcingsLaddieIsMassSpcEnum
+	BasalforcingsLaddieIsMomentumSpcEnum
+	BasalforcingsLaddieIsHeatSpcEnum
+	BasalforcingsLaddieIsSaltSpcEnum
 	BasalforcingsLaddieIsConvectionEnum
 	BasalforcingsLaddieConvOptionEnum
 	BasalforcingsLaddieKparamEnum
@@ -3960,6 +3964,10 @@ function EnumToString(enum::IssmEnum)
 	if(enum==BasalforcingsLaddieIsMomentumEnum) return "BasalforcingsLaddieIsMomentum" end
 	if(enum==BasalforcingsLaddieIsHeatEnum) return "BasalforcingsLaddieIsHeat" end
 	if(enum==BasalforcingsLaddieIsSaltEnum) return "BasalforcingsLaddieIsSalt" end
+	if(enum==BasalforcingsLaddieIsMassSpcEnum) return "BasalforcingsLaddieIsMassSpc" end
+	if(enum==BasalforcingsLaddieIsMomentumSpcEnum) return "BasalforcingsLaddieIsMomentumSpc" end
+	if(enum==BasalforcingsLaddieIsHeatSpcEnum) return "BasalforcingsLaddieIsHeatSpc" end
+	if(enum==BasalforcingsLaddieIsSaltSpcEnum) return "BasalforcingsLaddieIsSaltSpc" end
 	if(enum==BasalforcingsLaddieIsConvectionEnum) return "BasalforcingsLaddieIsConvection" end
 	if(enum==BasalforcingsLaddieConvOptionEnum) return "BasalforcingsLaddieConvOption" end
 	if(enum==BasalforcingsLaddieKparamEnum) return "BasalforcingsLaddieKparam" end
@@ -7796,6 +7804,10 @@ function StringToEnum(name::String)
 	if(name=="BasalforcingsLaddieIsMomentum") return BasalforcingsLaddieIsMomentumEnum  end
 	if(name=="BasalforcingsLaddieIsHeat") return BasalforcingsLaddieIsHeatEnum  end
 	if(name=="BasalforcingsLaddieIsSalt") return BasalforcingsLaddieIsSaltEnum  end
+	if(name=="BasalforcingsLaddieIsMassSpc") return BasalforcingsLaddieIsMassSpcEnum  end
+	if(name=="BasalforcingsLaddieIsMomentumSpc") return BasalforcingsLaddieIsMomentumSpcEnum  end
+	if(name=="BasalforcingsLaddieIsHeatSpc") return BasalforcingsLaddieIsHeatSpcEnum  end
+	if(name=="BasalforcingsLaddieIsSaltSpc") return BasalforcingsLaddieIsSaltSpcEnum  end
 	if(name=="BasalforcingsLaddieIsConvection") return BasalforcingsLaddieIsConvectionEnum  end
 	if(name=="BasalforcingsLaddieConvOption") return BasalforcingsLaddieConvOptionEnum  end
 	if(name=="BasalforcingsLaddieKparam") return BasalforcingsLaddieKparamEnum  end

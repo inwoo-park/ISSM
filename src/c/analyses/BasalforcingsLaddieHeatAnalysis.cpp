@@ -164,6 +164,10 @@ void           BasalforcingsLaddieHeatAnalysis::InputUpdateFromSolution(IssmDoub
 		/*Check solution*/
 		if(xIsNan<IssmDouble>(Tnew[i])) _error_("NaN found in solution vector");
 		if(xIsInf<IssmDouble>(Tnew[i])) _error_("Inf found in solution vector");
+		
+		/*NOTE: Preventing oscillation in temperature*/
+		//Tnew[i]=min(Tnew[i], 10.0);
+		//Tnew[i]=max(Tnew[i],-10.0);
 	}
 	element->AddBasalInput(BasalforcingsLaddieTEnum,Tnew,element->GetElementType());
 
@@ -176,6 +180,11 @@ void           BasalforcingsLaddieHeatAnalysis::UpdateConstraints(FemModel* femm
 
 	/*Deal with ocean constraint*/
 	SetActiveNodesLSMx(femmodel);
+
+	int isspc;
+
+	/*Retrieve all parameters: */
+	femmodel->parameters->FindParam(&isspc,BasalforcingsLaddieIsHeatSpcEnum);
 
 	/*Constrain all nodes that are grounded and unconstrain the ones that float*/
 	for(Object* & object : femmodel->elements->objects){
@@ -197,7 +206,7 @@ void           BasalforcingsLaddieHeatAnalysis::UpdateConstraints(FemModel* femm
 			else{
 				/*Apply plume salt as zero value along grounding line*/
 				node->Deactivate();
-				if(true) node->ApplyConstraint(0,Ta[in]);
+				if(isspc==1) node->ApplyConstraint(0,Ta[in]);
 			}
 		}
 		xDelete<IssmDouble>(mask);
@@ -334,20 +343,20 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 		}/*}}}*/
 		else if(stabilization==1){/* Artificial diffusion {{{*/
 			/*Artifical diffusion: */
-			vx_input->GetInputValue(&vx,gauss);
-			vy_input->GetInputValue(&vy,gauss);
-			thickness_input->GetInputValue(&thickness,gauss);
-			//vx_input->GetInputAverage(&vx);
-			//vy_input->GetInputAverage(&vy);
-			//thickness_input->GetInputAverage(&thickness);
+			//vx_input->GetInputValue(&vx,gauss);
+			//vy_input->GetInputValue(&vy,gauss);
+			//thickness_input->GetInputValue(&thickness,gauss);
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			thickness_input->GetInputAverage(&thickness);
 
 			factor=D_scalar*h/2.0*thickness;
-			D[0][0]=factor*fabs(vx); D[0][1]=0.0;
-			D[1][0]=0.0;             D[1][1]=factor*fabs(vy);
+			D[0][0]=fabs(vx); D[0][1]=0.0;
+			D[1][0]=0.0;      D[1][1]=fabs(vy);
 
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
-					Ke->values[i*numnodes+j] += (
+					Ke->values[i*numnodes+j] += factor*(
 								dbasis[0*numnodes+i] *(D[0][0]*dbasis[0*numnodes+j] + D[0][1]*dbasis[1*numnodes+j]) +
 								dbasis[1*numnodes+i] *(D[1][0]*dbasis[0*numnodes+j] + D[1][1]*dbasis[1*numnodes+j])
 								);
@@ -356,9 +365,12 @@ ElementMatrix* BasalforcingsLaddieHeatAnalysis::CreateKMatrixCG(Element* element
 		}/*}}}*/
 		else if(stabilization==2){/* Stream upwind {{{*/
 			_assert_(dim==2);
-			vx_input->GetInputAverage(&vx);
-			vy_input->GetInputAverage(&vy);
-			thickness_input->GetInputAverage(&thickness);
+			vx_input->GetInputValue(&vx,gauss);
+			vy_input->GetInputValue(&vy,gauss);
+			thickness_input->GetInputValue(&thickness,gauss);
+			//vx_input->GetInputAverage(&vx);
+			//vy_input->GetInputAverage(&vy);
+			//thickness_input->GetInputAverage(&thickness);
 
 			/*Streamline upwind*/
 			vel=sqrt(vx*vx+vy*vy)+1.e-14;

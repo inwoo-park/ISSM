@@ -34,14 +34,23 @@ class BasalforcingsLaddieMomentumAnalysis: public Analysis{
 		/*Momentum: CG method*/
 		ElementMatrix* CreateKMatrixCG(Element* element);
 		ElementVector* CreatePVectorCG(Element* element);
+		ElementVector* CreatePVectorCGLinearize(Element* element);
 
 		/*Flux correction transport (FCT)*/
 		ElementMatrix* CreateFctKMatrix(Element* element);
 		ElementMatrix* CreateMassMatrix(Element* element);
 		ElementVector* CreateFctPVector(Element* element);
 
+
 		void           FctKMatrix(Matrix<IssmDouble>** pKff,Matrix<IssmDouble>** pKfs,FemModel* femmodel);
 		void           FctPVector(Vector<IssmDouble>** ppf,FemModel* femmodel);
 		void           MassMatrix(Matrix<IssmDouble>** pMff,FemModel* femmodel);
+
+		/*Runge-Kutta scheme*/
+		ElementMatrix* CreateKMatrixRk(Element* element);
+		ElementVector* CreatePVectorRk(Element* element);
+		void           RkKMatrix(Matrix<IssmDouble>** pKff,FemModel* femmodel);
+		void           RkMassMatrix(Matrix<IssmDouble>** pMff,FemModel* femmodel);
+		void           RkPVector(Vector<IssmDouble>** ppf,FemModel* femmodel);
 };
 #endif

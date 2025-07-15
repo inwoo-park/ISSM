@@ -164,6 +164,11 @@ void BasalforcingsLaddieMassAnalysis::UpdateParameters(Parameters* parameters,Io
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isconvection",BasalforcingsLaddieIsConvectionEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.convOption",BasalforcingsLaddieConvOptionEnum));
 
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismassspc",BasalforcingsLaddieIsMassSpcEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.ismomentumspc",BasalforcingsLaddieIsMomentumSpcEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.isheatspc",BasalforcingsLaddieIsHeatSpcEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.basalforcings.issaltspc",BasalforcingsLaddieIsSaltSpcEnum));
+
 	/*Deal with forcing depth: */
 	iomodel->FetchData(&transparam,&M,&N,"md.basalforcings.forcing_depth");
 	_assert_(M==1); _assert_(N>=1);

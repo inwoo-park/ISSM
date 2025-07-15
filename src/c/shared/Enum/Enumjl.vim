@@ -128,6 +128,10 @@ syn keyword juliaConstC BasalforcingsLaddieIsMassEnum
 syn keyword juliaConstC BasalforcingsLaddieIsMomentumEnum
 syn keyword juliaConstC BasalforcingsLaddieIsHeatEnum
 syn keyword juliaConstC BasalforcingsLaddieIsSaltEnum
+syn keyword juliaConstC BasalforcingsLaddieIsMassSpcEnum
+syn keyword juliaConstC BasalforcingsLaddieIsMomentumSpcEnum
+syn keyword juliaConstC BasalforcingsLaddieIsHeatSpcEnum
+syn keyword juliaConstC BasalforcingsLaddieIsSaltSpcEnum
 syn keyword juliaConstC BasalforcingsLaddieIsConvectionEnum
 syn keyword juliaConstC BasalforcingsLaddieConvOptionEnum
 syn keyword juliaConstC BasalforcingsLaddieKparamEnum

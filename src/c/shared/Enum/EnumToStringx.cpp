@@ -137,6 +137,10 @@ const char* EnumToStringx(int en){
 		case BasalforcingsLaddieIsMomentumEnum : return "BasalforcingsLaddieIsMomentum";
 		case BasalforcingsLaddieIsHeatEnum : return "BasalforcingsLaddieIsHeat";
 		case BasalforcingsLaddieIsSaltEnum : return "BasalforcingsLaddieIsSalt";
+		case BasalforcingsLaddieIsMassSpcEnum : return "BasalforcingsLaddieIsMassSpc";
+		case BasalforcingsLaddieIsMomentumSpcEnum : return "BasalforcingsLaddieIsMomentumSpc";
+		case BasalforcingsLaddieIsHeatSpcEnum : return "BasalforcingsLaddieIsHeatSpc";
+		case BasalforcingsLaddieIsSaltSpcEnum : return "BasalforcingsLaddieIsSaltSpc";
 		case BasalforcingsLaddieIsConvectionEnum : return "BasalforcingsLaddieIsConvection";
 		case BasalforcingsLaddieConvOptionEnum : return "BasalforcingsLaddieConvOption";
 		case BasalforcingsLaddieKparamEnum : return "BasalforcingsLaddieKparam";

@@ -66,6 +66,12 @@ classdef basalforcingsladdie
 		issalt=0;
 		isconvection=0;
 
+		%spc boundary
+		ismassspc=0;
+		ismomentumspc=0;
+		isheatspc=0;
+		issaltspc=0;
+
 		%Solvers
 		isnonlinear =0;
 		maxiter  =0;
@@ -138,6 +144,12 @@ classdef basalforcingsladdie
 			fielddisplay(self,'isconvection','Choose convection scheme in momentum analysis of plume model. (default: 0). 0,1,2,3 are available');
 			fielddisplay(self,'convOption','Option for convection when stratification is unstable. 0: prescribe mindrho. 1: instantaneous convection.');
 
+			fielddisplay(self,'ismassspc','Option for specific thickenss value along grounding line with Dmin value. 0: turn-off, 1: turn-on');
+			fielddisplay(self,'ismomentumspc','Option for vx,vy with zeros values along grounding line.');
+			fielddisplay(self,'isheat','Set ambient temperature along grounding line. 0: All Neumann, 1: ambient temperature along grounding line.');
+			fielddisplay(self,'issalt','Set ambient salinity along grounding line. 0: all neumann, 1: ambient salinity along grounding line.');
+
+
 			disp(sprintf('\n      %s','Convergence criteria:'));
 			fielddisplay(self,'restol','mechanical equilibrium residual convergence criterion');
 			fielddisplay(self,'reltol','velocity relative convergence criterion, NaN: not applied');
@@ -208,6 +220,11 @@ classdef basalforcingsladdie
 			self.issalt=1;
 			self.isconvection=1;
 			self.convOption=1;
+
+			self.ismassspc=0;
+			self.ismomentumspc=0;
+			self.isheatspc=0;
+			self.issaltspc=0;
 
 			self.isnonlinear=1;
 			%maximum of non-linear iterations.
@@ -290,6 +307,11 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.isconvection','values',[0,1,2,3]);
 			md = checkfield(md,'fieldname','basalforcings.convOption','values',[0,1]);
 
+			md = checkfield(md,'fieldname','basalforcings.ismassspc','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.ismomentumspc','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.isheatspc','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.issaltspc','values',[0,1]);
+
 			%Convergence criterion: absolute, relative and residual
 			md = checkfield(md,'fieldname','basalforcings.isnonlinear','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.maxiter','>',0,'numel',1);
@@ -355,6 +377,11 @@ classdef basalforcingsladdie
 			WriteData(fid,prefix,'object',self,'fieldname','issalt','format','Boolean');
 			WriteData(fid,prefix,'object',self,'fieldname','isconvection','format','Integer');
 			WriteData(fid,prefix,'object',self,'fieldname','convOption','format','Integer');
+
+			WriteData(fid,prefix,'object',self,'fieldname','ismassspc','format','Integer');
+			WriteData(fid,prefix,'object',self,'fieldname','ismomentumspc','format','Integer');
+			WriteData(fid,prefix,'object',self,'fieldname','isheatspc','format','Integer');
+			WriteData(fid,prefix,'object',self,'fieldname','issaltspc','format','Integer');
 
 			WriteData(fid,prefix,'object',self,'fieldname','isnonlinear','format','Integer');
 			WriteData(fid,prefix,'object',self,'fieldname','maxiter','format','Integer');
