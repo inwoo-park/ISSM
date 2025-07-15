@@ -722,7 +722,8 @@ void LaddieMeltrateThreeEquationx(FemModel* femmodel){ /*{{{*/
 						 "Ctil = " << Ctil << "\n" <<  
 						 "gammaT= " << gammaT[iv] << "\n" << 
 						 "gammaS= " << gammaS[iv] << "\n" << 
-						 "melt= " << melt[iv]<< "\n"
+						 "melt= " << melt[iv] << "\n"
+						 "Tb  = " << Tb[iv] << "\n"
 						 );
 			}
 			if (xIsInf<IssmDouble>(Tb[iv])){
