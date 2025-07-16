@@ -351,17 +351,10 @@ void           BasalforcingsLaddieMomentumAnalysis::InputUpdateFromSolution(Issm
 		}
 	}
 
-	/*Cut for stability*/
-	//for(i=0;i<numnodes;i++){
-	//	vx[i] = min(vx[i], vcut);
-	//	vx[i] = max(vx[i], -vcut);
-
-	//	vy[i] = min(vy[i], vcut);
-	//	vy[i] = max(vy[i], -vcut);
-	//}
-
-
 	/*Add vx and vy as inputs to the tria element: */
+	//element->AddBasalInput(BasalforcingsLaddieVxEnum,vx,P1Enum);
+	//element->AddBasalInput(BasalforcingsLaddieVyEnum,vy,P1Enum);
+	//element->AddBasalInput(BasalforcingsLaddieVelEnum,vel,P1Enum);
 	element->AddBasalInput(BasalforcingsLaddieVxEnum,vx,element->GetElementType());
 	element->AddBasalInput(BasalforcingsLaddieVyEnum,vy,element->GetElementType());
 	element->AddBasalInput(BasalforcingsLaddieVelEnum,vel,element->GetElementType());
@@ -422,12 +415,14 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 			}else{
 				/*Apply plume vector (vx, vy) as zero value along grounding line*/
 				node->Deactivate();
-				//node->ApplyConstraint(0,spcvx); /*for vx*/
-				//node->ApplyConstraint(1,spcvy); /*for vy*/
+				if(isspc==1){
+					node->ApplyConstraint(0,spcvx); /*for vx*/
+					node->ApplyConstraint(1,spcvy); /*for vy*/
+				}
 			}
 
 			/*NOTE: apply zero velocity at ice front position?*/
-			if(isspc==1){
+			if(isspc==2){
 				if(mask_ice[in]>0.0 & mask[in]<0.0 && ls_active[in]==1.0){
 					node->Deactivate();
 					node->ApplyConstraint(0,0.0);
@@ -676,7 +671,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 								+ vx*dbasis[1*numnodes+j]
 								);
 
-					Ke->values[(2*i+1)*2*numnodes+2*j+1] += D_scalar*thickness*basis[i]*(
+					Ke->values[(2*i+1)*2*numnodes+2*j] += D_scalar*thickness*basis[i]*(
 								+ vy*basis[0*numnodes+j]
 								);
 
@@ -741,8 +736,8 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		}
 
 		/*NOTE: For stability of stiffness matrix, the friction and coriolis terms are moved to Pvector section*/
-		/*Friction term: Cd |u| (u, v)*/
-		if(false){ /* Friction term {{{ */
+		/*Drag term: Cd |u| (u, v)*/
+		if(true){ /* Friction term {{{ */
 			factor = gauss->weight*Jdet*Cd*vel*dt;
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
@@ -989,12 +984,29 @@ ElementVector* BasalforcingsLaddieMomentumAnalysis::CreatePVectorCG(Element* ele
 		factor_buoyancy = Jdet*gauss->weight*dt*(g*thickness*thickness/2/rho0);
 		factor_pgradient= Jdet*gauss->weight*dt*(ga*thickness);
 		factor_dentr    = Jdet*gauss->weight*dt*dentr;
-		factor_Cd       = Jdet*gauss->weight*dt*Cd*vel;
-		factor_cori     = Jdet*gauss->weight*dt*thickness;
 
+		/*Forcing term: */
 		for(int i=0;i<numnodes;i++){
-			pe->values[i*2+0]+=basis[i]*(factor_transient*thickness*vx - factor_buoyancy*ddrhoadx + factor_pgradient*(dzbdx-dthkdx) - factor_dentr*vx - factor_Cd*vx + factor_cori*vy);
-			pe->values[i*2+1]+=basis[i]*(factor_transient*thickness*vy - factor_buoyancy*ddrhoady + factor_pgradient*(dzbdy-dthkdy) - factor_dentr*vy - factor_Cd*vy - factor_cori*vx);
+			pe->values[i*2+0]+=basis[i]*(factor_transient*thickness*vx - factor_buoyancy*ddrhoadx + factor_pgradient*(dzbdx-dthkdx) - factor_dentr*vx);
+			pe->values[i*2+1]+=basis[i]*(factor_transient*thickness*vy - factor_buoyancy*ddrhoady + factor_pgradient*(dzbdy-dthkdy) - factor_dentr*vy);
+		}
+
+		/*Drag force...: */
+		if(false){
+			factor_Cd = Jdet*gauss->weight*dt*Cd*vel;
+			for(int i=0;i<numnodes;i++){
+				pe->values[i*2+0]+=basis[i]*(-factor_Cd*vx);
+				pe->values[i*2+1]+=basis[i]*(-factor_Cd*vy);
+			}
+		}
+
+		/*Coriolis forcing: */
+		if(true){
+			factor_cori = Jdet*gauss->weight*dt*thickness;
+			for(int i=0;i<numnodes;i++){
+				pe->values[i*2+0]+=basis[i]*(+factor_cori*vy);
+				pe->values[i*2+1]+=basis[i]*(-factor_cori*vx);
+			}
 		}
 	}
 
