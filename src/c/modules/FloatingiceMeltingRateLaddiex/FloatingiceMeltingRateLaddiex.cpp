@@ -341,7 +341,7 @@ void UpdateLaddieDensityAndEffectiveGravityx(FemModel* femmodel){/*{{{*/
 		Element* element = xDynamicCast<Element*>(object);
 		int      numvertices = element->GetNumberOfVertices();
 
-		/*Set melt to 0 if non floating*/
+		/*Set DRho and ga values to 0 if non-floating*/
 		if(!element->IsIceInElement() || !element->IsAllFloating() || !element->IsOnBase()){
 			values = xNewZeroInit<IssmDouble>(numvertices);
 			for(int i=0; i<numvertices;i++) values[i] = mindrho;
