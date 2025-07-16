@@ -380,7 +380,6 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 	IssmDouble *mask;
 	IssmDouble *mask_ice;
 	IssmDouble *ls_active;
-	IssmDouble  spcvx=0.0, spcvy=0.0;
 
 	IssmDouble *xyz_list=NULL;
 	IssmDouble  xyz_front[2][3];
@@ -416,8 +415,9 @@ void           BasalforcingsLaddieMomentumAnalysis::UpdateConstraints(FemModel* 
 				/*Apply plume vector (vx, vy) as zero value along grounding line*/
 				node->Deactivate();
 				if(isspc==1){
-					node->ApplyConstraint(0,spcvx); /*for vx*/
-					node->ApplyConstraint(1,spcvy); /*for vy*/
+					/*no-slip boundary condition*/
+					node->ApplyConstraint(0,0.0); /*for vx*/
+					node->ApplyConstraint(1,0.0); /*for vy*/
 				}
 			}
 
@@ -615,7 +615,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		factor=gauss->weight*Jdet;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
-				Ke->values[2*i*2*numnodes+2*j]       += factor*thickness*basis[i]*basis[j];
+				Ke->values[2*i*2*numnodes+2*j+0]       += factor*thickness*basis[i]*basis[j];
 				Ke->values[(2*i+1)*2*numnodes+2*j+1] += factor*thickness*basis[i]*basis[j];
 			}
 		}
@@ -624,7 +624,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		D_scalar=gauss->weight*Jdet*dt;
 		if(isconvection==0){
 			/*NOTE: Nothing to be done*/
-			//_printf0_("Momentum: Nothing to be done in convection term.\n");
+			_printf0_("Momentum: Nothing to be done in convection term.\n");
 		}
 		else if(isconvection==1){
 			/*
@@ -662,7 +662,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
 					/*term: 2uD dudx + uD dvdy + vD dudy*/
-					Ke->values[2*i*2*numnodes+2*j] += D_scalar*thickness*basis[i]*(
+					Ke->values[2*i*2*numnodes+2*j+0] += D_scalar*thickness*basis[i]*(
 								+ 2*vx*dbasis[0*numnodes+j] 
 								+ vy*dbasis[1*numnodes+j]
 								);
@@ -671,7 +671,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 								+ vx*dbasis[1*numnodes+j]
 								);
 
-					Ke->values[(2*i+1)*2*numnodes+2*j] += D_scalar*thickness*basis[i]*(
+					Ke->values[(2*i+1)*2*numnodes+2*j+0] += D_scalar*thickness*basis[i]*(
 								+ vy*basis[0*numnodes+j]
 								);
 
@@ -692,7 +692,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
 					/*term: 2uD dudx + uD dvdy + vD dudy*/
-					Ke->values[2*i*2*numnodes+2*j] += D_scalar*thickness*basis[i]*(
+					Ke->values[2*i*2*numnodes+2*j+0] += D_scalar*thickness*basis[i]*(
 								+ 2*dvxdx*basis[j]
 								+ 2*vx*dbasis[0*numnodes+j] 
 								+ dvydy*basis[j]
@@ -704,7 +704,7 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 								+ dvxdy*basis[j]
 								);
 
-					Ke->values[(2*i+1)*2*numnodes+2*j+1] += D_scalar*thickness*basis[i]*(
+					Ke->values[(2*i+1)*2*numnodes+2*j+0] += D_scalar*thickness*basis[i]*(
 								+ vy*dbasis[0*numnodes+j]
 								+ dvydy*basis[j]
 								);
@@ -807,16 +807,15 @@ ElementMatrix* BasalforcingsLaddieMomentumAnalysis::CreateKMatrixCG(Element* ele
 		else if(stabilization==2){ /*TODO: Stream-upwind scheme {{{ */
 			/*Stream-upwind scheme: */
 			/*TODO: Stream-upwind scheme should be fixed in future. This scheme is not working*/
-			vx_input->GetInputValue(&vx,gauss);
-			vy_input->GetInputValue(&vy,gauss);
-			thickness_input->GetInputValue(&thickness,gauss);
+			//vx_input->GetInputValue(&vx,gauss);
+			//vy_input->GetInputValue(&vy,gauss);
+			//thickness_input->GetInputValue(&thickness,gauss);
 
-			//vx_input->GetInputAverage(&vx);
-			//vy_input->GetInputAverage(&vy);
-			//thickness_input->GetInputAverage(&thickness);
+			vx_input->GetInputAverage(&vx);
+			vy_input->GetInputAverage(&vy);
+			thickness_input->GetInputAverage(&thickness);
 
 			factor = gauss->weight*Jdet*dt*thickness;
-			//D_scalar = gauss->weight*Jdet*dt*thickness_avg;
 			vel = sqrt(vx*vx* + vy*vy) + 1e-14;
 			tau = h/(2.0*vel);
 
