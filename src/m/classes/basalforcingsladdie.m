@@ -146,8 +146,8 @@ classdef basalforcingsladdie
 
 			fielddisplay(self,'ismassspc','Option for specific thickenss value along grounding line with Dmin value. 0: turn-off, 1: turn-on');
 			fielddisplay(self,'ismomentumspc','Option for vx,vy with zeros values along grounding line.');
-			fielddisplay(self,'isheat','Set ambient temperature along grounding line. 0: All Neumann, 1: ambient temperature along grounding line.');
-			fielddisplay(self,'issalt','Set ambient salinity along grounding line. 0: all neumann, 1: ambient salinity along grounding line.');
+			fielddisplay(self,'isheatspc','Set ambient temperature along grounding line. 0: All Neumann, 1: ambient temperature along grounding line.');
+			fielddisplay(self,'issaltspc','Set ambient salinity along grounding line. 0: all neumann, 1: ambient salinity along grounding line.');
 
 
 			disp(sprintf('\n      %s','Convergence criteria:'));
@@ -308,7 +308,7 @@ classdef basalforcingsladdie
 			md = checkfield(md,'fieldname','basalforcings.convOption','values',[0,1]);
 
 			md = checkfield(md,'fieldname','basalforcings.ismassspc','values',[0,1]);
-			md = checkfield(md,'fieldname','basalforcings.ismomentumspc','values',[0,1]);
+			md = checkfield(md,'fieldname','basalforcings.ismomentumspc','values',[0,1,2]);
 			md = checkfield(md,'fieldname','basalforcings.isheatspc','values',[0,1]);
 			md = checkfield(md,'fieldname','basalforcings.issaltspc','values',[0,1]);
 
