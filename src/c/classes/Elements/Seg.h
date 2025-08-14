@@ -159,6 +159,7 @@ class Seg: public Element,public ElementHook,public SegRef{
 		IssmDouble  TotalSmb(bool scaled){_error_("not implemented yet");};
 		IssmDouble  TotalSmbMelt(bool scaled){_error_("not implemented yet");};
 		IssmDouble  TotalSmbRefreeze(bool scaled){_error_("not implemented yet");};
+		IssmDouble  TotalSmbSublimation(bool scaled){_error_("not implemented yet");};
 		void        Update(Inputs* inputs,int index, IoModel* iomodel,int analysis_counter,int analysis_type,int finitelement){_error_("not implemented yet");};
 		void        UpdateConstraintsExtrudeFromBase(){_error_("not implemented");};
 		void        UpdateConstraintsExtrudeFromTop(){_error_("not implemented");};

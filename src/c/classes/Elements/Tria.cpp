@@ -6227,6 +6227,72 @@ IssmDouble Tria::TotalSmbRefreeze(bool scaled){/*{{{*/
 	return Total_Refreeze;
 }
 /*}}}*/
+IssmDouble Tria::TotalSmbSublimation(bool scaled){/*{{{*/
+
+	/*The sublimation [kg yr-1] of one element is area[m2] * sublimation [kg m^-2 yr^-1]*/
+	IssmDouble base,sublimation,rho_ice,scalefactor;
+	IssmDouble Total_SmbSublimation=0;
+	IssmDouble lsf[NUMVERTICES];
+	IssmDouble xyz_list[NUMVERTICES][3];
+
+	/*Get material parameters :*/
+	rho_ice=FindParam(MaterialsRhoIceEnum);
+
+   if(!IsIceInElement())return 0;
+
+	::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
+
+	/*First calculate the area of the base (cross section triangle)
+	 * http://en.wikipedia.org/wiki/Triangle
+	 * base = 1/2 abs((xA-xC)(yB-yA)-(xA-xB)(yC-yA))*/
+	base = 1./2. * fabs((xyz_list[0][0]-xyz_list[2][0])*(xyz_list[1][1]-xyz_list[0][1]) - (xyz_list[0][0]-xyz_list[1][0])*(xyz_list[2][1]-xyz_list[0][1]));	// area of element in m2
+
+	/*Now get the average SMB over the element*/
+	Element::GetInputListOnVertices(&lsf[0],MaskIceLevelsetEnum);
+	if(lsf[0]*lsf[1]<=0 || lsf[0]*lsf[2]<=0 || lsf[1]*lsf[2]<=0){
+		/*Partially ice-covered element*/
+		bool mainlyice;
+      int point;
+      IssmDouble* weights       = xNew<IssmDouble>(NUMVERTICES);
+      IssmDouble* sublimation_vertices  = xNew<IssmDouble>(NUMVERTICES);
+      IssmDouble f1,f2,phi;
+
+		Element::GetInputListOnVertices(&sublimation_vertices[0],SmbSublimationEnum);
+		GetFractionGeometry(weights,&phi,&point,&f1,&f2,&mainlyice,lsf);
+		sublimation = 0.0;
+		for(int i=0;i<NUMVERTICES;i++) sublimation += weights[i]*sublimation_vertices[i];
+
+		if(scaled==true){
+         IssmDouble* scalefactor_vertices = xNew<IssmDouble>(NUMVERTICES);
+         Element::GetInputListOnVertices(&scalefactor_vertices[0],MeshScaleFactorEnum);
+         scalefactor = 0.0;
+         for(int i=0;i<NUMVERTICES;i++) scalefactor += weights[i]/phi*scalefactor_vertices[i];
+         xDelete<IssmDouble>(scalefactor_vertices);
+      }
+		else scalefactor = 1.0;
+
+		/*Cleanup*/
+      xDelete<IssmDouble>(weights);
+      xDelete<IssmDouble>(sublimation_vertices);
+	}
+	else{
+		/*Fully ice-covered element*/
+		Input* sublimation_input = this->GetInput(SmbSublimationEnum); _assert_(sublimation_input);
+		sublimation_input->GetInputAverage(&sublimation);   // average sublimation on element in m ice s-1
+
+		if(scaled==true){
+			Input* scalefactor_input = this->GetInput(MeshScaleFactorEnum); _assert_(scalefactor_input);
+			scalefactor_input->GetInputAverage(&scalefactor);// average scalefactor on element
+		}
+		else scalefactor=1.0;
+	}
+
+   Total_SmbSublimation=rho_ice*base*sublimation*scalefactor;	// sublimation on element in kg s-1
+
+	/*Return: */
+	return Total_SmbSublimation;
+}
+/*}}}*/
 void       Tria::Update(Inputs* inputs,int index, IoModel* iomodel,int analysis_counter,int analysis_type,int finiteelement_type){/*{{{*/
 
 	/*Intermediaries*/

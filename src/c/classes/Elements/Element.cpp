@@ -5011,9 +5011,10 @@ void       Element::SmbSemicTransient(){/*{{{*/
 		smbi_out[iv] = smbi_out[iv]*rho_water/rho_ice*yts; // w.e. m/sec -> ice m/yr
 		smbs_out[iv] = smbs_out[iv]*rho_water/rho_ice*yts; // w.e. m/sec -> ice m/yr
 		saccu_out[iv] = saccu_out[iv]*rho_water/rho_ice*yts; // w.e. m/sec -> ice m/yr
-		smelt_out[iv] = smelt_out[iv]*rho_water/rho_ice; // w.e. m/sec -> ice m/yr
-		refr_out[iv]  = refr_out[iv]*rho_water/rho_ice;  // w.e. m/sec -> ice m/yr
+		smelt_out[iv] = smelt_out[iv]*rho_water/rho_ice;  // w.e. m/sec -> ice m/yr
+		refr_out[iv]  = refr_out[iv]*rho_water/rho_ice;   // w.e. m/sec -> ice m/yr
 		runoff_out[iv]= runoff_out[iv]*rho_water/rho_ice; // w.e. m/sec -> ice m/yr
+		subl_out[iv]  = subl_out[iv]*rho_water/rho_ice;   // w.e. m/sec -> ice m/yr
 	}
 
 	if(isverbose && this->Sid()==0){
@@ -5045,7 +5046,7 @@ void       Element::SmbSemicTransient(){/*{{{*/
 			this->AddInput(SmbHIceEnum,        &hice_out[0],P1DGEnum);
 			this->AddInput(SmbSemicQmrEnum,    &qmr_out[0],P1DGEnum);
 			this->AddInput(SmbRunoffEnum,      &runoff_out[0],P1DGEnum);
-			this->AddInput(SmbEvaporationEnum, &subl_out[0],P1DGEnum);
+			this->AddInput(SmbSublimationEnum, &subl_out[0],P1DGEnum);
 			break;
 		case PentaEnum:
 			// TODO
@@ -6237,6 +6238,19 @@ IssmDouble Element::TotalSmbRefreeze(IssmDouble* mask, bool scaled){/*{{{*/
 
 	/*Return: */
 	return this->TotalSmbRefreeze(scaled);
+}
+/*}}}*/
+IssmDouble Element::TotalSmbSublimation(IssmDouble* mask, bool scaled){/*{{{*/
+
+	/*Retrieve values of the mask defining the element: */
+	for(int i=0;i<this->GetNumberOfVertices();i++){
+		if(mask[this->vertices[i]->Sid()]<=0.){
+			return 0.;
+		}
+	}
+
+	/*Return: */
+	return this->TotalSmbSublimation(scaled);
 }
 /*}}}*/
 void       Element::TransformInvStiffnessMatrixCoord(ElementMatrix* Ke,int transformenum){/*{{{*/

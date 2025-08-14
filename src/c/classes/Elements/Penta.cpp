@@ -4456,6 +4456,74 @@ IssmDouble Penta::TotalSmbRefreeze(bool scaled){/*{{{*/
 	return Total_SmbRefreeze;
 }
 /*}}}*/
+IssmDouble Penta::TotalSmbSublimation(bool scaled){/*{{{*/
+
+	/*The smbsublimation[Gt yr-1] of one element is area[m2] * smb [ m ice yr^-1] * rho_ice [kg m-3] / 1e+10^12 */
+	IssmDouble base,smbsublimation,rho_ice,scalefactor;
+	IssmDouble Total_SmbSublimation=0;
+	IssmDouble lsf[NUMVERTICES];
+	IssmDouble xyz_list[NUMVERTICES][3];
+
+	/*Get material parameters :*/
+	rho_ice=FindParam(MaterialsRhoIceEnum);
+
+	if(!IsIceInElement() || !IsOnSurface()) return 0.;
+
+	::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
+
+	/*First calculate the area of the base (cross section triangle)
+	 * http://en.wikipedia.org/wiki/Triangle
+	 * base = 1/2 abs((xA-xC)(yB-yA)-(xA-xB)(yC-yA))*/
+	base = 1./2. * fabs((xyz_list[0][0]-xyz_list[2][0])*(xyz_list[1][1]-xyz_list[0][1]) - (xyz_list[0][0]-xyz_list[1][0])*(xyz_list[2][1]-xyz_list[0][1]));
+
+	/*Now get the average SMB over the element*/
+	Element::GetInputListOnVertices(&lsf[0],MaskIceLevelsetEnum);
+   if(lsf[0]*lsf[1]<=0 || lsf[0]*lsf[2]<=0 || lsf[1]*lsf[2]<=0){
+		/*Partially ice-covered element*/
+		bool mainlyice;
+      int point;
+      IssmDouble* smbsublimation_vertices = xNew<IssmDouble>(NUMVERTICES);
+		IssmDouble  weights[NUMVERTICES2D];
+		IssmDouble  lsf2d[NUMVERTICES2D];
+      IssmDouble f1,f2,phi;
+      Element::GetInputListOnVertices(&smbsublimation_vertices[0],SmbSublimationEnum);
+		for(int i=0;i<NUMVERTICES2D;i++) lsf2d[i] = lsf[i];
+		GetFractionGeometry2D(weights,&phi,&point,&f1,&f2,&mainlyice,lsf2d);
+		smbsublimation = 0.0;
+		for(int i=0;i<NUMVERTICES2D;i++) smbsublimation += weights[i]*smbsublimation_vertices[i];
+
+		if(scaled==true){
+         IssmDouble* scalefactor_vertices   = xNew<IssmDouble>(NUMVERTICES);
+         Element::GetInputListOnVertices(&scalefactor_vertices[0],MeshScaleFactorEnum);
+         /*Compute loop only over lower vertices: i<NUMVERTICES2D*/
+         scalefactor = 0.0;
+         for(int i=0;i<NUMVERTICES2D;i++) scalefactor += weights[i]/phi*scalefactor_vertices[i];
+         xDelete<IssmDouble>(scalefactor_vertices);
+		}
+		else scalefactor = 1.0;
+
+		/*Cleanup*/
+      xDelete<IssmDouble>(smbsublimation_vertices);
+	}
+
+	else{
+		/*Fully ice-covered element*/
+		Input* smbsublimation_input = this->GetInput(SmbSublimationEnum); _assert_(smbsublimation_input);
+		smbsublimation_input->GetInputAverage(&smbsublimation);
+
+		if(scaled==true){
+			Input* scalefactor_input = this->GetInput(MeshScaleFactorEnum); _assert_(scalefactor_input);
+			scalefactor_input->GetInputAverage(&scalefactor);// average scalefactor on element
+		}
+		else scalefactor=1.0;
+	}
+
+	Total_SmbSublimation=rho_ice*base*smbsublimation*scalefactor;// sublimation on element in kg s-1
+
+	/*Return: */
+	return Total_SmbSublimation;
+}
+/*}}}*/
 void       Penta::Update(Inputs* inputs,int index,IoModel* iomodel,int analysis_counter,int analysis_type,int finiteelement_type){ /*{{{*/
 
 	/*Intermediaries*/

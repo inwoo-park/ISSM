@@ -1165,6 +1165,7 @@ const char* EnumToStringx(int en){
 		case SmbElaEnum : return "SmbEla";
 		case SmbEnhanceFactorEnum : return "SmbEnhanceFactor";
 		case SmbEvaporationEnum : return "SmbEvaporation";
+		case SmbSublimationEnum : return "SmbSublimation";
 		case SmbFACEnum : return "SmbFAC";
 		case SmbFACSubstepEnum : return "SmbFACSubstep";
 		case SmbGCMLapseratesEnum : return "SmbGCMLapserates";
@@ -3740,6 +3741,8 @@ const char* EnumToStringx(int en){
 		case TotalGroundedBmbScaledEnum : return "TotalGroundedBmbScaled";
 		case TotalSmbEnum : return "TotalSmb";
 		case TotalSmbScaledEnum : return "TotalSmbScaled";
+		case TotalSmbSublimationEnum : return "TotalSmbSublimation";
+		case TotalSmbEvaporationEnum : return "TotalSmbEvaporation";
 		case TotalSmbRefreezeEnum : return "TotalSmbRefreeze";
 		case TotalSmbMeltEnum : return "TotalSmbMelt";
 		case TransientArrayParamEnum : return "TransientArrayParam";

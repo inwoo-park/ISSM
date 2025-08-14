@@ -161,6 +161,7 @@ class Tria: public Element,public ElementHook,public TriaRef{
 		IssmDouble  TotalSmb(bool scaled);
 		IssmDouble  TotalSmbMelt(bool scaled);
 		IssmDouble  TotalSmbRefreeze(bool scaled);
+		IssmDouble  TotalSmbSublimation(bool scaled);
 		void        Update(Inputs* inputs,int index, IoModel* iomodel,int analysis_counter,int analysis_type,int finitelement);
 		int         UpdatePotentialUngrounding(IssmDouble* vertices_potentially_ungrounding,Vector<IssmDouble>* vec_nodes_on_iceshelf,IssmDouble* nodes_on_iceshelf);
 		void        ValueP1DerivativesOnGauss(IssmDouble* dvalue,IssmDouble* values,IssmDouble* xyz_list,Gauss* gauss);

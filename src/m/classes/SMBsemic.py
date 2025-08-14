@@ -181,8 +181,9 @@ class SMBsemic(object):
             list = ['default','SmbMassBalance', 'SmbMassBalanceSnow', 'SmbMassBalanceIce',
                   'SmbMelt', 'SmbRefreeze','SmbAccumulation',
                   'SmbHIce', 'SmbHSnow', 'SmbAlbedo', 'SmbAlbedoSnow', 'TemperatureSEMIC',
+                  'SmbSublimation','SmbRunoff',
                   'SmbSemicQmr', 'TotalSmb', 'TotalSmbMelt', 'TotalSmbRefreeze', 
-                  'SmbRunoff','SmbEvaporation']
+                  'TotalSmbSublimation']
         else:
             list = ['default','SmbMassBalance']
         return list

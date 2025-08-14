@@ -144,6 +144,7 @@ class FemModel {
 		void TotalFloatingBmbx(IssmDouble* pFbmb, bool scaled);
 		void TotalGroundedBmbx(IssmDouble* pGbmb, bool scaled);
 		void TotalSmbx(IssmDouble* pSmb, bool scaled);
+		void TotalSmbSublimationx(IssmDouble* pSmbEvaporation, bool scaled);
 		void TotalSmbMeltx(IssmDouble* pSmbMelt, bool scaled);
 		void TotalSmbRefreezex(IssmDouble* pSmbRefreeze, bool scaled);
 		#ifdef  _HAVE_DAKOTA_

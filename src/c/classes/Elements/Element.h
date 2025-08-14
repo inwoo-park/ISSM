@@ -208,6 +208,7 @@ class Element: public Object{
 		IssmDouble         TotalSmb(IssmDouble* mask, bool scaled);
 		IssmDouble         TotalSmbMelt(IssmDouble* mask, bool scaled);
 		IssmDouble         TotalSmbRefreeze(IssmDouble* mask, bool scaled);
+		IssmDouble         TotalSmbSublimation(IssmDouble* mask, bool scaled);
 		void               TransformInvStiffnessMatrixCoord(ElementMatrix* Ke,int cs_enum);
 		void               TransformInvStiffnessMatrixCoord(ElementMatrix* Ke,Node** nodes,int numnodes,int cs_enum);
 		void               TransformInvStiffnessMatrixCoord(ElementMatrix* Ke,Node** nodes,int numnodes,int* cs_array);
@@ -397,6 +398,7 @@ class Element: public Object{
 		virtual IssmDouble TotalSmb(bool scaled)=0;
 		virtual IssmDouble TotalSmbMelt(bool scaled)=0;
 		virtual IssmDouble TotalSmbRefreeze(bool scaled)=0;
+		virtual IssmDouble TotalSmbSublimation(bool scaled)=0;
 		virtual void       Update(Inputs* inputs,int index, IoModel* iomodel,int analysis_counter,int analysis_type,int finite_element)=0;
 		virtual void       UpdateConstraintsExtrudeFromBase(void)=0;
 		virtual void       UpdateConstraintsExtrudeFromTop(void)=0;

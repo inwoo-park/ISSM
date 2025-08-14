@@ -1156,6 +1156,7 @@ syn keyword juliaConstC SmbECiniEnum
 syn keyword juliaConstC SmbElaEnum
 syn keyword juliaConstC SmbEnhanceFactorEnum
 syn keyword juliaConstC SmbEvaporationEnum
+syn keyword juliaConstC SmbSublimationEnum
 syn keyword juliaConstC SmbFACEnum
 syn keyword juliaConstC SmbFACSubstepEnum
 syn keyword juliaConstC SmbGCMLapseratesEnum
@@ -3731,6 +3732,8 @@ syn keyword juliaConstC TotalGroundedBmbEnum
 syn keyword juliaConstC TotalGroundedBmbScaledEnum
 syn keyword juliaConstC TotalSmbEnum
 syn keyword juliaConstC TotalSmbScaledEnum
+syn keyword juliaConstC TotalSmbSublimationEnum
+syn keyword juliaConstC TotalSmbEvaporationEnum
 syn keyword juliaConstC TotalSmbRefreezeEnum
 syn keyword juliaConstC TotalSmbMeltEnum
 syn keyword juliaConstC TransientArrayParamEnum

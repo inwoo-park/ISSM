@@ -1163,6 +1163,7 @@ syn keyword cConstant SmbECiniEnum
 syn keyword cConstant SmbElaEnum
 syn keyword cConstant SmbEnhanceFactorEnum
 syn keyword cConstant SmbEvaporationEnum
+syn keyword cConstant SmbSublimationEnum
 syn keyword cConstant SmbFACEnum
 syn keyword cConstant SmbFACSubstepEnum
 syn keyword cConstant SmbGCMLapseratesEnum
@@ -3738,6 +3739,8 @@ syn keyword cConstant TotalGroundedBmbEnum
 syn keyword cConstant TotalGroundedBmbScaledEnum
 syn keyword cConstant TotalSmbEnum
 syn keyword cConstant TotalSmbScaledEnum
+syn keyword cConstant TotalSmbSublimationEnum
+syn keyword cConstant TotalSmbEvaporationEnum
 syn keyword cConstant TotalSmbRefreezeEnum
 syn keyword cConstant TotalSmbMeltEnum
 syn keyword cConstant TransientArrayParamEnum

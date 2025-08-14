@@ -1152,6 +1152,7 @@
 	SmbElaEnum
 	SmbEnhanceFactorEnum
 	SmbEvaporationEnum
+	SmbSublimationEnum
 	SmbFACEnum
 	SmbFACSubstepEnum
 	SmbGCMLapseratesEnum
@@ -3727,6 +3728,8 @@
 	TotalGroundedBmbScaledEnum
 	TotalSmbEnum
 	TotalSmbScaledEnum
+	TotalSmbSublimationEnum
+	TotalSmbEvaporationEnum
 	TotalSmbRefreezeEnum
 	TotalSmbMeltEnum
 	TransientArrayParamEnum
@@ -4919,6 +4922,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SmbElaEnum) return "SmbEla" end
 	if(enum==SmbEnhanceFactorEnum) return "SmbEnhanceFactor" end
 	if(enum==SmbEvaporationEnum) return "SmbEvaporation" end
+	if(enum==SmbSublimationEnum) return "SmbSublimation" end
 	if(enum==SmbFACEnum) return "SmbFAC" end
 	if(enum==SmbFACSubstepEnum) return "SmbFACSubstep" end
 	if(enum==SmbGCMLapseratesEnum) return "SmbGCMLapserates" end
@@ -7494,6 +7498,8 @@ function EnumToString(enum::IssmEnum)
 	if(enum==TotalGroundedBmbScaledEnum) return "TotalGroundedBmbScaled" end
 	if(enum==TotalSmbEnum) return "TotalSmb" end
 	if(enum==TotalSmbScaledEnum) return "TotalSmbScaled" end
+	if(enum==TotalSmbSublimationEnum) return "TotalSmbSublimation" end
+	if(enum==TotalSmbEvaporationEnum) return "TotalSmbEvaporation" end
 	if(enum==TotalSmbRefreezeEnum) return "TotalSmbRefreeze" end
 	if(enum==TotalSmbMeltEnum) return "TotalSmbMelt" end
 	if(enum==TransientArrayParamEnum) return "TransientArrayParam" end
@@ -8686,6 +8692,7 @@ function StringToEnum(name::String)
 	if(name=="SmbEla") return SmbElaEnum  end
 	if(name=="SmbEnhanceFactor") return SmbEnhanceFactorEnum  end
 	if(name=="SmbEvaporation") return SmbEvaporationEnum  end
+	if(name=="SmbSublimation") return SmbSublimationEnum  end
 	if(name=="SmbFAC") return SmbFACEnum  end
 	if(name=="SmbFACSubstep") return SmbFACSubstepEnum  end
 	if(name=="SmbGCMLapserates") return SmbGCMLapseratesEnum  end
@@ -11261,6 +11268,8 @@ function StringToEnum(name::String)
 	if(name=="TotalGroundedBmbScaled") return TotalGroundedBmbScaledEnum  end
 	if(name=="TotalSmb") return TotalSmbEnum  end
 	if(name=="TotalSmbScaled") return TotalSmbScaledEnum  end
+	if(name=="TotalSmbSublimation") return TotalSmbSublimationEnum  end
+	if(name=="TotalSmbEvaporation") return TotalSmbEvaporationEnum  end
 	if(name=="TotalSmbRefreeze") return TotalSmbRefreezeEnum  end
 	if(name=="TotalSmbMelt") return TotalSmbMeltEnum  end
 	if(name=="TransientArrayParam") return TransientArrayParamEnum  end

@@ -2507,6 +2507,7 @@ void FemModel::RequestedOutputsx(Results **presults,char** requested_outputs, in
 					case TotalSmbEnum:                       this->TotalSmbx(&double_result,false);                 break;
 					case TotalSmbMeltEnum:                   this->TotalSmbMeltx(&double_result,false);             break;
 					case TotalSmbRefreezeEnum:               this->TotalSmbRefreezex(&double_result,false);         break;
+					case TotalSmbSublimationEnum:            this->TotalSmbSublimationx(&double_result,false);         break;
 					case TotalSmbScaledEnum:                 this->TotalSmbx(&double_result,true);                  break;
 
 					/*Scalar control output*/
@@ -3205,6 +3206,22 @@ void FemModel::TotalSmbRefreezex(IssmDouble* pSmbRefreeze, bool scaled){/*{{{*/
 
 	/*Assign output pointers: */
 	*pSmbRefreeze=total_smbrefreeze;
+
+}/*}}}*/
+void FemModel::TotalSmbSublimationx(IssmDouble* pSmbSublimation, bool scaled){/*{{{*/
+
+	IssmDouble local_sublimation = 0.0;
+	IssmDouble total_sublimation;
+
+	for(Object* & object : this->elements->objects){
+		Element* element = xDynamicCast<Element*>(object);
+		local_sublimation+=element->TotalSmbSublimation(scaled);
+	}
+	ISSM_MPI_Reduce(&local_sublimation,&total_sublimation,1,ISSM_MPI_DOUBLE,ISSM_MPI_SUM,0,IssmComm::GetComm() );
+	ISSM_MPI_Bcast(&total_sublimation,1,ISSM_MPI_DOUBLE,0,IssmComm::GetComm());
+
+	/*Assign output pointers: */
+	*pSmbSublimation=total_sublimation;
 
 }/*}}}*/
 void FemModel::UpdateConstraintsExtrudeFromBasex(void){ /*{{{*/

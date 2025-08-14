@@ -427,6 +427,7 @@ SmbECini
 SmbEla
 SmbEnhanceFactor
 SmbEvaporation
+SmbSublimation
 SmbFAC
 SmbFACSubstep
 SmbGCMLapserates
@@ -623,6 +624,7 @@ OldAccumulatedDeltaIceThickness
 OldAccumulatedDeltaTws
 
 %Scalar outputs
+AverageButtressing
 Divergence
 MaxDivergence
 IceMass

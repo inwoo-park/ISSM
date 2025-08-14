@@ -203,6 +203,7 @@ class Penta: public Element,public ElementHook,public PentaRef{
 		IssmDouble     TotalSmb(bool scaled);
 		IssmDouble     TotalSmbMelt(bool scaled);
 		IssmDouble     TotalSmbRefreeze(bool scaled);
+		IssmDouble     TotalSmbSublimation(bool scaled);
 		void           Update(Inputs* inputs,int index, IoModel* iomodel,int analysis_counter,int analysis_type,int finitelement);
 		void           UpdateConstraintsExtrudeFromBase(void);
 		void           UpdateConstraintsExtrudeFromTop(void);
