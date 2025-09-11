@@ -4,7 +4,7 @@ set -eu
 
 # Constants
 #
-export PREFIX="${ISSM_EXT_DIR}/javascript/triangle/install" # Set to location where external package should be installed
+export PREFIX="${ISSM_DIR}/externalpackages/triangle/install" # Set to location where external package should be installed
 
 # Environment
 #
@@ -22,7 +22,7 @@ rm -rf ${PREFIX}
 mkdir -p ${PREFIX} ${PREFIX}/include ${PREFIX}/share src
 
 # Download source
-${ISSM_DIR}/scripts/DownloadExternalPackage.sh "https://issm.ess.uci.edu/files/externalpackages/triangle.zip" "triangle.zip"
+${ISSM_DIR}/scripts/DownloadExternalPackage.sh "https://github.com/ISSMteam/ExternalPackages/raw/refs/heads/main/triangle.zip" "triangle.zip"
 
 # Unpack source
 unzip triangle.zip -d src
