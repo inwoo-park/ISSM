@@ -3,15 +3,10 @@ set -eu
 
 ## Constants
 #
-VER="3.23.4"
+VER="3.23.6"
 
 PETSC_DIR="${ISSM_DIR}/externalpackages/petsc/src" # DO NOT CHANGE THIS
 PREFIX="${ISSM_DIR}/externalpackages/petsc/install" # Set to location where external package should be installed
-
-# Environment
-if [ -z ${LDFLAGS+x} ]; then
-	LDFLAGS=""
-fi
 
 # Download source
 ${ISSM_DIR}/scripts/DownloadExternalPackage.sh "https://web.cels.anl.gov/projects/petsc/download/release-snapshots/petsc-${VER}.tar.gz" "petsc-${VER}.tar.gz"
@@ -37,7 +32,6 @@ cd ${PETSC_DIR}
 	--with-x=0 \
 	--with-ssl=0 \
 	--with-pic=1 \
-	--LDFLAGS="-Wl,-ld_classic" \
 	--download-metis=1 \
 	--download-mpich=1 \
 	--download-mumps=1 \
