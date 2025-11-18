@@ -24,7 +24,7 @@ md2 = setmask(md2, 'all', '')
 md2 = parameterize(md2, '../Par/SquareShelf.py')
 
 #Use of Gemb method for SMB computation
-md.smb = SMBgemb(md.mesh, md.geometry)
+md.smb = SMBgemb(md.mesh)
 md.smb.dsnowIdx = 1
 md.smb.swIdx = 1
 
@@ -56,6 +56,7 @@ ye2=np.mean(md2.mesh.y[md2.mesh.elements-1],axis=1)
 mpoints=np.arange(1,md2.mesh.numberofelements+1)
 
 md.smb.ismappedforcing=1
+md.smb.isprecipforcingremapped=1
 interpp = NearestNDInterpolator((xe2, ye2), mpoints)
 md.smb.mappedforcingpoint=interpp(xe,ye)
 md.smb.mappedforcingelevation=np.mean(md2.geometry.surface[md2.mesh.elements-1],axis=1)
@@ -88,7 +89,7 @@ for i in range(1, len(md.results.TransientSolution)):
 
 #Fields and tolerances to track changes
 field_names = ['Layers', 'SmbDz', 'SmbT', 'SmbD', 'SmbRe', 'SmbGdn', 'SmbGsp', 'SmbA', 'SmbEC', 'SmbMassBalance', 'SmbMAdd', 'SmbDzAdd', 'SmbFAC', 'SmbMeanSHF', 'SmbMeanLHF', 'SmbMeanULW', 'SmbNetLW', 'SmbNetSW', 'SmbAccumulatedMassBalance', 'SmbAccumulatedRunoff', 'SmbAccumulatedMelt', 'SmbAccumulatedEC', 'SmbAccumulatedPrecipitation', 'SmbAccumulatedRain', 'SmbAccumulatedRefreeze', 'SmbRunoff', 'SmbMelt', 'SmbEC', 'SmbPrecipitation', 'SmbRain', 'SmbRefreeze', 'SmbWAdd']
-field_tolerances = [1e-12, 4e-11, 2e-11, 3e-11, 6e-11, 8e-11, 8e-11, 1e-12, 5e-11, 2e-12, 1e-12, 1e-12, 4e-11, 2e-11, 5e-11, 1e-11, 9e-10, 2e-11, 1e-11, 9e-10, 2e-11, 2e-09, 1e-11, 1e-11, 1e-11, 8e-10, 2e-11, 2e-11, 1e-11, 1e-11, 1e-11, 1e-11]
+field_tolerances = [1e-12, 4e-11, 2e-11, 3e-11, 6e-11, 8e-11, 8e-11, 1e-12, 5e-11, 2e-12, 1e-12, 1e-12, 4e-11, 2e-11, 5e-11, 1e-11, 9e-10, 2e-11, 1e-11, 9e-10, 2e-11, 2e-09, 1e-11, 1e-11, 1e-11, 8e-10, 2e-11, 2e-11, 1e-11, 1e-11, 2e-11, 1e-11]
 
 # Shape is different in python solution (fixed using reshape) which can cause test failure
 field_values = [

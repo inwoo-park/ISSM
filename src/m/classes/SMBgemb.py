@@ -10,7 +10,7 @@ class SMBgemb(object):
     """SMBGEMB class definition
 
     Usage:
-        SMB = SMBgemb()
+        SMB = SMBgemb(md.mesh)
     """
 
     def __init__(self, *args):  # {{{
@@ -32,6 +32,7 @@ class SMBgemb(object):
         self.isconstrainsurfaceT = 0
         self.isdeltaLWup         = 0
         self.ismappedforcing     = 0
+        self.isprecipforcingremapped = 0
         self.iscompressedforcing = 0
 
         # Inputs
@@ -56,7 +57,7 @@ class SMBgemb(object):
         self.mappedforcingpoint     = np.nan    #Mapping of which forcing point will map to each mesh element (integer). Of size number of elements. Use if ismappedforcing is true.
         self.mappedforcingelevation = np.nan    #The elevation of each mapped forcing location (m above sea level). Of size number of forcing points. Use if ismappedforcing is true.
         self.lapseTaValue           = np.nan    #Temperature lapse rate if forcing has different grid and should be remapped. Use if ismappedforcing is true. (Default value is -0.006 K m-1.)
-        self.lapsedlwrfValue        = np.nan    #Longwave down lapse rate if forcing has different grid and should be remapped. Use if ismappedforcing is true. (Default value is -0.032 W m-2 m-1.)
+        self.lapsedlwrfValue        = np.nan    #Longwave down lapse rate if forcing has different grid and should be remapped. Use if ismappedforcing is true. If set to 0, dlwrf will scale with a constant effective atmospheric emissivity. (Default value is -0.032 W m-2 m-1.)
 
         # Initialization of snow properties
         self.Dzini                  = np.nan    # cell depth (m)
@@ -155,12 +156,11 @@ class SMBgemb(object):
         #elev:  this is taken from the ISSM surface itself.
 
         nargin = len(args)
-        if nargin == 2:
+        if nargin == 1:
             mesh = args[0]
-            geometry = args[1]
-            self.setdefaultparameters(mesh, geometry)
+            self.setdefaultparameters(mesh)
         else:
-            raise Exception('constructor not supported: need mesh and geometry to set defaults')
+            raise Exception('constructor not supported: need mesh to set defaults')
         # }}}
 
     def __repr__(self):  # {{{
@@ -179,6 +179,7 @@ class SMBgemb(object):
         s += '{}\n'.format(fielddisplay(self, 'isconstrainsurfaceT', 'constrain surface temperatures to air temperature, turn off EC and surface flux contribution to surface temperature change (default false)'))
         s += '{}\n'.format(fielddisplay(self, 'isdeltaLWup', 'set to true to invoke a bias in the long wave upward spatially, specified by dulwrfValue (default false)'))
         s += '{}\n'.format(fielddisplay(self,'ismappedforcing','set to true if forcing grid does not match model mesh, mapping specified by mappedforcingpoint (default false)'))
+        s += '{}\n'.format(fielddisplay(self,'isprecipforcingremapped','set to true if ismappedforcing is true and precip should be downscaled from native grid (Default value is true)'))
         s += '{}\n'.format(fielddisplay(self,'iscompressedforcing','set to true to compress the input matrices when writing to binary (default false)'))
         s += '{}\n'.format(fielddisplay(self, 'Ta', '2 m air temperature, in Kelvin'))
         s += '{}\n'.format(fielddisplay(self, 'V', 'wind speed (m s-1)'))
@@ -224,7 +225,7 @@ class SMBgemb(object):
         s += '{}\n'.format(fielddisplay(self,'mappedforcingpoint','Mapping of which forcing point will map to each mesh element for ismappedforcing option (integer). Size number of elements.'))
         s += '{}\n'.format(fielddisplay(self,'mappedforcingelevation','The elevation of each mapped forcing location (m above sea level) for ismappedforcing option. Size number of forcing points.'))
         s += '{}\n'.format(fielddisplay(self,'lapseTaValue','Temperature lapse rate if forcing has different grid and should be remapped for ismappedforcing option. (Default value is -0.006 K m-1.)'))
-        s += '{}\n'.format(fielddisplay(self,'lapsedlwrfValue','Longwave down lapse rate if forcing has different grid and should be remapped for ismappedforcing option. (Default value is -0.032 W m-2 m-1.)'))
+        s += '{}\n'.format(fielddisplay(self,'lapsedlwrfValue','Longwave down lapse rate if forcing has different grid and should be remapped for ismappedforcing option. If set to 0, dlwrf will scale with a constant effective atmospheric emissivity. (Default value is -0.032 W m-2 m-1.)'))
 
         # Snow properties init
         s += '{}\n'.format(fielddisplay(self, 'Dzini', 'Initial cell depth when restart [m]'))
@@ -337,7 +338,7 @@ class SMBgemb(object):
         return ['SmbMassBalance','SmbAccumulatedMassBalance']
     # }}}
 
-    def setdefaultparameters(self, mesh, geometry):  # {{{
+    def setdefaultparameters(self, mesh):  # {{{
         self.isgraingrowth = 1
         self.isalbedo = 1
         self.isshortwave = 1
@@ -349,6 +350,7 @@ class SMBgemb(object):
         self.isconstrainsurfaceT = 0
         self.isdeltaLWup = 0
         self.ismappedforcing = 0
+        self.isprecipforcingremapped = 1
         self.iscompressedforcing = 0
 
         self.aIdx = 1
@@ -424,6 +426,7 @@ class SMBgemb(object):
         md = checkfield(md, 'fieldname', 'smb.isdeltaLWup', 'values',[0, 1])
         md = checkfield(md, 'fieldname', 'smb.isconstrainsurfaceT', 'values', [0, 1])
         md = checkfield(md, 'fieldname', 'smb.ismappedforcing', 'values',[0, 1])
+        md = checkfield(md, 'fieldname', 'smb.isprecipforcingremapped', 'values',[0, 1])
         md = checkfield(md, 'fieldname', 'smb.iscompressedforcing', 'values',[0, 1])
 
         sizeta=np.shape(self.Ta)
@@ -509,6 +512,7 @@ class SMBgemb(object):
         WriteData(fid, prefix, 'object', self, 'class', 'smb', 'fieldname', 'isconstrainsurfaceT', 'format', 'Boolean')
         WriteData(fid, prefix, 'object', self, 'class', 'smb', 'fieldname', 'isdeltaLWup', 'format', 'Boolean')
         WriteData(fid, prefix, 'object', self, 'class', 'smb', 'fieldname', 'ismappedforcing', 'format', 'Boolean')
+        WriteData(fid, prefix, 'object', self, 'class', 'smb', 'fieldname', 'isprecipforcingremapped', 'format', 'Boolean')
 
         if self.iscompressedforcing:
             writetype='CompressedMat'

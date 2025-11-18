@@ -71,7 +71,8 @@ class Element: public Object{
       void               ArmaProcess(bool isstepforarma,int arorder,int maorder,int numparams,int numbreaks,IssmDouble tstep_arma,IssmDouble* polyparams,IssmDouble* arlagcoefs,IssmDouble* malagcoefs,IssmDouble* datebreaks,bool isfieldstochastic,int enum_type);
 		void               BasinLinearFloatingiceMeltingRate(IssmDouble* deepwaterel,IssmDouble* upperwatermelt,IssmDouble* upperwaterel,IssmDouble* perturbation);
 		void               CalvingSetZeroRate(void);
-		void               CalvingRateToVector(void);
+		void               CalvingRateToVector();
+		void               CalvingRateToVector(bool isvelvector);
 		void               ComputeLambdaS(void);
 		void               ComputeNewDamage();
 		void               ComputeStrainRate();
@@ -94,7 +95,7 @@ class Element: public Object{
 		IssmDouble         FindParam(int paramenum);
 		void               FindParam(int** pvalues,int* psize,int paramenum);
 		IssmDouble         FloatingArea(IssmDouble* mask, bool scaled);
-		void	             GetDofList(int** pdoflist,int approximation_enum,int setenum);
+		void	             GetDofList(int** pdoflist,int approximation_enum,int setenum, bool hideclones=0);
 		void	             GetDofListPressure(int** pdoflist,int setenum);
 		void	             GetDofListVelocity(int** pdoflist,int setenum);
 		void	             GetDofListLocal(int** pdoflist,int approximation_enum,int setenum);
@@ -129,6 +130,7 @@ class Element: public Object{
 		IssmDouble         GetZcoord(IssmDouble* xyz_list,Gauss* gauss);
 		void               GradientIndexing(int* indexing,int control_index);
 		IssmDouble         GroundedArea(IssmDouble* mask, bool scaled);
+		IssmDouble         GroundinglineMassFlux(IssmDouble* mask, bool scaled);
 		bool               HasNodeOnBase();
 		bool               HasNodeOnSurface();
 		IssmDouble         IceMass(bool scaled);
@@ -177,6 +179,8 @@ class Element: public Object{
 		void               PicoComputeBasalMelt();
 		void               PositiveDegreeDay(IssmDouble* pdds,IssmDouble* pds,IssmDouble signorm,bool ismungsm,bool issetpddfac);
 		void               PositiveDegreeDaySicopolis(bool isfirnwarming);
+		void               PositiveDegreeDayGCM();
+		void               ProjectGridDataToMesh(IssmDouble* griddata,IssmDouble* x_grid,IssmDouble* y_grid,int Nx,int Ny,int input_enum);
 		void               SmbDebrisEvatt();
 		void               RignotMeltParameterization();
 		void               ResultInterpolation(int* pinterpolation,int*nodesperelement,int* parray_size, int output_enum);
@@ -238,6 +242,7 @@ class Element: public Object{
 		virtual void       AddBasalInput(int input_enum, IssmDouble* values, int interpolation_enum){_error_("not implemented");};
 		virtual void       AddInput(int input_enum, IssmDouble* values, int interpolation_enum){_error_("not implemented");};
 		virtual void       AddControlInput(int input_enum,Inputs* inputs,IoModel* iomodel,IssmDouble* values,IssmDouble* values_min,IssmDouble* values_max, int interpolation_enum,int id){_error_("not supported yet");};
+		virtual bool       Buttressing(IssmDouble* ptheta, IssmDouble* plength){_error_("not implemented");};
 		virtual void       DatasetInputCreate(IssmDouble* array,int M,int N,int* individual_enums,int num_inputs,Inputs* inputs,IoModel* iomodel,int input_enum){_error_("not supported");};
 		virtual void       AverageOntoPartition(Vector<IssmDouble>* partition_contributions,Vector<IssmDouble>* partition_areas,IssmDouble* vertex_response,IssmDouble* qmu_part)=0;
 		virtual void		 BasalNodeIndices(int* pnumindices,int** pindices,int finiteelement){_error_("not implemented yet");};
@@ -273,7 +278,7 @@ class Element: public Object{
 		virtual Element*   GetBasalElement(void)=0;
 		virtual int        GetElementType(void)=0;
 		virtual IssmDouble GetHorizontalSurfaceArea(void){_error_("not implemented");};
-		virtual void       GetGroundedPart(int* point1,IssmDouble* fraction1,IssmDouble* fraction2, bool* mainlyfloating,int distance_enum, IssmDouble intrusion_distance)=0;
+		virtual void       GetGroundedPart(int* point1,IssmDouble* fraction1,IssmDouble* fraction2, bool* mainlyfloating, int distance_enum, IssmDouble intrusion_distance)=0;
 		virtual IssmDouble GetGroundedPortion(IssmDouble* xyz_list)=0;
 		virtual void        GetFractionGeometry(IssmDouble* weights, IssmDouble* pphi, int* ppoint1,IssmDouble* pfraction1,IssmDouble* pfraction2, bool* ptrapezeisnegative, IssmDouble* gl)=0;
 		virtual void       GetNodalWeightsAndAreaAndCentroidsFromLeveset(IssmDouble* loadweights, IssmDouble* ploadarea, IssmDouble* platbar, IssmDouble* plongbar, IssmDouble late, IssmDouble longe, IssmDouble area,  int levelsetenum)=0;

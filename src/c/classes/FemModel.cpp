@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <float.h>/*  DBL_EPSILON  */
 #include "../cores/cores.h"
 #include "../shared/io/io.h"
 #include "./classes.h"
@@ -1052,6 +1053,29 @@ void FemModel::Solve(void){/*{{{*/
 /*}}}*/
 
 /*Modules:*/
+void FemModel::AverageButtressingx(IssmDouble* pTheta){/*{{{*/
+
+	IssmDouble local_theta  = 0.;
+	IssmDouble local_length = 0.;
+	IssmDouble total_theta,total_length,element_theta,element_length;
+
+	for(Object* & object : this->elements->objects){
+		Element* element = xDynamicCast<Element*>(object);
+		if(element->Buttressing(&element_theta, &element_length)){
+			local_theta  += element_theta;
+			local_length += element_length;
+		}
+	}
+	ISSM_MPI_Reduce(&local_theta,&total_theta,1,ISSM_MPI_DOUBLE,ISSM_MPI_SUM,0,IssmComm::GetComm() );
+	ISSM_MPI_Bcast(&total_theta,1,ISSM_MPI_DOUBLE,0,IssmComm::GetComm());
+	ISSM_MPI_Reduce(&local_length,&total_length,1,ISSM_MPI_DOUBLE,ISSM_MPI_SUM,0,IssmComm::GetComm() );
+	ISSM_MPI_Bcast(&total_length,1,ISSM_MPI_DOUBLE,0,IssmComm::GetComm());
+	_assert_(total_length>0.);
+
+	/*Assign output pointers: */
+	*pTheta=total_theta/total_length;
+
+}/*}}}*/
 void FemModel::BalancethicknessMisfitx(IssmDouble* presponse){/*{{{*/
 
 	/*output: */
@@ -2446,11 +2470,12 @@ void FemModel::RequestedOutputsx(Results **presults,char** requested_outputs, in
 				switch(output_enum){
 
 					/*Scalar output*/
+					case AverageButtressingEnum:             this->AverageButtressingx(&double_result);             break;
 					case DivergenceEnum:                     this->Divergencex(&double_result);                     break;
 					case MaxDivergenceEnum:                  this->MaxDivergencex(&double_result);                  break;
 					case IceMassEnum:                        this->IceMassx(&double_result,false);                  break;
 					case IcefrontMassFluxEnum:               this->IcefrontMassFluxx(&double_result,false);         break;
-					case IcefrontMassFluxLevelsetEnum:       this->IcefrontMassFluxLevelsetx(&double_result,false);         break;
+					case IcefrontMassFluxLevelsetEnum:       this->IcefrontMassFluxLevelsetx(&double_result,false); break;
 					case IceMassScaledEnum:                  this->IceMassx(&double_result,true);                   break;
 					case IceVolumeEnum:                      this->IceVolumex(&double_result,false);                break;
 					case IceVolumeScaledEnum:                this->IceVolumex(&double_result,true);                 break;
@@ -2709,6 +2734,7 @@ void FemModel::Responsex(IssmDouble* responses,int response_descriptor_enum){/*{
 
 	switch (response_descriptor_enum){
 
+		case AverageButtressingEnum:             this->AverageButtressingx(responses); break;
 		case DivergenceEnum:                     this->Divergencex(responses); break;
 		case MaxDivergenceEnum:                  this->MaxDivergencex(responses); break;
 		case IceMassEnum:                        this->IceMassx(responses, false); break;
@@ -2760,8 +2786,9 @@ void FemModel::Responsex(IssmDouble* responses,int response_descriptor_enum){/*{
 		case MaterialsRheologyBbarEnum:          this->ElementResponsex(responses,MaterialsRheologyBbarEnum); break;
 		case VelEnum:                            this->ElementResponsex(responses,VelEnum); break;
 		case FrictionCoefficientEnum:            NodalValuex(responses, FrictionCoefficientEnum,elements,nodes, vertices, loads, materials, parameters); break;
+		case GroundinglineMassFluxEnum:          this->GroundinglineMassFluxx(responses, false);    break;
 		default:
-			if(response_descriptor_enum>=Outputdefinition1Enum && response_descriptor_enum <=Outputdefinition100Enum){
+			if(response_descriptor_enum>=Outputdefinition1Enum && response_descriptor_enum <=Outputdefinition2000Enum){
 				int ierr = OutputDefinitionsResponsex(responses, this,response_descriptor_enum);
 				if(ierr) _error_("could not evaluate response");
 			}
@@ -3224,6 +3251,11 @@ void FemModel::UpdateConstraintsx(void){ /*{{{*/
 
 	/*Now, update degrees of freedoms: */
 	NodesDofx(nodes,parameters);
+
+	/*Update FileInputs if need be*/
+	if(this->inputs->IsFileInputUpdate(time)){
+		_error_("not implemented yet");
+	}
 
 }/*}}}*/
 int  FemModel::UpdateVertexPositionsx(void){ /*{{{*/
@@ -4852,10 +4884,6 @@ void FemModel::EsaGeodetic3D(Vector<IssmDouble>* pUp, Vector<IssmDouble>* pNorth
 	xDelete<IssmDouble>(zz);
 }
 /*}}}*/
-
-
-
-
 #endif
 void FemModel::HydrologyEPLupdateDomainx(IssmDouble* pEplcount){ /*{{{*/
 
