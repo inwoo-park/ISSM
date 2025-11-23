@@ -49,10 +49,12 @@ classdef friction
 			md = checkfield(md,'fieldname','friction.q','NaN',1,'Inf',1,'size',[md.mesh.numberofelements 1]);
 			md = checkfield(md,'fieldname','friction.p','NaN',1,'Inf',1,'size',[md.mesh.numberofelements 1]);
 			md = checkfield(md,'fieldname','friction.linearize','numel',[1],'values',[0:2]);
-			md = checkfield(md,'fieldname','friction.coupling','numel',[1],'values',[0:4]);
+			md = checkfield(md,'fieldname','friction.coupling','numel',[1],'values',[0:5]);
 			md = checkfield(md,'fieldname','friction.effective_pressure_limit','numel',[1],'>=',0);
          if self.coupling==3
             md = checkfield(md,'fieldname','friction.effective_pressure','NaN',1,'Inf',1,'timeseries',1);
+			elseif self.coupling==5
+				md = checkfield(md,'fieldname','initialization.hydraulic_potential','NaN',1,'Inf',1);
 			end
 		end % }}}
 		function disp(self) % {{{
@@ -60,7 +62,7 @@ classdef friction
 			fielddisplay(self,'coefficient','friction coefficient [SI]');
 			fielddisplay(self,'p','p exponent');
 			fielddisplay(self,'q','q exponent');
-			fielddisplay(self,'coupling','Coupling flag 0: uniform sheet (negative pressure ok, default), 1: ice pressure only, 2: water pressure assuming uniform sheet (no negative pressure), 3: use provided effective_pressure, 4: use coupled model (not implemented yet)');
+			fielddisplay(self,'coupling','Coupling flag 0: uniform sheet (negative pressure ok, default), 1: ice pressure only, 2: water pressure assuming uniform sheet (no negative pressure), 3: use provided effective_pressure, 4: use coupled model (not implemented yet), 5: use head in md.initialization.hydraulic_potential ');
 			fielddisplay(self,'linearize','0: not linearized, 1: interpolated linearly, 2: constant per element (default is 0)');
 			fielddisplay(self,'effective_pressure','Effective Pressure for the forcing if not coupled [Pa]');
 			fielddisplay(self,'effective_pressure_limit','Neff do not allow to fall below a certain limit: effective_pressure_limit*rho_ice*g*thickness (default 0)');

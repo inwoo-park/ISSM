@@ -34,6 +34,9 @@ switch(md.friction.coupling)
       N = max(md.friction.effective_pressure, 0);
    case 4
       error('md.friction.coupling=4 is not supported yet.');
+	case 5
+		p_water = md.initialization.hydraulic_potential - md.constants.g*md.materials.rho_freshwater*md.geometry.base;
+		N = p_ice - p_water;
    otherwise
       error('not supported yet');
 end

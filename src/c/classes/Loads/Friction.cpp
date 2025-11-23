@@ -1131,6 +1131,19 @@ IssmDouble Friction::EffectivePressure(Gauss* gauss){/*{{{*/
 			element->GetInputValue(&Neff,gauss,EffectivePressureEnum);
 		}
 			break;
+		case 5:{
+			IssmDouble hydraulic_potential;
+			element->GetInputValue(&hydraulic_potential,gauss,HydraulicPotentialEnum);
+			element->GetInputValue(&base, gauss, BaseEnum);
+			element->GetInputValue(&sealevel, gauss, SealevelEnum);
+
+			IssmDouble rho_water = element->FindParam(MaterialsRhoIceEnum);
+			IssmDouble gravity   = element->FindParam(ConstantsGEnum);
+
+			p_water = hydraulic_potential - rho_water*gravity*base;
+			Neff = p_ice - p_water;
+		}
+			break;
 		default:
 			_error_("not supported");
 	}
@@ -1271,6 +1284,8 @@ void FrictionUpdateInputs(Elements* elements,Inputs* inputs,IoModel* iomodel){/*
 				iomodel->FetchDataToInput(inputs,elements,"md.friction.effective_pressure",FrictionEffectivePressureEnum);}
 			else if(frictioncoupling==4){
 				iomodel->FetchDataToInput(inputs,elements,"md.friction.effective_pressure",EffectivePressureEnum);
+			}else if(frictioncoupling==5){
+				iomodel->FetchDataToInput(inputs,elements,"md.initialization.hydraulic_potential",HydraulicPotentialEnum);
 			}
 			break;
 		case 2:
