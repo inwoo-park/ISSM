@@ -1142,6 +1142,8 @@ IssmDouble Friction::EffectivePressure(Gauss* gauss){/*{{{*/
 
 			p_water = hydraulic_potential - rho_water*gravity*base;
 			Neff = p_ice - p_water;
+			/* NOTE: Negative effective pressure is not allowed. */
+			Neff = max(Neff,0.0);
 		}
 			break;
 		default:
