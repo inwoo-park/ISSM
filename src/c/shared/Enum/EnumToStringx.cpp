@@ -280,7 +280,11 @@ const char* EnumToStringx(int en){
 		case HydrologyGapHeightMaxEnum : return "HydrologyGapHeightMax";
 		case HydrologyEnglacialVoidRatioEnum : return "HydrologyEnglacialVoidRatio";
 		case HydrologyIschannelsEnum : return "HydrologyIschannels";
+		case HydrologyIschannelCreepEnum : return "HydrologyIschannelCreep";
+		case HydrologyIschannelMeltEnum : return "HydrologyIschannelMelt";
+		case HydrologyIschannelCavityEnum : return "HydrologyIschannelCavity";
 		case HydrologyIsIncludeSheetThicknessEnum : return "HydrologyIsIncludeSheetThickness";
+		case HydrologyIsconfinedEnum : return "HydrologyIsconfined";
 		case HydrologyCreepOpenFlagEnum : return "HydrologyCreepOpenFlag";
 		case HydrologyIsTransitionEnum : return "HydrologyIsTransition";
 		case HydrologyIsWaterPressureArmaEnum : return "HydrologyIsWaterPressureArma";
@@ -934,6 +938,12 @@ const char* EnumToStringx(int en){
 		case HydrologyBumpHeightEnum : return "HydrologyBumpHeight";
 		case HydrologyBumpSpacingEnum : return "HydrologyBumpSpacing";
 		case HydrologyChannelConductivityEnum : return "HydrologyChannelConductivity";
+		case HydrologyCuasConductivityEnum : return "HydrologyCuasConductivity";
+		case HydrologyCuasRoughnessEnum : return "HydrologyCuasRoughness";
+		case HydrologyCuasSpecificStorageEnum : return "HydrologyCuasSpecificStorage";
+		case HydrologyCuasSpecificYieldEnum : return "HydrologyCuasSpecificYield";
+		case HydrologyCuasTinitEnum : return "HydrologyCuasTinit";
+		case HydrologyCuasTrasmissivityEnum : return "HydrologyCuasTrasmissivity";
 		case HydrologydcBasalMoulinInputEnum : return "HydrologydcBasalMoulinInput";
 		case HydrologydcEplThicknessEnum : return "HydrologydcEplThickness";
 		case HydrologydcEplThicknessOldEnum : return "HydrologydcEplThicknessOld";
@@ -3523,6 +3533,7 @@ const char* EnumToStringx(int en){
 		case HydrologyPismAnalysisEnum : return "HydrologyPismAnalysis";
 		case HydrologyShaktiAnalysisEnum : return "HydrologyShaktiAnalysis";
 		case HydrologyShreveAnalysisEnum : return "HydrologyShreveAnalysis";
+		case HydrologyCuasAnalysisEnum : return "HydrologyCuasAnalysis";
 		case HydrologySolutionEnum : return "HydrologySolution";
 		case HydrologySubstepsEnum : return "HydrologySubsteps";
 		case HydrologySubTimeEnum : return "HydrologySubTime";
@@ -3530,6 +3541,7 @@ const char* EnumToStringx(int en){
 		case HydrologypismEnum : return "Hydrologypism";
 		case HydrologyshaktiEnum : return "Hydrologyshakti";
 		case HydrologyshreveEnum : return "Hydrologyshreve";
+		case HydrologycuasEnum : return "Hydrologycuas";
 		case IceMassEnum : return "IceMass";
 		case IceMassScaledEnum : return "IceMassScaled";
 		case IceVolumeAboveFloatationEnum : return "IceVolumeAboveFloatation";

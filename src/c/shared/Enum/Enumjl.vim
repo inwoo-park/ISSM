@@ -271,7 +271,11 @@ syn keyword juliaConstC HydrologyGapHeightMinEnum
 syn keyword juliaConstC HydrologyGapHeightMaxEnum
 syn keyword juliaConstC HydrologyEnglacialVoidRatioEnum
 syn keyword juliaConstC HydrologyIschannelsEnum
+syn keyword juliaConstC HydrologyIschannelCreepEnum
+syn keyword juliaConstC HydrologyIschannelMeltEnum
+syn keyword juliaConstC HydrologyIschannelCavityEnum
 syn keyword juliaConstC HydrologyIsIncludeSheetThicknessEnum
+syn keyword juliaConstC HydrologyIsconfinedEnum
 syn keyword juliaConstC HydrologyCreepOpenFlagEnum
 syn keyword juliaConstC HydrologyIsTransitionEnum
 syn keyword juliaConstC HydrologyIsWaterPressureArmaEnum
@@ -925,6 +929,12 @@ syn keyword juliaConstC HydrologyBasinsIdEnum
 syn keyword juliaConstC HydrologyBumpHeightEnum
 syn keyword juliaConstC HydrologyBumpSpacingEnum
 syn keyword juliaConstC HydrologyChannelConductivityEnum
+syn keyword juliaConstC HydrologyCuasConductivityEnum
+syn keyword juliaConstC HydrologyCuasRoughnessEnum
+syn keyword juliaConstC HydrologyCuasSpecificStorageEnum
+syn keyword juliaConstC HydrologyCuasSpecificYieldEnum
+syn keyword juliaConstC HydrologyCuasTinitEnum
+syn keyword juliaConstC HydrologyCuasTrasmissivityEnum
 syn keyword juliaConstC HydrologydcBasalMoulinInputEnum
 syn keyword juliaConstC HydrologydcEplThicknessEnum
 syn keyword juliaConstC HydrologydcEplThicknessOldEnum
@@ -3514,6 +3524,7 @@ syn keyword juliaConstC HydrologyGlaDSEnum
 syn keyword juliaConstC HydrologyPismAnalysisEnum
 syn keyword juliaConstC HydrologyShaktiAnalysisEnum
 syn keyword juliaConstC HydrologyShreveAnalysisEnum
+syn keyword juliaConstC HydrologyCuasAnalysisEnum
 syn keyword juliaConstC HydrologySolutionEnum
 syn keyword juliaConstC HydrologySubstepsEnum
 syn keyword juliaConstC HydrologySubTimeEnum
@@ -3521,6 +3532,7 @@ syn keyword juliaConstC HydrologydcEnum
 syn keyword juliaConstC HydrologypismEnum
 syn keyword juliaConstC HydrologyshaktiEnum
 syn keyword juliaConstC HydrologyshreveEnum
+syn keyword juliaConstC HydrologycuasEnum
 syn keyword juliaConstC IceMassEnum
 syn keyword juliaConstC IceMassScaledEnum
 syn keyword juliaConstC IceVolumeAboveFloatationEnum

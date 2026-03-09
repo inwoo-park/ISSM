@@ -387,6 +387,20 @@ fi
 AM_CONDITIONAL([HYDROLOGYARMAPW], [test x$HAVE_HYDROLOGYARMAPW = xyes])
 AC_MSG_RESULT($HAVE_HYDROLOGYARMAPW)
 dnl }}}
+dnl with-HydrologyCuas{{{
+AC_ARG_WITH([HydrologyCuas],
+	AS_HELP_STRING([--with-HydrologyCuas= YES], [compile with HydrologyCuas capabilities (default is yes)]),
+	[HYDROLOGYCUAS=$withval],[HYDROLOGYCUAS=yes])
+AC_MSG_CHECKING(for HydrologyCuas capability compilation)
+
+HAVE_HYDROLOGYCUAS=no 
+if test "x$HYDROLOGYCUAS" = "xyes"; then
+	HAVE_HYDROLOGYCUAS=yes
+	AC_DEFINE([_HAVE_HYDROLOGYCUAS_],[1],[with HydrologyCuas capability])
+fi
+AM_CONDITIONAL([HYDROLOGYCUAS], [test x$HAVE_HYDROLOGYCUAS = xyes])
+AC_MSG_RESULT($HAVE_HYDROLOGYCUAS)
+dnl }}}
 dnl with-L2ProjectionBase{{{
 AC_ARG_WITH([L2ProjectionBase],
 	AS_HELP_STRING([--with-L2ProjectionBase = YES], [compile with L2ProjectionBase capabilities (default is yes)]),

@@ -267,7 +267,11 @@
 	HydrologyGapHeightMaxEnum
 	HydrologyEnglacialVoidRatioEnum
 	HydrologyIschannelsEnum
+	HydrologyIschannelCreepEnum
+	HydrologyIschannelMeltEnum
+	HydrologyIschannelCavityEnum
 	HydrologyIsIncludeSheetThicknessEnum
+	HydrologyIsconfinedEnum
 	HydrologyCreepOpenFlagEnum
 	HydrologyIsTransitionEnum
 	HydrologyIsWaterPressureArmaEnum
@@ -921,6 +925,12 @@
 	HydrologyBumpHeightEnum
 	HydrologyBumpSpacingEnum
 	HydrologyChannelConductivityEnum
+	HydrologyCuasConductivityEnum
+	HydrologyCuasRoughnessEnum
+	HydrologyCuasSpecificStorageEnum
+	HydrologyCuasSpecificYieldEnum
+	HydrologyCuasTinitEnum
+	HydrologyCuasTrasmissivityEnum
 	HydrologydcBasalMoulinInputEnum
 	HydrologydcEplThicknessEnum
 	HydrologydcEplThicknessOldEnum
@@ -3510,6 +3520,7 @@
 	HydrologyPismAnalysisEnum
 	HydrologyShaktiAnalysisEnum
 	HydrologyShreveAnalysisEnum
+	HydrologyCuasAnalysisEnum
 	HydrologySolutionEnum
 	HydrologySubstepsEnum
 	HydrologySubTimeEnum
@@ -3517,6 +3528,7 @@
 	HydrologypismEnum
 	HydrologyshaktiEnum
 	HydrologyshreveEnum
+	HydrologycuasEnum
 	IceMassEnum
 	IceMassScaledEnum
 	IceVolumeAboveFloatationEnum
@@ -4046,7 +4058,11 @@ function EnumToString(enum::IssmEnum)
 	if(enum==HydrologyGapHeightMaxEnum) return "HydrologyGapHeightMax" end
 	if(enum==HydrologyEnglacialVoidRatioEnum) return "HydrologyEnglacialVoidRatio" end
 	if(enum==HydrologyIschannelsEnum) return "HydrologyIschannels" end
+	if(enum==HydrologyIschannelCreepEnum) return "HydrologyIschannelCreep" end
+	if(enum==HydrologyIschannelMeltEnum) return "HydrologyIschannelMelt" end
+	if(enum==HydrologyIschannelCavityEnum) return "HydrologyIschannelCavity" end
 	if(enum==HydrologyIsIncludeSheetThicknessEnum) return "HydrologyIsIncludeSheetThickness" end
+	if(enum==HydrologyIsconfinedEnum) return "HydrologyIsconfined" end
 	if(enum==HydrologyCreepOpenFlagEnum) return "HydrologyCreepOpenFlag" end
 	if(enum==HydrologyIsTransitionEnum) return "HydrologyIsTransition" end
 	if(enum==HydrologyIsWaterPressureArmaEnum) return "HydrologyIsWaterPressureArma" end
@@ -4700,6 +4716,12 @@ function EnumToString(enum::IssmEnum)
 	if(enum==HydrologyBumpHeightEnum) return "HydrologyBumpHeight" end
 	if(enum==HydrologyBumpSpacingEnum) return "HydrologyBumpSpacing" end
 	if(enum==HydrologyChannelConductivityEnum) return "HydrologyChannelConductivity" end
+	if(enum==HydrologyCuasConductivityEnum) return "HydrologyCuasConductivity" end
+	if(enum==HydrologyCuasRoughnessEnum) return "HydrologyCuasRoughness" end
+	if(enum==HydrologyCuasSpecificStorageEnum) return "HydrologyCuasSpecificStorage" end
+	if(enum==HydrologyCuasSpecificYieldEnum) return "HydrologyCuasSpecificYield" end
+	if(enum==HydrologyCuasTinitEnum) return "HydrologyCuasTinit" end
+	if(enum==HydrologyCuasTrasmissivityEnum) return "HydrologyCuasTrasmissivity" end
 	if(enum==HydrologydcBasalMoulinInputEnum) return "HydrologydcBasalMoulinInput" end
 	if(enum==HydrologydcEplThicknessEnum) return "HydrologydcEplThickness" end
 	if(enum==HydrologydcEplThicknessOldEnum) return "HydrologydcEplThicknessOld" end
@@ -7289,6 +7311,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==HydrologyPismAnalysisEnum) return "HydrologyPismAnalysis" end
 	if(enum==HydrologyShaktiAnalysisEnum) return "HydrologyShaktiAnalysis" end
 	if(enum==HydrologyShreveAnalysisEnum) return "HydrologyShreveAnalysis" end
+	if(enum==HydrologyCuasAnalysisEnum) return "HydrologyCuasAnalysis" end
 	if(enum==HydrologySolutionEnum) return "HydrologySolution" end
 	if(enum==HydrologySubstepsEnum) return "HydrologySubsteps" end
 	if(enum==HydrologySubTimeEnum) return "HydrologySubTime" end
@@ -7296,6 +7319,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==HydrologypismEnum) return "Hydrologypism" end
 	if(enum==HydrologyshaktiEnum) return "Hydrologyshakti" end
 	if(enum==HydrologyshreveEnum) return "Hydrologyshreve" end
+	if(enum==HydrologycuasEnum) return "Hydrologycuas" end
 	if(enum==IceMassEnum) return "IceMass" end
 	if(enum==IceMassScaledEnum) return "IceMassScaled" end
 	if(enum==IceVolumeAboveFloatationEnum) return "IceVolumeAboveFloatation" end
@@ -7825,7 +7849,11 @@ function StringToEnum(name::String)
 	if(name=="HydrologyGapHeightMax") return HydrologyGapHeightMaxEnum  end
 	if(name=="HydrologyEnglacialVoidRatio") return HydrologyEnglacialVoidRatioEnum  end
 	if(name=="HydrologyIschannels") return HydrologyIschannelsEnum  end
+	if(name=="HydrologyIschannelCreep") return HydrologyIschannelCreepEnum  end
+	if(name=="HydrologyIschannelMelt") return HydrologyIschannelMeltEnum  end
+	if(name=="HydrologyIschannelCavity") return HydrologyIschannelCavityEnum  end
 	if(name=="HydrologyIsIncludeSheetThickness") return HydrologyIsIncludeSheetThicknessEnum  end
+	if(name=="HydrologyIsconfined") return HydrologyIsconfinedEnum  end
 	if(name=="HydrologyCreepOpenFlag") return HydrologyCreepOpenFlagEnum  end
 	if(name=="HydrologyIsTransition") return HydrologyIsTransitionEnum  end
 	if(name=="HydrologyIsWaterPressureArma") return HydrologyIsWaterPressureArmaEnum  end
@@ -8479,6 +8507,12 @@ function StringToEnum(name::String)
 	if(name=="HydrologyBumpHeight") return HydrologyBumpHeightEnum  end
 	if(name=="HydrologyBumpSpacing") return HydrologyBumpSpacingEnum  end
 	if(name=="HydrologyChannelConductivity") return HydrologyChannelConductivityEnum  end
+	if(name=="HydrologyCuasConductivity") return HydrologyCuasConductivityEnum  end
+	if(name=="HydrologyCuasRoughness") return HydrologyCuasRoughnessEnum  end
+	if(name=="HydrologyCuasSpecificStorage") return HydrologyCuasSpecificStorageEnum  end
+	if(name=="HydrologyCuasSpecificYield") return HydrologyCuasSpecificYieldEnum  end
+	if(name=="HydrologyCuasTinit") return HydrologyCuasTinitEnum  end
+	if(name=="HydrologyCuasTrasmissivity") return HydrologyCuasTrasmissivityEnum  end
 	if(name=="HydrologydcBasalMoulinInput") return HydrologydcBasalMoulinInputEnum  end
 	if(name=="HydrologydcEplThickness") return HydrologydcEplThicknessEnum  end
 	if(name=="HydrologydcEplThicknessOld") return HydrologydcEplThicknessOldEnum  end
@@ -11068,6 +11102,7 @@ function StringToEnum(name::String)
 	if(name=="HydrologyPismAnalysis") return HydrologyPismAnalysisEnum  end
 	if(name=="HydrologyShaktiAnalysis") return HydrologyShaktiAnalysisEnum  end
 	if(name=="HydrologyShreveAnalysis") return HydrologyShreveAnalysisEnum  end
+	if(name=="HydrologyCuasAnalysis") return HydrologyCuasAnalysisEnum  end
 	if(name=="HydrologySolution") return HydrologySolutionEnum  end
 	if(name=="HydrologySubsteps") return HydrologySubstepsEnum  end
 	if(name=="HydrologySubTime") return HydrologySubTimeEnum  end
@@ -11075,6 +11110,7 @@ function StringToEnum(name::String)
 	if(name=="Hydrologypism") return HydrologypismEnum  end
 	if(name=="Hydrologyshakti") return HydrologyshaktiEnum  end
 	if(name=="Hydrologyshreve") return HydrologyshreveEnum  end
+	if(name=="Hydrologycuas") return HydrologycuasEnum  end
 	if(name=="IceMass") return IceMassEnum  end
 	if(name=="IceMassScaled") return IceMassScaledEnum  end
 	if(name=="IceVolumeAboveFloatation") return IceVolumeAboveFloatationEnum  end
