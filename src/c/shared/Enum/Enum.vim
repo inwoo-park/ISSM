@@ -278,7 +278,11 @@ syn keyword cConstant HydrologyGapHeightMinEnum
 syn keyword cConstant HydrologyGapHeightMaxEnum
 syn keyword cConstant HydrologyEnglacialVoidRatioEnum
 syn keyword cConstant HydrologyIschannelsEnum
+syn keyword cConstant HydrologyIschannelCreepEnum
+syn keyword cConstant HydrologyIschannelMeltEnum
+syn keyword cConstant HydrologyIschannelCavityEnum
 syn keyword cConstant HydrologyIsIncludeSheetThicknessEnum
+syn keyword cConstant HydrologyIsconfinedEnum
 syn keyword cConstant HydrologyCreepOpenFlagEnum
 syn keyword cConstant HydrologyIsTransitionEnum
 syn keyword cConstant HydrologyIsWaterPressureArmaEnum
@@ -932,6 +936,12 @@ syn keyword cConstant HydrologyBasinsIdEnum
 syn keyword cConstant HydrologyBumpHeightEnum
 syn keyword cConstant HydrologyBumpSpacingEnum
 syn keyword cConstant HydrologyChannelConductivityEnum
+syn keyword cConstant HydrologyCuasConductivityEnum
+syn keyword cConstant HydrologyCuasRoughnessEnum
+syn keyword cConstant HydrologyCuasSpecificStorageEnum
+syn keyword cConstant HydrologyCuasSpecificYieldEnum
+syn keyword cConstant HydrologyCuasTinitEnum
+syn keyword cConstant HydrologyCuasTrasmissivityEnum
 syn keyword cConstant HydrologydcBasalMoulinInputEnum
 syn keyword cConstant HydrologydcEplThicknessEnum
 syn keyword cConstant HydrologydcEplThicknessOldEnum
@@ -3521,6 +3531,7 @@ syn keyword cConstant HydrologyGlaDSEnum
 syn keyword cConstant HydrologyPismAnalysisEnum
 syn keyword cConstant HydrologyShaktiAnalysisEnum
 syn keyword cConstant HydrologyShreveAnalysisEnum
+syn keyword cConstant HydrologyCuasAnalysisEnum
 syn keyword cConstant HydrologySolutionEnum
 syn keyword cConstant HydrologySubstepsEnum
 syn keyword cConstant HydrologySubTimeEnum
@@ -3528,6 +3539,7 @@ syn keyword cConstant HydrologydcEnum
 syn keyword cConstant HydrologypismEnum
 syn keyword cConstant HydrologyshaktiEnum
 syn keyword cConstant HydrologyshreveEnum
+syn keyword cConstant HydrologycuasEnum
 syn keyword cConstant IceMassEnum
 syn keyword cConstant IceMassScaledEnum
 syn keyword cConstant IceVolumeAboveFloatationEnum
