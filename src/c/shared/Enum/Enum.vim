@@ -470,6 +470,7 @@ syn keyword cConstant SamplingRequestedOutputsEnum
 syn keyword cConstant SamplingRobinEnum
 syn keyword cConstant SamplingSeedEnum
 syn keyword cConstant SaveResultsEnum
+syn keyword cConstant SaveFinalResultsEnum
 syn keyword cConstant SolidearthPartitionIceEnum
 syn keyword cConstant SolidearthPartitionHydroEnum
 syn keyword cConstant SolidearthPartitionOceanEnum
@@ -936,12 +937,10 @@ syn keyword cConstant HydrologyBasinsIdEnum
 syn keyword cConstant HydrologyBumpHeightEnum
 syn keyword cConstant HydrologyBumpSpacingEnum
 syn keyword cConstant HydrologyChannelConductivityEnum
-syn keyword cConstant HydrologyCuasConductivityEnum
-syn keyword cConstant HydrologyCuasRoughnessEnum
+syn keyword cConstant HydrologyConductivityEnum
 syn keyword cConstant HydrologyCuasSpecificStorageEnum
 syn keyword cConstant HydrologyCuasSpecificYieldEnum
 syn keyword cConstant HydrologyCuasTinitEnum
-syn keyword cConstant HydrologyCuasTrasmissivityEnum
 syn keyword cConstant HydrologydcBasalMoulinInputEnum
 syn keyword cConstant HydrologydcEplThicknessEnum
 syn keyword cConstant HydrologydcEplThicknessOldEnum
@@ -974,6 +973,8 @@ syn keyword cConstant HydrologySheetDischargeEnum
 syn keyword cConstant HydrologySheetThicknessEnum
 syn keyword cConstant HydrologySheetThicknessOldEnum
 syn keyword cConstant HydrologyStorageEnum
+syn keyword cConstant HydrologyTrasmissivityEnum
+syn keyword cConstant HydrologyTrasmissivityNewEnum
 syn keyword cConstant HydrologyTwsEnum
 syn keyword cConstant HydrologyTwsSpcEnum
 syn keyword cConstant HydrologyTwsAnalysisEnum
