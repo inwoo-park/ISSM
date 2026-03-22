@@ -463,6 +463,7 @@ syn keyword juliaConstC SamplingRequestedOutputsEnum
 syn keyword juliaConstC SamplingRobinEnum
 syn keyword juliaConstC SamplingSeedEnum
 syn keyword juliaConstC SaveResultsEnum
+syn keyword juliaConstC SaveFinalResultsEnum
 syn keyword juliaConstC SolidearthPartitionIceEnum
 syn keyword juliaConstC SolidearthPartitionHydroEnum
 syn keyword juliaConstC SolidearthPartitionOceanEnum
@@ -929,12 +930,10 @@ syn keyword juliaConstC HydrologyBasinsIdEnum
 syn keyword juliaConstC HydrologyBumpHeightEnum
 syn keyword juliaConstC HydrologyBumpSpacingEnum
 syn keyword juliaConstC HydrologyChannelConductivityEnum
-syn keyword juliaConstC HydrologyCuasConductivityEnum
-syn keyword juliaConstC HydrologyCuasRoughnessEnum
+syn keyword juliaConstC HydrologyConductivityEnum
 syn keyword juliaConstC HydrologyCuasSpecificStorageEnum
 syn keyword juliaConstC HydrologyCuasSpecificYieldEnum
 syn keyword juliaConstC HydrologyCuasTinitEnum
-syn keyword juliaConstC HydrologyCuasTrasmissivityEnum
 syn keyword juliaConstC HydrologydcBasalMoulinInputEnum
 syn keyword juliaConstC HydrologydcEplThicknessEnum
 syn keyword juliaConstC HydrologydcEplThicknessOldEnum
@@ -967,6 +966,8 @@ syn keyword juliaConstC HydrologySheetDischargeEnum
 syn keyword juliaConstC HydrologySheetThicknessEnum
 syn keyword juliaConstC HydrologySheetThicknessOldEnum
 syn keyword juliaConstC HydrologyStorageEnum
+syn keyword juliaConstC HydrologyTrasmissivityEnum
+syn keyword juliaConstC HydrologyTrasmissivityNewEnum
 syn keyword juliaConstC HydrologyTwsEnum
 syn keyword juliaConstC HydrologyTwsSpcEnum
 syn keyword juliaConstC HydrologyTwsAnalysisEnum

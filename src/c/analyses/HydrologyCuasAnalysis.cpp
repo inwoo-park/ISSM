@@ -86,7 +86,11 @@ ElementMatrix* HydrologyCuasAnalysis::CreateJacobianMatrix(Element* element){/*{
 _error_("Not implemented");
 }/*}}}*/
 ElementMatrix* HydrologyCuasAnalysis::CreateKMatrix(Element* element){/*{{{*/
-	_error_("not implemented");
+
+	/* Check if ice in element */
+	if(element->IsAllFloating() || !element->IsIceInElement()) return NULL;
+	if(!element->IsOnBase()) return NULL;
+	Element* basalelement = element->SpawnBasalElement();
 }/*}}}*/
 ElementVector* HydrologyCuasAnalysis::CreatePVector(Element* element){/*{{{*/
 	_error_("not implemented");
@@ -105,108 +109,94 @@ void           HydrologyCuasAnalysis::UpdateConstraints(FemModel* femmodel){/*{{
 }/*}}}*/
 
 /*Additional methods*/
-void HydrologyCuasAnalysis::UpdateWaterColumn(FemModel* femmodel){/*{{{*/
-
-	for(Object* & object : femmodel->elements->objects){
-		Element* element=xDynamicCast<Element*>(object);
-		this->UpdateWaterColumn(element);
-	}
-
-}/*}}}*/
-void HydrologyCuasAnalysis::UpdateWaterColumn(Element* element){/*{{{*/
-
-	/*Skip if water or ice shelf element*/
-	if(element->IsAllFloating()) return;
-
-	/*Intermediaries */
-	IssmDouble  dt,drainage_rate,water_column;
-
-	/*Retrieve all inputs and parameters*/
-	element->FindParam(&dt,TimesteppingTimeStepEnum);
-	IssmDouble  rho_ice   = element->FindParam(MaterialsRhoIceEnum);
-	IssmDouble  rho_water = element->FindParam(MaterialsRhoFreshwaterEnum);
-
-	/*Get water column and drainage rate*/
-	const int  numvertices= element->GetNumberOfVertices();
-	IssmDouble* watercolumn  = xNew<IssmDouble>(numvertices);
-	IssmDouble* drainagerate = xNew<IssmDouble>(numvertices);
-	IssmDouble* meltingrate  = xNew<IssmDouble>(numvertices);
- 	IssmDouble* watercolumn_max  = xNew<IssmDouble>(numvertices);
-	element->GetInputListOnVertices(&watercolumn[0],WaterColumnOldEnum);
-	element->GetInputListOnVertices(&drainagerate[0],HydrologyDrainageRateEnum);
-	element->GetInputListOnVertices(&meltingrate[0],BasalforcingsGroundediceMeltingRateEnum);
-	element->GetInputListOnVertices(&watercolumn_max[0],HydrologyWatercolumnMaxEnum);
-
-	/*Add water*/
-	for(int i=0;i<numvertices;i++){
-		watercolumn[i] += (meltingrate[i]/rho_ice*rho_water-drainagerate[i])*dt;
-		/*Check that water column height is within 0 and upper bound, correct if needed*/
- 		if(watercolumn[i]>watercolumn_max[i]) watercolumn[i]=watercolumn_max[i];
- 		if(watercolumn[i]<0) watercolumn[i]=0.;
-	}
-
-	/* Divide by connectivity, add degree of channelization as an input */
-	/*FIXME: should be changed to P1, this is due to the NR, IsAllFloating will return 0 on this element, but it should not be DG*/
-	element->AddInput(WatercolumnEnum,&watercolumn[0],P1DGEnum);
-
-	/*Clean up and return*/
-	xDelete<IssmDouble>(watercolumn);
-	xDelete<IssmDouble>(meltingrate);
-	xDelete<IssmDouble>(watercolumn_max);
-	xDelete<IssmDouble>(drainagerate);
-}/*}}}*/
-
-void HydrologyCuasAnalysis::EffectiveTransmissivity(Element* element)/*{{{*/
-	/*Skip if water or ice shelf element*/
-	if(element->IsAllFloating()) return;
-
-	Input *S_input = element->GetInput(HydrologyStorageEnum); _assert_(S_input);
-}/*}}}*/
 void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 	/*
 	 Update transmissivity...
 	 */
+
 	/*Skip if water or ice shelf element*/
-	if(element->IsAllFloating()) return;
+	if(element->IsAllFloating() || !element->IsIceInElement()) return;
+	if(!element->IsOnBase()) return;
+	Element* basalelement = element->SpawnBasalElement();
 
 	/*Intermediaries */
+	IssmDouble* xyz_list=NULL;
 	IssmDouble  dt;
 
+	IssmDouble trans, trans_new;
+	IssmDouble Pe; // effective pressure
+	IssmDouble head;
+	IssmDouble dh[3]; // deritavtives.
+	IssmDouble dhdx, dhdy;
+	IssmDouble n; /* Glen's flow exponent */
+	IssmDouble B; /* ice rheology B */
+	IssmDouble A; /* ice flow parameter A */
+
+	IssmDouble bump_height, bump_space;
+
 	/*Retrieve all inputs and parameters*/
-	element->FindParam(&dt,HydrologySubTimeStepEnum);
-	IssmDouble  rho_ice   = element->FindParam(MaterialsRhoIceEnum);
-	IssmDouble  rho_water = element->FindParam(MaterialsRhoFreshwaterEnum);
+	basalelement->GetVerticesCoordinates(&xyz_list);
+	basalelement->FindParam(&dt,HydrologySubTimeStepEnum);
+	IssmDouble  rho_ice   = basalelement->FindParam(MaterialsRhoIceEnum);
+	IssmDouble  rho_water = basalelement->FindParam(MaterialsRhoFreshwaterEnum);
+	IssmDouble  latent    = basalelement->FindParam(MaterialsLatentheatEnum);
 
-	IssmDouble  latent    = element->FindParam(MaterialsLatentheatEnum);
-
-	/*Get water column and drainage rate*/
-	const int  numvertices= element->GetNumberOfVertices();
-	IssmDouble* head         = xNew<IssmDouble>(numvertices);
-	IssmDouble* T     = xNew<IssmDouble>(numvertices);
-	IssmDouble* melt  = xNew<IssmDouble>(numvertices);
-	IssmDouble* creep = xNew<IssmDouble>(numvertices);
-	IssmDouble* cavity= xNew<IssmDouble>(numvertices);
-
-	element->GetInputListOnVertices(&T[0],HydrologyCuasTrasmissivityEnum);
-	element->GetInputListOnVertices(&creep[0],);
-	element->GetInputListOnVertices(&melt[0],HydrologyCuasTrasmissivityEnum);
-	element->GetInputListOnVertices(&cavity[0],HydrologyCuasTrasmissivityEnum);
+	const int  numvertices= basalelement->GetNumberOfVertices();
+	IssmDouble* trans_new = xNew<IssmDouble>(numvertices);
 
 	IssmDouble vel;
-	Input *head_input = element->GetInput(HydrologyHeadEnum);      _assert_(head_input);
-	Input *B_input    = element->GetInput(MaterialsRheologyBEnum); _assert_(B_input);
-	Input *
+	Input *vel_input  = basalelement->GetInput(VelEnum); _assert_(vel_input);
+	Input *head_input = basalelement->GetInput(HydrologyHeadEnum);      _assert_(head_input);
+	Input *B_input    = basalelement->GetInput(MaterialsRheologyBEnum); _assert_(B_input);
+	Input *n_input    = basalelement->GetInput(MaterialsRheologyNEnum); _assert_(N_input);
 
+	Input *conductivity_input=basalelement->GetInput(HydrologyConductivityEnum); _assert_(conductivity_input);
+	Input *trans_input = basalelement->GetInput(HydrologyTransmissivityEnum); _assert_(trans_old_input);
+	Input *Pe_input    = basalelement->GetInput(EffectivePressureEnum); _assert_(N_input);
 
-	/* Divide by connectivity, add degree of channelization as an input */
-	/*FIXME: should be changed to P1, this is due to the NR, IsAllFloating will return 0 on this element, but it should not be DG*/
-	element->AddInput(WatercolumnEnum,&watercolumn[1],P1DGEnum);
+	Input *bump_height_input = basalelement->GetInpu(HydrologyBumpHeightEnum); _assert_(bump_height_input);
+	Input *bump_space_input  = basalelement->GetInpu(HydrologyBumpSpacingEnum); _assert_(bump_space_input);
+
+	/* Update tarnsmissivity */
+	Gauss *gauss;
+	for(int iv=0;i<numvertices;i++){
+		gauss->GaussVertex(iv);
+
+		basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
+		trans_old_input->GetInputValue(&trans,gauss);
+		vel_input->GetInputValue(&vel,gauss);
+		Pe_input->GetInputValue(&Pe,gauss);
+
+		head_input->GetInputDerivativeValue(&dh[0],&xyz_list[0][0],&gauss);
+		dhdx = dh[0];
+		dhdy = dh[1];
+
+		/*Get ice A parameters*/
+		B_input->GetInputValue(&B, gauss);		
+		n_input->GetInputValue(&n, gauss);
+		A=pow(B,-n);
+
+		/* geometry information */
+		bump_height_input->GetInputValue(&bump_height,gauss);
+		bump_space_input->GetInputValue(&bump_space,gauss);
+		IssmDouble beta = bump_height/bump_space;
+
+		/* Opening by melting */
+		IssmDouble term1 = g * rho_water * trans / rho_ice / latent * (pow(dhdx,2.0) + pow(dhdy,2.0));
+		IssmDouble term2 = 2*A*pow(n,-n)*pow(abs(N),n-1)*trans;
+		IssmDouble term3 = beta*abs(vel)*conductivity;
+		
+		/* Resolve term in explictly */
+		trans_new[iv] = dt*(term1 + term2 + term3) + trans 
+	}
+
+	/* Assign value */
+	element->AddBasalInput(HydrologyTransmissivityNewEnum,trans_new,P1DGEnum);
 
 	/*Clean up and return*/
-	xDelete<IssmDouble>(watercolumn);
-	xDelete<IssmDouble>(meltingrate);
-	xDelete<IssmDouble>(watercolumn_max);
-	xDelete<IssmDouble>(drainagerate);
+	xDelete<IssmDouble>(xyz_list);
+	xDelete<IssmDouble>(trans_new);
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
 }/*}}}*/
 void HyoldrogyCuasAnalysis::ComputeCavityOpening(Element* element){ /* {{{ */
 	/*
@@ -222,4 +212,16 @@ void HyoldrogyCuasAnalysis::ComputeCavityOpening(Element* element){ /* {{{ */
 	element->FindParam(&ischannel_melt,HydrologyIschannelMeltEnum);
 	element->FindParam(&ischannel_creep,HydrologyIschannelCreepEnum);
 } /* }}} */
+void HydrologyCuasAnalysis::UpdateStorage(Element* element){ /*{{{ */
+	/*Skip if water or ice shelf element*/
+	if(element->IsAllFloating() || !element->IsIceInElement()) return;
+	if(!element->IsOnBase()) return;
+	Element* basalelement = element->SpawnBasalElement();
 
+	base_input=basalelement->GetInput(BaseEnum); _assert_(base_input);
+
+	element->AddBasalInput(HydrologyStorageEnum,storage,P1DGEnum);
+} /* }}} */
+void HydroologyCuasAnalysis::GetEffectiveTransmissivity(Element *element){ /* {{{ */
+
+} /* }}} */
