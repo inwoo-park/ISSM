@@ -10,17 +10,11 @@ void HydrologyCuasAnalysis::CreateConstraints(Constraints* constraints,IoModel* 
 	/*retrieve some parameters: */
 	int hydrology_model;
 	iomodel->FindConstant(&hydrology_model,"md.hydrology.model");
-<<<<<<< Updated upstream
 
 	if(hydrology_model!=HydrologycuasEnum) return;
 
 	IoModelToConstraintsx(constraints,iomodel,"md.hydrology.spchead",HydrologyCuasAnalysisEnum,P1Enum);
-=======
->>>>>>> Stashed changes
-
-	if(hydrology_model!=HydrologycuasEnum) return;
-
-	IoModelToConstraintsx(constraints,iomodel,"md.hydrology.spchead",HydrologyCuasAnalysisEnum,P1Enum);
+	
 }/*}}}*/
 void HydrologyCuasAnalysis::CreateLoads(Loads* loads, IoModel* iomodel){/*{{{*/
 
@@ -29,7 +23,6 @@ void HydrologyCuasAnalysis::CreateLoads(Loads* loads, IoModel* iomodel){/*{{{*/
 }/*}}}*/
 void HydrologyCuasAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,bool isamr){/*{{{*/
 
-<<<<<<< Updated upstream
     /*Fetch parameters: */
 	int  hydrology_model;
 	iomodel->FindConstant(&hydrology_model,"md.hydrology.model");
@@ -38,18 +31,9 @@ void HydrologyCuasAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,bool isamr
 	if(hydrology_model!=HydrologycuasEnum) return;
 
     if(iomodel->domaintype==Domain3DEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
-=======
-	/*Fetch parameters: */
-	int  hydrology_model;
-	iomodel->FindConstant(&hydrology_model,"md.hydrology.model");
-
-	/*Now, do we really want Shakti?*/
-	if(hydrology_model!=HydrologycuasEnum) return;
-
-	if(iomodel->domaintype==Domain3DEnum) iomodel->FetchData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
->>>>>>> Stashed changes
 	::CreateNodes(nodes,iomodel,HydrologyCuasAnalysisEnum,P1Enum);
 	iomodel->DeleteData(2,"md.mesh.vertexonbase","md.mesh.vertexonsurface");
+
 }/*}}}*/
 int  HydrologyCuasAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
 	return 1;
@@ -131,7 +115,6 @@ ElementMatrix* HydrologyCuasAnalysis::CreateJacobianMatrix(Element* element){/*{
 ElementMatrix* HydrologyCuasAnalysis::CreateKMatrix(Element* element){/*{{{*/
 
 	/* Check if ice in element */
-<<<<<<< Updated upstream
 	if(element->IsAllFloating() || !element->IsIceInElement()) return NULL;
 	if(!element->IsOnBase()) return NULL;
 	Element* basalelement = element->SpawnBasalElement();
