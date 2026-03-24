@@ -32,7 +32,10 @@ class HydrologyCuasAnalysis: public Analysis{
 		void           UpdateConstraints(FemModel* femmodel);
 
 		/*Intermediaries*/
-		void UpdateWaterColumn(FemModel* femmodel);
-		void UpdateWaterColumn(Element* element);
+        void UpdateTransmissivity(FemModel* femmodel);
+        void UpdateTransmissivity(Element* element);
+        void UpdateStorage(FemModel* femmodel);
+        void UpdateStorage(Element* element);
+        void UpdateEffectiveAquiferProperties(Element *element);
 };
 #endif
