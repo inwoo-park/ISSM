@@ -5,15 +5,30 @@
 
 classdef hydrologycuas
 	properties (SetAccess=public)
-		conductivity = NaN;
+		head = NaN;
+        transmissivity = NaN;
+        conductivity = NaN;
+        layer_thickness = NaN;
+
 		Tmin  = NaN;
 		Tmax  = NaN;
-		Tinit = NaN;
+		
+        ss = NaN;
+        sy = NaN;
 
+        % Parameters for channels
 		ischannel_creep =0;
 		ischannel_melt  =0;
 		ischannel_cavity=0;
 		isconfined=0;
+
+        melt_flag=0;
+
+        unconfinedSmooth=0;
+
+        % Boundary conditions
+        spchead = NaN;
+        spcneumann = NaN;
 
 		steps_per_step=NaN;
 		averaging=NaN;
@@ -31,30 +46,16 @@ classdef hydrologycuas
 			end
 		end% }}}
 		function list = defaultoutputs(self,md) % {{{
-			list = {'SedimentHead','SedimentHeadResidual','EffectivePressure'};
-			if self.isefficientlayer,
-				list=[list,{'EplHead','HydrologydcMaskEplactiveNode','HydrologydcMaskEplactiveElt','EplHeadSlopeX','EplHeadSlopeY','HydrologydcEplThickness'}];
-			end
-			if self.steps_per_step>1 | self.step_adapt,
-				list = [list,'EffectivePressureSubstep','SedimentHeadSubstep'];
-				if self.isefficientlayer,
-					list = [list,'EplHeadSubstep','HydrologydcEplThicknessSubstep'];
-				end
-			end
+			list = {'HydrologyHead','HydrologyTransmissivity','HydrologyStorage'};
 		end % }}}
 		function self = initialize(self,md) % {{{
-			self.epl_colapse_thickness = self.sediment_transmitivity/self.epl_conductivity;
-			if isnan(self.basal_moulin_input),
-				self.basal_moulin_input=zeros(md.mesh.numberofvertices,1);
-				disp('      no hydrology.basal_moulin_input specified: values set as zero');
-			end
-
+            return
 		end % }}}
 		function self = setdefaultparameters(self)% {{{
 			%Parameters from ?? (original CUAS document)
-			self.Tmin      = 1e-7;
-			self.Tmax      = 20.0;
-			self.Tinit     = 0.2;
+			self.transmissivity = 1e-7;
+			self.Tmax           = 20.0;
+			self.Tinit          = 0.2;
 			
 			self.ss        = 0.0000982977696;
 			self.sy        = 0.4;
@@ -64,8 +65,13 @@ classdef hydrologycuas
 			self.ischannel_cavity= 1;
 			self.isconfined= 1;
 
+            self.melt_flag=1;
+
+            self.unconfinedSmooth=0.0;
+
 			% Opening factor.
-			self.roughness = 1.0;
+			self.bump_height  = 0.1;
+            self.bump_spacing = 10.0;
 
 			self.requested_outputs        = {'default'};
 		end  % }}}
@@ -101,52 +107,28 @@ classdef hydrologycuas
 			fielddisplay(self,'ischannel_melt','Evolve channel due to melting (default: 1)');
 			fielddisplay(self,'ischannel_cavitiy','Evolve channel due to cavity (default: 1)');
 			fielddisplay(self,'isconfined','Select CUAS model to solve confined or unconfined. 0: unconfined, 1: confined. (default: 1)');
+            fielddisplay(self,'unconfinedSmooth','Smoothing factor for unconfined aquifer system (default: 0.0)');
 		end % }}}
 		function marshall(self,prefix,md,fid)% {{{
 			WriteData(fid,prefix,'name','md.hydrology.model','data',8,'format','Integer');
 
-			WriteData(fid,prefix,'object',self,'fieldname','head','format','Double');
+			WriteData(fid,prefix,'object',self,'fieldname','head','format','DoubleMat','mattype',1);
+            WriteData(fid,prefix,'object',self,'fieldname','conductivity','DoubleMat','mattype',1);
+            WriteData(fid,prefix,'object',self,'fieldname','transmissivity','DoubleMat','mattype',1);
+            
+            WriteData(fid,prefix,'object',self,'fieldname','Tmin','format','Double');
 
 
+            WriteData(fid,prefix,'object',self,'fieldname','ischannel_cavity','format','Boolean');
+            WriteData(fid,prefix,'object',self,'fieldname','ischannel_melt','format','Boolean');
+            WriteData(fid,prefix,'object',self,'fieldname','ischannel_creep','format','Boolean');
+            WriteData(fid,prefix,'object',self,'fieldname','isconfined','format','Boolean');
 
-			WriteData(fid,prefix,'object',self,'fieldname','water_compressibility','format','Double');
-			WriteData(fid,prefix,'object',self,'fieldname','isefficientlayer','format','Boolean');
-			WriteData(fid,prefix,'object',self,'fieldname','penalty_factor','format','Double');
-			WriteData(fid,prefix,'object',self,'fieldname','penalty_lock','format','Integer');
-			WriteData(fid,prefix,'object',self,'fieldname','rel_tol','format','Double');
-			WriteData(fid,prefix,'object',self,'fieldname','max_iter','format','Integer');
-			WriteData(fid,prefix,'object',self,'fieldname','steps_per_step','format','Integer');
-			WriteData(fid,prefix,'object',self,'fieldname','step_adapt','format','Boolean');
-			WriteData(fid,prefix,'object',self,'fieldname','averaging','format','Integer');
-			WriteData(fid,prefix,'object',self,'fieldname','sedimentlimit_flag','format','Integer');
-			WriteData(fid,prefix,'object',self,'fieldname','transfer_flag','format','Integer');
-			WriteData(fid,prefix,'object',self,'fieldname','unconfined_flag','format','Integer');
-			if self.sedimentlimit_flag==1,
-				WriteData(fid,prefix,'object',self,'fieldname','sedimentlimit','format','Double');
-			end
-			if self.transfer_flag==1,
-				WriteData(fid,prefix,'object',self,'fieldname','leakage_factor','format','Double');
-			end
-			WriteData(fid,prefix,'object',self,'fieldname','basal_moulin_input','format','DoubleMat','mattype',1,'timeserieslength',md.mesh.numberofvertices+1,'yts',md.constants.yts)
+			WriteData(fid,prefix,'object',self,'fieldname','melt_flag','format','Integer');
+            WriteData(fid,prefix,'object',self,'fieldname','unconfinedSmooth','format','Double');
+            
 
-			WriteData(fid,prefix,'object',self,'fieldname','spcsediment_head','format','DoubleMat','mattype',1,'timeserieslength',md.mesh.numberofvertices+1,'yts',md.constants.yts);
-			WriteData(fid,prefix,'object',self,'fieldname','sediment_compressibility','format','Double');
-			WriteData(fid,prefix,'object',self,'fieldname','sediment_porosity','format','Double');
-			WriteData(fid,prefix,'object',self,'fieldname','sediment_thickness','format','Double');
-			WriteData(fid,prefix,'object',self,'fieldname','sediment_transmitivity','format','DoubleMat','mattype',1');
-			WriteData(fid,prefix,'object',self,'fieldname','mask_thawed_node','format','DoubleMat','mattype',1);
-			if self.isefficientlayer==1,
-				WriteData(fid,prefix,'object',self,'fieldname','spcepl_head','format','DoubleMat','mattype',1,'timeserieslength',md.mesh.numberofvertices+1,'yts',md.constants.yts);
-				WriteData(fid,prefix,'object',self,'fieldname','mask_eplactive_node','format','DoubleMat','mattype',1);
-				WriteData(fid,prefix,'object',self,'fieldname','epl_compressibility','format','Double');
-				WriteData(fid,prefix,'object',self,'fieldname','epl_porosity','format','Double');
-				WriteData(fid,prefix,'object',self,'fieldname','epl_initial_thickness','format','Double');
-				WriteData(fid,prefix,'object',self,'fieldname','epl_colapse_thickness','format','Double');
-				WriteData(fid,prefix,'object',self,'fieldname','epl_thick_comp','format','Integer');
-				WriteData(fid,prefix,'object',self,'fieldname','epl_max_thickness','format','Double');
-				WriteData(fid,prefix,'object',self,'fieldname','epl_conductivity','format','Double');
-				WriteData(fid,prefix,'object',self,'fieldname','eplflip_lock','format','Integer');
-			end
+            % requested outputs
 			outputs = self.requested_outputs;
 			pos  = find(ismember(outputs,'default'));
 			if ~isempty(pos),

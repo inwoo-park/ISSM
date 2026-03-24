@@ -318,6 +318,7 @@ issm_sources += \
 	./solutionsequences/solutionsequence_hydro_nonlinear.cpp \
 	./solutionsequences/solutionsequence_shakti_nonlinear.cpp \
 	./solutionsequences/solutionsequence_glads_nonlinear.cpp \
+    ./solutionsequences/solutionsequence_cuas_nonlinear.cpp \
 	./cores/stressbalance_core.cpp \
 	./solutionsequences/solutionsequence_stokescoupling_nonlinear.cpp \
 	./cores/balancethickness_core.cpp \

@@ -267,6 +267,24 @@ void hydrology_core(FemModel* femmodel){ /*{{{*/
       analysis->UpdateSubglacialWaterPressure(femmodel);
       delete analysis;
    }
+    
+    else if (hydrology_model==HydrologycuasEnum){
+        if(VerboseSolution()) _printf0_("   computing effective pressure\n");
+		HydrologyCuasAnalysis* analysis = new HydrologyCuasAnalysis();
+
+        /*Pre-compute tarnsmissivity and storage*/
+        analysis->UpdateTransmissivity(femmodel);
+        analysis->UpdateStorage(femmodel);
+        
+        /*Get new head*/
+        femmodel->SetCurrentConfiguration(HydrologyCuasAnalysisEnum);
+        InputDuplicatex(femmodel,HydrologyHeadEnum,HydrologyHeadOldEnum);
+        solutionsequence_cuas_nonlinear(femmodel);
+        
+        /*Clear memory*/
+        delete analysis;
+    }
+
 	else{
 		_error_("Hydrology model "<< EnumToStringx(hydrology_model) <<" not supported yet");
 	}
