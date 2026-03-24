@@ -274,6 +274,9 @@ syn keyword cConstant HydrologyChannelAlphaEnum
 syn keyword cConstant HydrologyChannelBetaEnum
 syn keyword cConstant HydrologyCavitySpacingEnum
 syn keyword cConstant HydrologyChannelSheetWidthEnum
+syn keyword cConstant HydrologyCuasTmaxEnum
+syn keyword cConstant HydrologyCuasTminEnum
+syn keyword cConstant HydrologyCuasUnconfinedSmoothEnum
 syn keyword cConstant HydrologyGapHeightMinEnum
 syn keyword cConstant HydrologyGapHeightMaxEnum
 syn keyword cConstant HydrologyEnglacialVoidRatioEnum
@@ -282,7 +285,7 @@ syn keyword cConstant HydrologyIschannelCreepEnum
 syn keyword cConstant HydrologyIschannelMeltEnum
 syn keyword cConstant HydrologyIschannelCavityEnum
 syn keyword cConstant HydrologyIsIncludeSheetThicknessEnum
-syn keyword cConstant HydrologyIsconfinedEnum
+syn keyword cConstant HydrologyIsConfinedEnum
 syn keyword cConstant HydrologyCreepOpenFlagEnum
 syn keyword cConstant HydrologyIsTransitionEnum
 syn keyword cConstant HydrologyIsWaterPressureArmaEnum
@@ -938,9 +941,6 @@ syn keyword cConstant HydrologyBumpHeightEnum
 syn keyword cConstant HydrologyBumpSpacingEnum
 syn keyword cConstant HydrologyChannelConductivityEnum
 syn keyword cConstant HydrologyConductivityEnum
-syn keyword cConstant HydrologyCuasSpecificStorageEnum
-syn keyword cConstant HydrologyCuasSpecificYieldEnum
-syn keyword cConstant HydrologyCuasTinitEnum
 syn keyword cConstant HydrologydcBasalMoulinInputEnum
 syn keyword cConstant HydrologydcEplThicknessEnum
 syn keyword cConstant HydrologydcEplThicknessOldEnum
@@ -972,9 +972,12 @@ syn keyword cConstant HydrologySheetConductivityEnum
 syn keyword cConstant HydrologySheetDischargeEnum
 syn keyword cConstant HydrologySheetThicknessEnum
 syn keyword cConstant HydrologySheetThicknessOldEnum
+syn keyword cConstant HydrologySpecificStorageEnum
+syn keyword cConstant HydrologySpecificYieldEnum
 syn keyword cConstant HydrologyStorageEnum
-syn keyword cConstant HydrologyTrasmissivityEnum
-syn keyword cConstant HydrologyTrasmissivityNewEnum
+syn keyword cConstant HydrologyTransmissivityEnum
+syn keyword cConstant HydrologyTransmissivityNewEnum
+syn keyword cConstant HydrologyTransmissivityEffectiveEnum
 syn keyword cConstant HydrologyTwsEnum
 syn keyword cConstant HydrologyTwsSpcEnum
 syn keyword cConstant HydrologyTwsAnalysisEnum
