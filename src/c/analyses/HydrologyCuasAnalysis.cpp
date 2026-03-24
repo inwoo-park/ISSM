@@ -178,52 +178,52 @@ ElementMatrix* HydrologyCuasAnalysis::CreateKMatrix(Element* element){/*{{{*/
     return Ke;
 }/*}}}*/
 ElementVector* HydrologyCuasAnalysis::CreatePVector(Element* element){/*{{{*/
-    
-    /*Skip if water or ice shelf element*/
+	
+	/*Skip if water or ice shelf element*/
 	if(element->IsAllFloating() || !element->IsIceInElement()) return NULL;
 	if(!element->IsOnBase()) return NULL;
 	Element* basalelement = element->SpawnBasalElement();
 
 	/*Intermediaries */
-    IssmDouble  Jdet;
-    IssmDouble* xyz_list = NULL;
-    IssmDouble* meltrate;
-    IssmDouble* englacial_rate;
+	IssmDouble  Jdet;
+	IssmDouble* xyz_list = NULL;
+	IssmDouble  meltrate;
+	IssmDouble  englacial_rate;
 
-    /*Fetch number of nodes and dof for this finite element*/
+	/*Fetch number of nodes and dof for this finite element*/
 	int numnodes = basalelement->GetNumberOfNodes();
 
-    /*Initialize Element vector and other vectors*/
+	/*Initialize Element vector and other vectors*/
 	ElementVector* pe    = basalelement->NewElementVector();
 	IssmDouble*    basis = xNew<IssmDouble>(numnodes);
 
-    /*Retrieve all inputs and parameters*/
-    Input* head_input      = basalelement->GetInput(HydrologyHeadEnum); _assert_(head_input);
-    Input* meltrate_input = basalelement->GetInput(BasalforcingsGroundediceMeltingRateEnum); _assert_(meltrate_input);
-    Input* englacial_input = basalelement->GetInput(HydrologyEnglacialInputEnum); _assert_(englacial_input);
+	/*Retrieve all inputs and parameters*/
+	Input* head_input	  = basalelement->GetInput(HydrologyHeadEnum); _assert_(head_input);
+	Input* meltrate_input = basalelement->GetInput(BasalforcingsGroundediceMeltingRateEnum); _assert_(meltrate_input);
+	Input* englacial_input = basalelement->GetInput(HydrologyEnglacialInputEnum); _assert_(englacial_input);
 
-    /*Get Params*/
-    IssmDouble dt;
-    basalelement->FindParam(&dt,TimesteppingTimeStepEnum);
+	/*Get Params*/
+	IssmDouble dt;
+	basalelement->FindParam(&dt,TimesteppingTimeStepEnum);
 
-    /* Start  looping on the number of gaussian points: */
-    Gauss* gauss=basalelement->NewGauss(2);
-    while(gauss->next()){
+	/* Start  looping on the number of gaussian points: */
+	Gauss* gauss=basalelement->NewGauss(2);
+	while(gauss->next()){
 
-        basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
+		basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
 		basalelement->NodalFunctions(basis,gauss);
 
-        meltrate_input->GetInputValue(&meltrate,gauss);
-        englacial_input->GetInputValue(&englacial_rate,gauss);
+		meltrate_input->GetInputValue(&meltrate,gauss);
+		englacial_input->GetInputValue(&englacial_rate,gauss);
 
-        IssmDouble factor = (meltrate + englacial_rate)*Jdet*gauss->weight;
+		IssmDouble factor = (meltrate + englacial_rate)*Jdet*gauss->weight;
 
-        for(int i=0;i<numnodes;i++){
-            pe->values[i] += factor*basis[i];
-        }
-    }
+		for(int i=0;i<numnodes;i++){
+			pe->values[i] += factor*basis[i];
+		}
+	}
 
-    /*Clean up and return*/
+	/*Clean up and return*/
 	xDelete<IssmDouble>(xyz_list);
 	xDelete<IssmDouble>(basis);
 	delete gauss;
@@ -337,28 +337,31 @@ void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 	/*Intermediaries */
 	IssmDouble* xyz_list=NULL;
 	IssmDouble  dt;
-    IssmDouble  Jdet;
+	IssmDouble  Jdet;
 
-	IssmDouble trans, trans_new;
-	IssmDouble Pe; // effective pressure
-	IssmDouble head;
-	IssmDouble dh[3]; // deritavtives.
-	IssmDouble dhdx, dhdy;
-	IssmDouble n; /* Glen's flow exponent */
-	IssmDouble B; /* ice rheology B */
-	IssmDouble A; /* ice flow parameter A */
+	IssmDouble  trans;
+	IssmDouble* trans_new;
+	IssmDouble  conductivity;
+	IssmDouble  Neff; // effective pressure
+	IssmDouble  head;
+	IssmDouble  dh[3]; // deritavtives.
+	IssmDouble  dhdx, dhdy;
+	IssmDouble  n; /* Glen's flow exponent */
+	IssmDouble  B; /* ice rheology B */
+	IssmDouble  A; /* ice flow parameter A */
 
 	IssmDouble bump_height, bump_space;
 
 	/*Retrieve all inputs and parameters*/
 	basalelement->GetVerticesCoordinates(&xyz_list);
 	basalelement->FindParam(&dt,TimesteppingTimeStepEnum);
+	IssmDouble  g         = basalelement->FindParam(ConstantsGEnum);
 	IssmDouble  rho_ice   = basalelement->FindParam(MaterialsRhoIceEnum);
 	IssmDouble  rho_water = basalelement->FindParam(MaterialsRhoFreshwaterEnum);
 	IssmDouble  latent    = basalelement->FindParam(MaterialsLatentheatEnum);
 
 	const int  numvertices= basalelement->GetNumberOfVertices();
-	IssmDouble* trans_new = xNew<IssmDouble>(numvertices);
+	trans_new = xNew<IssmDouble>(numvertices);
 
 	IssmDouble vel;
 	Input *vel_input  = basalelement->GetInput(VelEnum); _assert_(vel_input);
@@ -368,22 +371,23 @@ void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 
 	Input *conductivity_input=basalelement->GetInput(HydrologyConductivityEnum); _assert_(conductivity_input);
 	Input *trans_input = basalelement->GetInput(HydrologyTransmissivityEnum); _assert_(trans_input);
-	Input *Pe_input    = basalelement->GetInput(EffectivePressureEnum); _assert_(Pe_input);
+	Input *Neff_input    = basalelement->GetInput(EffectivePressureEnum); _assert_(Neff_input);
 
 	Input *bump_height_input = basalelement->GetInput(HydrologyBumpHeightEnum); _assert_(bump_height_input);
 	Input *bump_space_input  = basalelement->GetInput(HydrologyBumpSpacingEnum); _assert_(bump_space_input);
 
 	/* Update transmissivity */
 	Gauss *gauss=basalelement->NewGauss(1);
-    for(int iv=0;iv<numvertices;iv++){
+	for(int iv=0;iv<numvertices;iv++){
 		gauss->GaussVertex(iv);
 
 		basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
 		trans_input->GetInputValue(&trans,gauss);
+		conductivity_input->GetInputValue(&conductivity,gauss);
 		vel_input->GetInputValue(&vel,gauss);
-		Pe_input->GetInputValue(&Pe,gauss);
+		Neff_input->GetInputValue(&Neff,gauss);
 
-		head_input->GetInputDerivativeValue(&dh[0],&xyz_list[0][0],&gauss);
+		head_input->GetInputDerivativeValue(&dh[0],&xyz_list[0],gauss);
 		dhdx = dh[0];
 		dhdy = dh[1];
 
@@ -399,11 +403,11 @@ void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 
 		/* Opening by melting */
 		IssmDouble term1 = g * rho_water * trans / rho_ice / latent * (pow(dhdx,2.0) + pow(dhdy,2.0));
-		IssmDouble term2 = 2*A*pow(n,-n)*pow(abs(N),n-1)*trans;
+		IssmDouble term2 = 2*A*pow(n,-n)*pow(abs(Neff),n-1)*trans;
 		IssmDouble term3 = beta*abs(vel)*conductivity;
 		
 		/* Resolve term in explictly */
-		trans_new[iv] = dt*(term1 + term2 + term3) + trans 
+		trans_new[iv] = dt*(term1 + term2 + term3) + trans;
 	}
 
 	/* Assign value */
@@ -412,7 +416,9 @@ void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 	/*Clean up and return*/
 	xDelete<IssmDouble>(xyz_list);
 	xDelete<IssmDouble>(trans_new);
-	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+	if(basalelement->IsSpawnedElement()){
+		basalelement->DeleteMaterials(); delete basalelement;
+	};
 }/*}}}*/
 void HydrologyCuasAnalysis::UpdateStorage(FemModel* femmodel){/*{{{*/
     for(Object* & object : femmodel->elements->objects){
@@ -426,15 +432,31 @@ void HydrologyCuasAnalysis::UpdateStorage(Element* element){ /*{{{ */
 	if(!element->IsOnBase()) return;
 	Element* basalelement = element->SpawnBasalElement();
 
-	base_input=basalelement->GetInput(BaseEnum); _assert_(base_input);
+	/*Intermediaries */
+	IssmDouble* xyz_list=NULL;
+	IssmDouble  dt;
+	IssmDouble* storage;
+
+	Input* base_input=basalelement->GetInput(BaseEnum); _assert_(base_input);
+
+	const int  numvertices= basalelement->GetNumberOfVertices();
+	storage = xNew<IssmDouble>(numvertices);
 
 	element->AddBasalInput(HydrologyStorageEnum,storage,P1DGEnum);
+
+
+	/*Clean up and return*/
+	xDelete<IssmDouble>(xyz_list);
+	xDelete<IssmDouble>(storage);
+	if(basalelement->IsSpawnedElement()){
+		basalelement->DeleteMaterials(); delete basalelement;
+	};
 } /* }}} */
 void HydrologyCuasAnalysis::UpdateEffectiveAquiferProperties(Element *element){ /* {{{ */
 
     /*Skip if water or ice shelf element*/
-	if(element->IsAllFloating() || !element->IsIceInElement()) return NULL;
-	if(!element->IsOnBase()) return NULL;
+	if(element->IsAllFloating() || !element->IsIceInElement()) return;
+	if(!element->IsOnBase()) return;
 	Element* basalelement = element->SpawnBasalElement();
 
     /*Intermediaries*/
