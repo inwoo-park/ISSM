@@ -267,6 +267,9 @@ syn keyword juliaConstC HydrologyChannelAlphaEnum
 syn keyword juliaConstC HydrologyChannelBetaEnum
 syn keyword juliaConstC HydrologyCavitySpacingEnum
 syn keyword juliaConstC HydrologyChannelSheetWidthEnum
+syn keyword juliaConstC HydrologyCuasTmaxEnum
+syn keyword juliaConstC HydrologyCuasTminEnum
+syn keyword juliaConstC HydrologyCuasUnconfinedSmoothEnum
 syn keyword juliaConstC HydrologyGapHeightMinEnum
 syn keyword juliaConstC HydrologyGapHeightMaxEnum
 syn keyword juliaConstC HydrologyEnglacialVoidRatioEnum
@@ -275,7 +278,7 @@ syn keyword juliaConstC HydrologyIschannelCreepEnum
 syn keyword juliaConstC HydrologyIschannelMeltEnum
 syn keyword juliaConstC HydrologyIschannelCavityEnum
 syn keyword juliaConstC HydrologyIsIncludeSheetThicknessEnum
-syn keyword juliaConstC HydrologyIsconfinedEnum
+syn keyword juliaConstC HydrologyIsConfinedEnum
 syn keyword juliaConstC HydrologyCreepOpenFlagEnum
 syn keyword juliaConstC HydrologyIsTransitionEnum
 syn keyword juliaConstC HydrologyIsWaterPressureArmaEnum
@@ -931,9 +934,6 @@ syn keyword juliaConstC HydrologyBumpHeightEnum
 syn keyword juliaConstC HydrologyBumpSpacingEnum
 syn keyword juliaConstC HydrologyChannelConductivityEnum
 syn keyword juliaConstC HydrologyConductivityEnum
-syn keyword juliaConstC HydrologyCuasSpecificStorageEnum
-syn keyword juliaConstC HydrologyCuasSpecificYieldEnum
-syn keyword juliaConstC HydrologyCuasTinitEnum
 syn keyword juliaConstC HydrologydcBasalMoulinInputEnum
 syn keyword juliaConstC HydrologydcEplThicknessEnum
 syn keyword juliaConstC HydrologydcEplThicknessOldEnum
@@ -965,9 +965,12 @@ syn keyword juliaConstC HydrologySheetConductivityEnum
 syn keyword juliaConstC HydrologySheetDischargeEnum
 syn keyword juliaConstC HydrologySheetThicknessEnum
 syn keyword juliaConstC HydrologySheetThicknessOldEnum
+syn keyword juliaConstC HydrologySpecificStorageEnum
+syn keyword juliaConstC HydrologySpecificYieldEnum
 syn keyword juliaConstC HydrologyStorageEnum
-syn keyword juliaConstC HydrologyTrasmissivityEnum
-syn keyword juliaConstC HydrologyTrasmissivityNewEnum
+syn keyword juliaConstC HydrologyTransmissivityEnum
+syn keyword juliaConstC HydrologyTransmissivityNewEnum
+syn keyword juliaConstC HydrologyTransmissivityEffectiveEnum
 syn keyword juliaConstC HydrologyTwsEnum
 syn keyword juliaConstC HydrologyTwsSpcEnum
 syn keyword juliaConstC HydrologyTwsAnalysisEnum

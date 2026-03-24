@@ -189,6 +189,7 @@ HydrologyBasinsId
 HydrologyBumpHeight
 HydrologyBumpSpacing
 HydrologyChannelConductivity
+HydrologyConductivity
 HydrologydcBasalMoulinInput
 HydrologydcEplThickness
 HydrologydcEplThicknessOld
@@ -220,7 +221,12 @@ HydrologySheetConductivity
 HydrologySheetDischarge
 HydrologySheetThickness
 HydrologySheetThicknessOld
+HydrologySpecificStorage
+HydrologySpecificYield
 HydrologyStorage
+HydrologyTransmissivity
+HydrologyTransmissivityNew
+HydrologyTransmissivityEffective
 HydrologyTws
 HydrologyTwsSpc
 HydrologyTwsAnalysis
