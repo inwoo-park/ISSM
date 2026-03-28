@@ -451,6 +451,7 @@ SmbHref
 SmbIsInitialized
 SmbMAdd
 SmbMappedforcingpoint
+SmbMappedforcingprecipscaling
 SmbMassBalance
 SmbMassBalanceSnow
 SmbMassBalanceIce

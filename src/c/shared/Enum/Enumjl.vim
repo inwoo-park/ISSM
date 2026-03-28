@@ -1195,6 +1195,7 @@ syn keyword juliaConstC SmbHrefEnum
 syn keyword juliaConstC SmbIsInitializedEnum
 syn keyword juliaConstC SmbMAddEnum
 syn keyword juliaConstC SmbMappedforcingpointEnum
+syn keyword juliaConstC SmbMappedforcingprecipscalingEnum
 syn keyword juliaConstC SmbMassBalanceEnum
 syn keyword juliaConstC SmbMassBalanceSnowEnum
 syn keyword juliaConstC SmbMassBalanceIceEnum
@@ -3698,6 +3699,7 @@ syn keyword juliaConstC SMBmeltcomponentsEnum
 syn keyword juliaConstC SMBpddEnum
 syn keyword juliaConstC SMBpddSicopolisEnum
 syn keyword juliaConstC SMBpddGCMEnum
+syn keyword juliaConstC SMBpddFastEnum
 syn keyword juliaConstC SMBsemicEnum
 syn keyword juliaConstC SSAApproximationEnum
 syn keyword juliaConstC SSAFSApproximationEnum

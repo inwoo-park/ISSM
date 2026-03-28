@@ -1202,6 +1202,7 @@ syn keyword cConstant SmbHrefEnum
 syn keyword cConstant SmbIsInitializedEnum
 syn keyword cConstant SmbMAddEnum
 syn keyword cConstant SmbMappedforcingpointEnum
+syn keyword cConstant SmbMappedforcingprecipscalingEnum
 syn keyword cConstant SmbMassBalanceEnum
 syn keyword cConstant SmbMassBalanceSnowEnum
 syn keyword cConstant SmbMassBalanceIceEnum
@@ -3705,6 +3706,7 @@ syn keyword cConstant SMBmeltcomponentsEnum
 syn keyword cConstant SMBpddEnum
 syn keyword cConstant SMBpddSicopolisEnum
 syn keyword cConstant SMBpddGCMEnum
+syn keyword cConstant SMBpddFastEnum
 syn keyword cConstant SMBsemicEnum
 syn keyword cConstant SSAApproximationEnum
 syn keyword cConstant SSAFSApproximationEnum
