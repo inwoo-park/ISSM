@@ -261,29 +261,44 @@ void hydrology_core(FemModel* femmodel){ /*{{{*/
 
 	/*Using the armaPw hydrology model*/
    else if (hydrology_model==HydrologyarmapwEnum){
-      femmodel->SetCurrentConfiguration(HydrologyArmapwAnalysisEnum);
-      if(VerboseSolution()) _printf0_("   updating subglacial water pressure\n");
-      HydrologyArmapwAnalysis* analysis = new HydrologyArmapwAnalysis();
-      analysis->UpdateSubglacialWaterPressure(femmodel);
-      delete analysis;
+	  femmodel->SetCurrentConfiguration(HydrologyArmapwAnalysisEnum);
+	  if(VerboseSolution()) _printf0_("   updating subglacial water pressure\n");
+	  HydrologyArmapwAnalysis* analysis = new HydrologyArmapwAnalysis();
+	  analysis->UpdateSubglacialWaterPressure(femmodel);
+	  delete analysis;
    }
-    
-    else if (hydrology_model==HydrologycuasEnum){
-        if(VerboseSolution()) _printf0_("   computing effective pressure\n");
+	
+	/*Using the CUAS hydrology model*/
+	else if (hydrology_model==HydrologycuasEnum){
 		HydrologyCuasAnalysis* analysis = new HydrologyCuasAnalysis();
+		InputDuplicatex(femmodel,HydrologyTransmissivityEnum,HydrologyTransmissivityOldEnum);
+		InputDuplicatex(femmodel,HydrologyHeadEnum,HydrologyHeadOldEnum);
 
-        /*Pre-compute tarnsmissivity and storage*/
-        analysis->UpdateTransmissivity(femmodel);
-        analysis->UpdateStorage(femmodel);
-        
-        /*Get new head*/
-        femmodel->SetCurrentConfiguration(HydrologyCuasAnalysisEnum);
-        InputDuplicatex(femmodel,HydrologyHeadEnum,HydrologyHeadOldEnum);
-        solutionsequence_cuas_nonlinear(femmodel);
-        
-        /*Clear memory*/
-        delete analysis;
-    }
+		if(VerboseSolution()) _printf0_("   updating effective pressure\n");
+		analysis->UpdateEffectivePressure(femmodel);
+
+		if(VerboseSolution()) _printf0_("   updating effective aquifer properties\n");
+		analysis->UpdateEffectiveAquiferProperties(femmodel);
+
+		if(VerboseSolution()) _printf0_("   updating channel rates\n");
+		analysis->UpdateChannelRates(femmodel);
+
+		/*Get new head*/
+		//if(VerboseSolution()) _printf0_("   go solve cuas model\n");
+		femmodel->SetCurrentConfiguration(HydrologyCuasAnalysisEnum);
+		//if(VerboseSolution()) _printf0_("   go solve cuas model2\n");
+		solutionsequence_linear(femmodel);
+		//solutionsequence_cuas_nonlinear(femmodel);
+
+		if(VerboseSolution()) _printf0_("   updating transmissivity\n");
+		analysis->UpdateTransmissivity(femmodel);
+
+		//if(VerboseSolution()) _printf0_("   updating effective pressure\n");
+		analysis->UpdateEffectivePressure(femmodel);
+
+		/*Clear memory*/
+		delete analysis;
+	}
 
 	else{
 		_error_("Hydrology model "<< EnumToStringx(hydrology_model) <<" not supported yet");

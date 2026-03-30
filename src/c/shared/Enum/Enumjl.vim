@@ -933,6 +933,9 @@ syn keyword juliaConstC HydrologyBasinsIdEnum
 syn keyword juliaConstC HydrologyBumpHeightEnum
 syn keyword juliaConstC HydrologyBumpSpacingEnum
 syn keyword juliaConstC HydrologyChannelConductivityEnum
+syn keyword juliaConstC HydrologyChannelMeltRateEnum
+syn keyword juliaConstC HydrologyChannelCreepRateEnum
+syn keyword juliaConstC HydrologyChannelCavityRateEnum
 syn keyword juliaConstC HydrologyConductivityEnum
 syn keyword juliaConstC HydrologydcBasalMoulinInputEnum
 syn keyword juliaConstC HydrologydcEplThicknessEnum
@@ -969,7 +972,7 @@ syn keyword juliaConstC HydrologySpecificStorageEnum
 syn keyword juliaConstC HydrologySpecificYieldEnum
 syn keyword juliaConstC HydrologyStorageEnum
 syn keyword juliaConstC HydrologyTransmissivityEnum
-syn keyword juliaConstC HydrologyTransmissivityNewEnum
+syn keyword juliaConstC HydrologyTransmissivityOldEnum
 syn keyword juliaConstC HydrologyTransmissivityEffectiveEnum
 syn keyword juliaConstC HydrologyTwsEnum
 syn keyword juliaConstC HydrologyTwsSpcEnum

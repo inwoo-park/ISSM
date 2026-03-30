@@ -80,6 +80,7 @@ class Moulin: public Load{
 		ElementMatrix* CreateKMatrixHydrologyGlaDS(void);
 		ElementVector* CreatePVectorHydrologyShakti(void);
 		ElementVector* CreatePVectorHydrologyGlaDS(void);
+		ElementVector* CreatePVectorHydrologyCuas(void);
 		ElementVector* CreatePVectorHydrologyDCInefficient(void);
 		ElementVector* CreatePVectorHydrologyDCEfficient(void);
 };

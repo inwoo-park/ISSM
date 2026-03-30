@@ -189,6 +189,9 @@ HydrologyBasinsId
 HydrologyBumpHeight
 HydrologyBumpSpacing
 HydrologyChannelConductivity
+HydrologyChannelMeltRate
+HydrologyChannelCreepRate
+HydrologyChannelCavityRate
 HydrologyConductivity
 HydrologydcBasalMoulinInput
 HydrologydcEplThickness
@@ -225,7 +228,7 @@ HydrologySpecificStorage
 HydrologySpecificYield
 HydrologyStorage
 HydrologyTransmissivity
-HydrologyTransmissivityNew
+HydrologyTransmissivityOld
 HydrologyTransmissivityEffective
 HydrologyTws
 HydrologyTwsSpc

@@ -185,6 +185,9 @@ void  Moulin::CreateKMatrix(Matrix<IssmDouble>* Kff, Matrix<IssmDouble>* Kfs){/*
 		case HydrologyDCEfficientAnalysisEnum:
 			/*do nothing: */
 			return;
+		case HydrologyCuasAnalysisEnum:
+			/*do nothing: */
+			return;
 		default:
 			_error_("Don't know why we should be here");
 
@@ -215,6 +218,9 @@ void  Moulin::CreatePVector(Vector<IssmDouble>* pf){/*{{{*/
 			break;
 		case HydrologyDCEfficientAnalysisEnum:
 			pe = this->CreatePVectorHydrologyDCEfficient();
+			break;
+		case HydrologyCuasAnalysisEnum:
+			pe = this->CreatePVectorHydrologyCuas();
 			break;
 		default:
 			_error_("Don't know why we should be here");
@@ -412,6 +418,24 @@ ElementVector* Moulin::CreatePVectorHydrologyGlaDS(void){/*{{{*/
 }
 /*}}}*/
 ElementVector* Moulin::CreatePVectorHydrologyShakti(void){/*{{{*/
+
+	/*If this node is not the master node (belongs to another partition of the
+	 * mesh), don't add the moulin input a second time*/
+	if(node->IsClone()) return NULL;
+
+	IssmDouble moulin_load;
+
+	/*Initialize Element matrix*/
+	ElementVector* pe=new ElementVector(&node,1,this->parameters);
+
+	this->element->GetInputValue(&moulin_load,node,HydrologyMoulinInputEnum);
+	pe->values[0]=moulin_load;
+
+	/*Clean up and return*/
+	return pe;
+}
+/*}}}*/
+ElementVector* Moulin::CreatePVectorHydrologyCuas(void){/*{{{*/
 
 	/*If this node is not the master node (belongs to another partition of the
 	 * mesh), don't add the moulin input a second time*/

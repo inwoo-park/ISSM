@@ -940,6 +940,9 @@ syn keyword cConstant HydrologyBasinsIdEnum
 syn keyword cConstant HydrologyBumpHeightEnum
 syn keyword cConstant HydrologyBumpSpacingEnum
 syn keyword cConstant HydrologyChannelConductivityEnum
+syn keyword cConstant HydrologyChannelMeltRateEnum
+syn keyword cConstant HydrologyChannelCreepRateEnum
+syn keyword cConstant HydrologyChannelCavityRateEnum
 syn keyword cConstant HydrologyConductivityEnum
 syn keyword cConstant HydrologydcBasalMoulinInputEnum
 syn keyword cConstant HydrologydcEplThicknessEnum
@@ -976,7 +979,7 @@ syn keyword cConstant HydrologySpecificStorageEnum
 syn keyword cConstant HydrologySpecificYieldEnum
 syn keyword cConstant HydrologyStorageEnum
 syn keyword cConstant HydrologyTransmissivityEnum
-syn keyword cConstant HydrologyTransmissivityNewEnum
+syn keyword cConstant HydrologyTransmissivityOldEnum
 syn keyword cConstant HydrologyTransmissivityEffectiveEnum
 syn keyword cConstant HydrologyTwsEnum
 syn keyword cConstant HydrologyTwsSpcEnum

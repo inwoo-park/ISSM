@@ -942,6 +942,9 @@ const char* EnumToStringx(int en){
 		case HydrologyBumpHeightEnum : return "HydrologyBumpHeight";
 		case HydrologyBumpSpacingEnum : return "HydrologyBumpSpacing";
 		case HydrologyChannelConductivityEnum : return "HydrologyChannelConductivity";
+		case HydrologyChannelMeltRateEnum : return "HydrologyChannelMeltRate";
+		case HydrologyChannelCreepRateEnum : return "HydrologyChannelCreepRate";
+		case HydrologyChannelCavityRateEnum : return "HydrologyChannelCavityRate";
 		case HydrologyConductivityEnum : return "HydrologyConductivity";
 		case HydrologydcBasalMoulinInputEnum : return "HydrologydcBasalMoulinInput";
 		case HydrologydcEplThicknessEnum : return "HydrologydcEplThickness";
@@ -978,7 +981,7 @@ const char* EnumToStringx(int en){
 		case HydrologySpecificYieldEnum : return "HydrologySpecificYield";
 		case HydrologyStorageEnum : return "HydrologyStorage";
 		case HydrologyTransmissivityEnum : return "HydrologyTransmissivity";
-		case HydrologyTransmissivityNewEnum : return "HydrologyTransmissivityNew";
+		case HydrologyTransmissivityOldEnum : return "HydrologyTransmissivityOld";
 		case HydrologyTransmissivityEffectiveEnum : return "HydrologyTransmissivityEffective";
 		case HydrologyTwsEnum : return "HydrologyTws";
 		case HydrologyTwsSpcEnum : return "HydrologyTwsSpc";
