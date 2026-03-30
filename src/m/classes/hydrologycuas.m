@@ -6,18 +6,19 @@
 classdef hydrologycuas
 	properties (SetAccess=public)
 		head = NaN;
-		transmissivity = NaN;
 		conductivity = NaN;
 		layer_thickness = NaN;
-
-		bump_height = NaN;
-		bump_spacing= NaN;
+		transmissivity = NaN;
 
 		Tmin  = NaN;
 		Tmax  = NaN;
 		
 		ss = NaN;
 		sy = NaN;
+
+		bump_height = NaN;
+		bump_spacing= NaN;
+
 		englacial_input = NaN;
 		moulin_input = NaN;
 
@@ -113,9 +114,10 @@ classdef hydrologycuas
 			md = checkfield(md,'fieldname','hydrology.sy','size',[md.mesh.numberofvertices,1],'NaN',1,'Inf',1,'>=',0);
 
 			md = checkfield(md,'fieldname','hydrology.moulin_input','NaN',1,'Inf',1,'timeseries',1);
+			md = checkfield(md,'fieldname','hydrology.englacial_input','NaN',1,'Inf',1,'timeseries',1);
 
-			md = checkfield(md,'fieldname','hydrology.neumannflux','timeseries',1,'NaN',1,'Inf',1);
 			md = checkfield(md,'fieldname','hydrology.spchead','Inf',1,'timeseries',1);
+			md = checkfield(md,'fieldname','hydrology.neumannflux','timeseries',1,'NaN',1,'Inf',1);
 
 			md = checkfield(md,'fieldname','hydrology.ischannel_creep','values',[0,1],'Inf',1,'NaN',1,'numel',1);
 			md = checkfield(md,'fieldname','hydrology.ischannel_melt','values',[0,1],'Inf',1,'NaN',1,'numel',1);
@@ -128,17 +130,25 @@ classdef hydrologycuas
 			fielddisplay(self,'conductivity','Conductivity of layer (m s-1)');
 			fielddisplay(self,'layer_thickness','EPM layer thickness (m)');
 			fielddisplay(self,'transmissivity','transmissivity of EPM layer (m^2 s-1)');
+
 			fielddisplay(self,'Tmin','Minimum transmissivity to be allowed in the evolution (m^2 s-1)');
 			fielddisplay(self,'Tmax','Maximum transmissivity to be allowed in the evolution (m^2 s-1)');
+
 			fielddisplay(self,'ss','specific storage, ss (unit: m^-1)');
 			fielddisplay(self,'sy','specific yield, Sy (unit: 1)');
+
+			fielddisplay(self,'bump_height','characteristic bedrock bump height (m)');
+			fielddisplay(self,'bump_spacing','characteristic bedrock bump spacing (m)');
+
+			fielddisplay(self,'englacial_input','liquid water input from englacial to subglacial system (m/yr)');
 			fielddisplay(self,'moulin_input','liquid water input from moulins (at the vertices) to subglacial system (m^3/s)');
 
 			fielddisplay(self,'ischannel_creep','Evolve channel due to creep (default: 1)');
 			fielddisplay(self,'ischannel_melt','Evolve channel due to melting (default: 1)');
 			fielddisplay(self,'ischannel_cavity','Evolve channel due to cavity (default: 1)');
 			fielddisplay(self,'isconfined','Select CUAS model to solve confined or unconfined. 0: unconfined, 1: confined. (default: 1)');
-			fielddisplay(self,'unconfinedSmooth','Smoothing factor for unconfined aquifer system (default: 0.0)');
+			fielddisplay(self,'melt_flag','User specified basal melt? 0: no (use geothermal and frictional heat), 1: use md.basalforcings.grounded_melting_rate (default: 1)');
+			fielddisplay(self,'unconfinedSmooth','Smoothing factor for unconfined aquifer system (default: 0.0 m)');
 		end % }}}
 		function marshall(self,prefix,md,fid)% {{{
 			WriteData(fid,prefix,'name','md.hydrology.model','data',8,'format','Integer');
