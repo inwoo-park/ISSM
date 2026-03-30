@@ -43,5 +43,8 @@ class HydrologyCuasAnalysis: public Analysis{
 
 		void UpdateEffectivePressure(FemModel* femmodel);
 		void UpdateEffectivePressure(Element* element);
+
+		void ComputeWaterflux(FemModel* femmodel);
+		void ComputeWaterflux(Element* element);
 };
 #endif

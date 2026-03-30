@@ -4,6 +4,8 @@
 #include "../shared/shared.h"
 #include "../modules/modules.h"
 
+#define FINITEELEMENT P1Enum
+
 /*Model processing*/
 void HydrologyCuasAnalysis::CreateConstraints(Constraints* constraints,IoModel* iomodel){/*{{{*/
 
@@ -144,9 +146,12 @@ void HydrologyCuasAnalysis::UpdateElements(Elements* elements,Inputs* inputs,IoM
 
 
 	/*Initialize requested outputs in case they are not defined later for this partition*/
-	iomodel->ConstantToInput(inputs,elements,0.,HydrologyChannelMeltRateEnum,P1Enum);
-	iomodel->ConstantToInput(inputs,elements,0.,HydrologyChannelCreepRateEnum,P1Enum);
-	iomodel->ConstantToInput(inputs,elements,0.,HydrologyChannelCavityRateEnum,P1Enum);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyChannelMeltRateEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyChannelCreepRateEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyChannelCavityRateEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyBasalFluxEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyWaterVxEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyWaterVyEnum,FINITEELEMENT);
 }/*}}}*/
 void HydrologyCuasAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 
@@ -294,7 +299,7 @@ ElementVector* HydrologyCuasAnalysis::CreatePVector(Element* element){/*{{{*/
 	basalelement->FindParam(&rho_ice,MaterialsRhoIceEnum);
 
 	/* Start  looping on the number of gaussian points: */
-	Gauss* gauss=basalelement->NewGauss(2);
+	Gauss* gauss=basalelement->NewGauss(3);
 	while(gauss->next()){
 
 		basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
@@ -329,7 +334,7 @@ void           HydrologyCuasAnalysis::GradientJ(Vector<IssmDouble>* gradient,Ele
 }/*}}}*/
 void           HydrologyCuasAnalysis::InputUpdateFromSolution(IssmDouble* solution,Element* element){/*{{{*/
 
-    /*Only update if on base*/
+	 /*Only update if on base*/
 	if(!element->IsOnBase()) return;
 
 	/*Intermediary*/
@@ -395,8 +400,8 @@ void           HydrologyCuasAnalysis::UpdateConstraints(FemModel* femmodel){/*{{
 				node->Activate(); //Not sure if we need this!
 			}
 			else{
-			   node->Deactivate();// node should be inactive
-            node->ApplyConstraint(0,0.0); // set head (dof 0) to 0.0 m
+				node->Deactivate();// node should be inactive
+				node->ApplyConstraint(0,0.0); // set head (dof 0) to 0.0 m
 			}
 		}
 		xDelete<IssmDouble>(mask);
@@ -410,10 +415,10 @@ void           HydrologyCuasAnalysis::UpdateConstraints(FemModel* femmodel){/*{{
 
 /*Additional methods*/
 void HydrologyCuasAnalysis::UpdateChannelRates(FemModel* femmodel){/*{{{*/
-    for(Object* & object : femmodel->elements->objects){
-        Element *element = xDynamicCast<Element*>(object);
-        UpdateChannelRates(element);
-    }
+	 for(Object* & object : femmodel->elements->objects){
+		  Element *element = xDynamicCast<Element*>(object);
+		  UpdateChannelRates(element);
+	 }
 }/*}}}*/
 void HydrologyCuasAnalysis::UpdateChannelRates(Element* element){/*{{{*/
 	/*
@@ -438,7 +443,7 @@ void HydrologyCuasAnalysis::UpdateChannelRates(Element* element){/*{{{*/
 	IssmDouble  conductivity;
 	IssmDouble  Neff; // effective pressure
 	IssmDouble  head;
-	IssmDouble  dh[3]; // deritavtives.
+	IssmDouble  dh[2]; // deritavtives.
 	IssmDouble  dhdx, dhdy;
 	IssmDouble  n; /* Glen's flow exponent */
 	IssmDouble  B; /* ice rheology B */
@@ -480,7 +485,7 @@ void HydrologyCuasAnalysis::UpdateChannelRates(Element* element){/*{{{*/
 	/* Update transmissivity */
 	Gauss *gauss=basalelement->NewGauss();
 	for(int iv=0;iv<numvertices;iv++){
-		gauss->GaussVertex(iv);
+		gauss->GaussNode(basalelement->GetElementType(),iv);
 
 		basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
 		trans_input->GetInputValue(&trans,gauss);
@@ -490,7 +495,7 @@ void HydrologyCuasAnalysis::UpdateChannelRates(Element* element){/*{{{*/
 		vel = sqrt(vx*vx + vy*vy);
 		Neff_input->GetInputValue(&Neff,gauss);
 
-		head_input->GetInputDerivativeValue(&dh[0],&xyz_list[0],gauss);
+		head_input->GetInputDerivativeValue(&dh[0],xyz_list,gauss);
 		dhdx = dh[0];
 		dhdy = dh[1];
 
@@ -518,25 +523,23 @@ void HydrologyCuasAnalysis::UpdateChannelRates(Element* element){/*{{{*/
 	}
 
 	/* Assign value */
-	element->AddBasalInput(HydrologyChannelCavityRateEnum,channel_cavity,P1Enum);
-	element->AddBasalInput(HydrologyChannelMeltRateEnum,channel_melt,P1Enum);
-	element->AddBasalInput(HydrologyChannelCreepRateEnum,channel_creep,P1Enum);
+	element->AddBasalInput(HydrologyChannelCavityRateEnum,channel_cavity,FINITEELEMENT);
+	element->AddBasalInput(HydrologyChannelMeltRateEnum,channel_melt,FINITEELEMENT);
+	element->AddBasalInput(HydrologyChannelCreepRateEnum,channel_creep,FINITEELEMENT);
 
 	/*Clean up and return*/
 	xDelete<IssmDouble>(xyz_list);
 	xDelete<IssmDouble>(channel_melt);
 	xDelete<IssmDouble>(channel_creep);
 	xDelete<IssmDouble>(channel_cavity);
-	if(basalelement->IsSpawnedElement()){
-		basalelement->DeleteMaterials(); delete basalelement;
-	};
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
 }/*}}}*/
 
 void HydrologyCuasAnalysis::UpdateTransmissivity(FemModel* femmodel){/*{{{*/
-    for(Object* & object : femmodel->elements->objects){
-        Element *element = xDynamicCast<Element*>(object);
-        UpdateTransmissivity(element);
-    }
+	 for(Object* & object : femmodel->elements->objects){
+		  Element *element = xDynamicCast<Element*>(object);
+		  UpdateTransmissivity(element);
+	 }
 }/*}}}*/
 void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 	/*
@@ -560,8 +563,8 @@ void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 	/*Retrieve all inputs and parameters*/
 	basalelement->GetVerticesCoordinates(&xyz_list);
 	basalelement->FindParam(&dt,TimesteppingTimeStepEnum);
-	IssmDouble  Tmin      = basalelement->FindParam(HydrologyCuasTminEnum);
-	IssmDouble  Tmax      = basalelement->FindParam(HydrologyCuasTmaxEnum);
+	IssmDouble  Tmin = basalelement->FindParam(HydrologyCuasTminEnum);
+	IssmDouble  Tmax = basalelement->FindParam(HydrologyCuasTmaxEnum);
 
 	const int  numvertices= basalelement->GetNumberOfVertices();
 	trans_new = xNew<IssmDouble>(numvertices);
@@ -574,7 +577,7 @@ void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 	/* Update transmissivity */
 	Gauss *gauss=basalelement->NewGauss();
 	for(int iv=0;iv<numvertices;iv++){
-		gauss->GaussVertex(iv);
+		gauss->GaussNode(basalelement->GetElementType(),iv);
 
 		basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
 		trans_input->GetInputValue(&trans,gauss);
@@ -592,14 +595,12 @@ void HydrologyCuasAnalysis::UpdateTransmissivity(Element* element){/*{{{*/
 	}
 
 	/* Assign value */
-	element->AddBasalInput(HydrologyTransmissivityEnum,trans_new,P1Enum);
+	element->AddBasalInput(HydrologyTransmissivityEnum,trans_new,FINITEELEMENT);
 
 	/*Clean up and return*/
 	xDelete<IssmDouble>(xyz_list);
 	xDelete<IssmDouble>(trans_new);
-	if(basalelement->IsSpawnedElement()){
-		basalelement->DeleteMaterials(); delete basalelement;
-	};
+	if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
 }/*}}}*/
 
 void HydrologyCuasAnalysis::UpdateEffectiveAquiferProperties(FemModel* femmodel){ /*{{{ */
@@ -644,14 +645,15 @@ void HydrologyCuasAnalysis::UpdateEffectiveAquiferProperties(Element* element){ 
 	Input* sy_input = basalelement->GetInput(HydrologySpecificYieldEnum); _assert_(sy_input);
 
 	bool isconfined;
+	IssmDouble  unconfinedSmooth;
 	basalelement->FindParam(&isconfined,HydrologyIsConfinedEnum);
-	IssmDouble  unconfinedSmooth = basalelement->FindParam(HydrologyCuasUnconfinedSmoothEnum);
+	basalelement->FindParam(&unconfinedSmooth,HydrologyCuasUnconfinedSmoothEnum);
 
 	/*Start looping */
 	Gauss *gauss=basalelement->NewGauss();
 	for(int iv=0;iv<numnodes;iv++){
 
-		gauss->GaussVertex(iv);
+		gauss->GaussNode(basalelement->GetElementType(),iv);
 		base_input->GetInputValue(&zb,gauss);
 		head_input->GetInputValue(&head,gauss);
 		trans_input->GetInputValue(&transmissivity,gauss);
@@ -663,13 +665,13 @@ void HydrologyCuasAnalysis::UpdateEffectiveAquiferProperties(Element* element){ 
 		
 		psi = head - zb;
 		/*Neglect negative values*/
-		if (psi < 0.0) psi = 0.0;
+		if (psi < 0.0) psi = 0.01;
 
 		/*First, guess effective storage coefficient.*/
 		Seff[iv] = ss*layer_thickness;
 		if (!isconfined){
 			if (unconfinedSmooth > 0.0){
-				if(layer_thickness < psi){
+				if(layer_thickness <= psi){
 				 Sprime = 0.0;
 				}
 				else if( (layer_thickness-unconfinedSmooth <= psi) & (psi<layer_thickness)){
@@ -689,10 +691,10 @@ void HydrologyCuasAnalysis::UpdateEffectiveAquiferProperties(Element* element){ 
 			Teff[iv]= transmissivity;
 		}else{
 			if (layer_thickness <= psi){
-				Teff[iv] = transmissivity * (psi/layer_thickness);
+				Teff[iv] = transmissivity;
 			}
 			else{
-				Teff[iv] = transmissivity;
+				Teff[iv] = transmissivity * (psi/layer_thickness);
 			}
 		}
 
@@ -700,8 +702,8 @@ void HydrologyCuasAnalysis::UpdateEffectiveAquiferProperties(Element* element){ 
 		if(xIsInf<IssmDouble>(Seff[iv])) _error_("Found inf value in Seff: " << Seff[iv] << "\n");
 	}
 
-	element->AddBasalInput(HydrologyTransmissivityEffectiveEnum,Teff,element->GetElementType());
-	element->AddBasalInput(HydrologyStorageEnum,Seff,element->GetElementType());
+	element->AddBasalInput(HydrologyTransmissivityEffectiveEnum,Teff,FINITEELEMENT); //element->GetElementType());
+	element->AddBasalInput(HydrologyStorageEnum,Seff,FINITEELEMENT); //element->GetElementType());
 
 	xDelete<IssmDouble>(Teff);
 	xDelete<IssmDouble>(Seff);
@@ -724,42 +726,106 @@ void HydrologyCuasAnalysis::UpdateEffectivePressure(Element* element){/*{{{*/
 	IssmDouble bed,thickness,head,layer_thickness;
 
 	/* Fetch number of nodes and allocate output*/
-   int numnodes = element->GetNumberOfNodes();
-   IssmDouble* N = xNew<IssmDouble>(numnodes);
+	int numnodes = element->GetNumberOfNodes();
+	IssmDouble* N = xNew<IssmDouble>(numnodes);
 
 	/*Retrieve all inputs and parameters*/
-	IssmDouble  g          = element->FindParam(ConstantsGEnum);
-	IssmDouble  rho_ice    = element->FindParam(MaterialsRhoIceEnum);
+	IssmDouble  g			 = element->FindParam(ConstantsGEnum);
+	IssmDouble  rho_ice	 = element->FindParam(MaterialsRhoIceEnum);
 	IssmDouble  rho_water  = element->FindParam(MaterialsRhoFreshwaterEnum);
-	Input* head_input      = element->GetInput(HydrologyHeadEnum); _assert_(head_input);
-	Input* thickness_input = element->GetInput(ThicknessEnum);     _assert_(thickness_input);
-	Input* base_input      = element->GetInput(BaseEnum);          _assert_(base_input);
+	Input* head_input		= element->GetInput(HydrologyHeadEnum); _assert_(head_input);
+	Input* thickness_input = element->GetInput(ThicknessEnum);	  _assert_(thickness_input);
+	Input* base_input		= element->GetInput(BaseEnum);			 _assert_(base_input);
 	Input* layer_thickness_input=element->GetInput(HydrologySheetThicknessEnum); _assert_(layer_thickness_input);
 
-   Gauss* gauss=element->NewGauss();
-   for (int i=0;i<numnodes;i++){
-      gauss->GaussNode(element->GetElementType(),i);
+	Gauss* gauss=element->NewGauss();
+	for (int iv=0;iv<numnodes;iv++){
+		gauss->GaussNode(element->GetElementType(),iv);
 
 		base_input->GetInputValue(&bed,gauss);
 		thickness_input->GetInputValue(&thickness,gauss);
 		head_input->GetInputValue(&head,gauss);
 		layer_thickness_input->GetInputValue(&layer_thickness,gauss);
 
-		N[i] = rho_ice*g*thickness - rho_water*g*(head-bed-layer_thickness);
+		N[iv] = rho_ice*g*thickness - rho_water*g*(head-bed-layer_thickness);
 	}
 
 	/*Set to 0 if inactive element*/
-   if(element->IsAllFloating() || !element->IsIceInElement()){
-      for(int iv=0;iv<numnodes;iv++) N[iv] = 0.;
-      element->AddInput(EffectivePressureEnum,N,P1Enum);
-      xDelete<IssmDouble>(N);
-      return;
-   }
+	if(element->IsAllFloating() || !element->IsIceInElement()){
+		for(int iv=0;iv<numnodes;iv++) N[iv] = 0.;
+		element->AddInput(EffectivePressureEnum,N,FINITEELEMENT);
+		xDelete<IssmDouble>(N);
+		return;
+	}
 
 	/*Add new gap as an input*/
-	element->AddBasalInput(EffectivePressureEnum,N,element->GetElementType());
+	element->AddBasalInput(EffectivePressureEnum,N,FINITEELEMENT);
 
 	/*Clean up and return*/
-   xDelete<IssmDouble>(N);
+	xDelete<IssmDouble>(N);
 	delete gauss;
+}/*}}}*/
+
+void HydrologyCuasAnalysis::ComputeWaterflux(FemModel* femmodel){/*{{{*/
+	for(Object* & object : femmodel->elements->objects){
+		Element *element = xDynamicCast<Element*>(object);
+		ComputeWaterflux(element);
+	}
+}/*}}}*/
+void HydrologyCuasAnalysis::ComputeWaterflux(Element* element){/*{{{*/
+
+	/*Skip if water or ice shelf element*/
+	if(element->IsAllFloating() || !element->IsIceInElement()) return;
+	if(!element->IsOnBase()) return;
+	Element* basalelement = element->SpawnBasalElement();
+
+	/*Intermediaries*/
+	IssmDouble* xyz_list=NULL;
+	IssmDouble  Jdet;
+	IssmDouble  dh[2];
+	IssmDouble  dhdx, dhdy;
+	IssmDouble  transmissivity;
+
+	/* Fetch number of nodes and allocate output*/
+	int numnodes = basalelement->GetNumberOfNodes();
+	IssmDouble *flux, *fluxX, *fluxY;
+	flux  = xNew<IssmDouble>(numnodes);
+	fluxX = xNew<IssmDouble>(numnodes);
+	fluxY = xNew<IssmDouble>(numnodes);
+
+	/*Retrieve all inputs and parameters*/
+	basalelement->GetVerticesCoordinates(&xyz_list);
+	Input* head_input  = basalelement->GetInput(HydrologyHeadEnum); _assert_(head_input);
+	Input* trans_input = basalelement->GetInput(HydrologyTransmissivityEffectiveEnum); _assert_(trans_input);
+
+	Gauss* gauss=basalelement->NewGauss();
+	for (int iv=0;iv<numnodes;iv++){
+		gauss->GaussNode(basalelement->GetElementType(),iv);
+
+		basalelement->JacobianDeterminant(&Jdet,xyz_list,gauss);
+
+		trans_input->GetInputValue(&transmissivity,gauss);
+		head_input->GetInputDerivativeValue(&dh[0],xyz_list,gauss);
+		dhdx=dh[0];
+		dhdy=dh[1];
+		
+		/*Now, compute water flux in x, y direction*/
+		fluxX[iv] = -transmissivity*dhdx;
+		fluxY[iv] = -transmissivity*dhdy;
+		flux[iv]  = transmissivity*sqrt(dhdx*dhdx + dhdy*dhdy);
+	}
+
+	/*Add new gap as an input*/
+	element->AddBasalInput(HydrologyBasalFluxEnum,flux,FINITEELEMENT);
+	element->AddBasalInput(HydrologyWaterVxEnum,fluxX,FINITEELEMENT);
+	element->AddBasalInput(HydrologyWaterVyEnum,fluxY,FINITEELEMENT);
+
+	/*Clean up and return*/
+	xDelete<IssmDouble>(xyz_list);
+	xDelete<IssmDouble>(fluxX);
+	xDelete<IssmDouble>(fluxY);
+	xDelete<IssmDouble>(flux);
+	delete gauss;
+	if(element->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+
 }/*}}}*/
