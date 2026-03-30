@@ -721,7 +721,7 @@ void HydrologyCuasAnalysis::UpdateEffectivePressure(Element* element){/*{{{*/
 	if(!element->IsOnBase()) return;
 
 	/*Intermediaries*/
-	IssmDouble bed,thickness,head;
+	IssmDouble bed,thickness,head,layer_thickness;
 
 	/* Fetch number of nodes and allocate output*/
    int numnodes = element->GetNumberOfNodes();
@@ -734,6 +734,7 @@ void HydrologyCuasAnalysis::UpdateEffectivePressure(Element* element){/*{{{*/
 	Input* head_input      = element->GetInput(HydrologyHeadEnum); _assert_(head_input);
 	Input* thickness_input = element->GetInput(ThicknessEnum);     _assert_(thickness_input);
 	Input* base_input      = element->GetInput(BaseEnum);          _assert_(base_input);
+	Input* layer_thickness_input=element->GetInput(HydrologySheetThicknessEnum); _assert_(layer_thickness_input);
 
    Gauss* gauss=element->NewGauss();
    for (int i=0;i<numnodes;i++){
@@ -742,8 +743,9 @@ void HydrologyCuasAnalysis::UpdateEffectivePressure(Element* element){/*{{{*/
 		base_input->GetInputValue(&bed,gauss);
 		thickness_input->GetInputValue(&thickness,gauss);
 		head_input->GetInputValue(&head,gauss);
+		layer_thickness_input->GetInputValue(&layer_thickness,gauss);
 
-		N[i] = rho_ice*g*thickness - rho_water*g*(head-bed);
+		N[i] = rho_ice*g*thickness - rho_water*g*(head-bed-layer_thickness);
 	}
 
 	/*Set to 0 if inactive element*/
