@@ -152,6 +152,9 @@ void HydrologyCuasAnalysis::UpdateElements(Elements* elements,Inputs* inputs,IoM
 	iomodel->ConstantToInput(inputs,elements,0.,HydrologyBasalFluxEnum,FINITEELEMENT);
 	iomodel->ConstantToInput(inputs,elements,0.,HydrologyWaterVxEnum,FINITEELEMENT);
 	iomodel->ConstantToInput(inputs,elements,0.,HydrologyWaterVyEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyTransmissivityEffectiveEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,HydrologyStorageEnum,FINITEELEMENT);
+	iomodel->ConstantToInput(inputs,elements,0.,EffectivePressureEnum,FINITEELEMENT);
 }/*}}}*/
 void HydrologyCuasAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 
@@ -238,8 +241,10 @@ ElementMatrix* HydrologyCuasAnalysis::CreateKMatrix(Element* element){/*{{{*/
 		basalelement->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
 		basalelement->NodalFunctions(basis,gauss);
 
-		storage_input->GetInputValue(&storage,gauss);
-		Teff_input->GetInputValue(&Teff,gauss);
+		//storage_input->GetInputValue(&storage,gauss);
+		//Teff_input->GetInputValue(&Teff,gauss);
+		storage_input->GetInputAverage(&storage);
+		Teff_input->GetInputAverage(&Teff);
 
 		/* Diffusion term */
 		IssmDouble factor1 = Teff*gauss->weight*Jdet;
@@ -495,6 +500,7 @@ void HydrologyCuasAnalysis::UpdateChannelRates(Element* element){/*{{{*/
 		vel = sqrt(vx*vx + vy*vy);
 		Neff_input->GetInputValue(&Neff,gauss);
 
+		/* Get hydraulic gradient '\nabla h' */
 		head_input->GetInputDerivativeValue(&dh[0],xyz_list,gauss);
 		dhdx = dh[0];
 		dhdy = dh[1];

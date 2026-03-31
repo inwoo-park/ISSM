@@ -271,17 +271,21 @@ void hydrology_core(FemModel* femmodel){ /*{{{*/
 	/*Using the CUAS hydrology model*/
 	else if (hydrology_model==HydrologycuasEnum){
 		HydrologyCuasAnalysis* analysis = new HydrologyCuasAnalysis();
+		/*Back up previous time step information*/
 		InputDuplicatex(femmodel,HydrologyTransmissivityEnum,HydrologyTransmissivityOldEnum);
 		InputDuplicatex(femmodel,HydrologyHeadEnum,HydrologyHeadOldEnum);
 
 		if(VerboseSolution()) _printf0_("   updating effective pressure\n");
 		analysis->UpdateEffectivePressure(femmodel);
 
-		if(VerboseSolution()) _printf0_("   updating effective aquifer properties\n");
-		analysis->UpdateEffectiveAquiferProperties(femmodel);
-
 		if(VerboseSolution()) _printf0_("   updating channel rates\n");
 		analysis->UpdateChannelRates(femmodel);
+
+		if(VerboseSolution()) _printf0_("   updating transmissivity\n");
+		analysis->UpdateTransmissivity(femmodel);
+
+		if(VerboseSolution()) _printf0_("   updating effective aquifer properties\n");
+		analysis->UpdateEffectiveAquiferProperties(femmodel);
 
 		/*Get new head*/
 		//if(VerboseSolution()) _printf0_("   go solve cuas model\n");
@@ -290,14 +294,10 @@ void hydrology_core(FemModel* femmodel){ /*{{{*/
 		solutionsequence_linear(femmodel);
 		//solutionsequence_cuas_nonlinear(femmodel);
 
-		if(VerboseSolution()) _printf0_("   updating transmissivity\n");
-		analysis->UpdateTransmissivity(femmodel);
-
 		if(VerboseSolution()) _printf0_("   updating effective pressure\n");
 		analysis->UpdateEffectivePressure(femmodel);
 		if(VerboseSolution()) _printf0_("   computing water flux\n");
 		analysis->ComputeWaterflux(femmodel);
-		if(VerboseSolution()) _printf0_("   computing water flux: done\n");
 
 		/*Clear memory*/
 		delete analysis;
