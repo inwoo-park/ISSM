@@ -85,7 +85,13 @@ def plotmodel(md, *args):
             axgrid = fig.subplots(nrows, ncols,
                                   sharex=share_all,sharey=share_all,
                                   squeeze=True)
-            axgrid = axgrid.flatten() # flattening...
+            if (nrows == 1) & (ncols == 1):
+                axgrid = [axgrid] # make axgrid iterable contents.
+            else:
+                axgrid = axgrid.flatten() # flattening...
+
+            for ax in axgrid:
+                ax.set_aspect('equal')
         else:
             # NOTE: The inline comments for each of the following parameters are
             #       taken from https://matplotlib.org/api/_as_gen/mpl_toolkits.axes_grid1.axes_grid.ImageGrid.html
