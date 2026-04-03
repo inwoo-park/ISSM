@@ -686,6 +686,7 @@ TotalFloatingBmb
 TotalFloatingBmbScaled
 TotalGroundedBmb
 TotalGroundedBmbScaled
+TotalHydrologyBasalFlux
 TotalSmb
 TotalSmbMelt
 TotalSmbRefreeze
