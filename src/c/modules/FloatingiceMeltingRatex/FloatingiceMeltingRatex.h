@@ -18,5 +18,6 @@ void MismipFloatingiceMeltingRatex(FemModel* femmodel);
 void FloatingiceMeltingRateIsmip6x(FemModel* femmodel);
 void BeckmannGoosseFloatingiceMeltingRatex(FemModel* femmodel);
 void LinearFloatingiceMeltingRatearmax(FemModel* femmodel);
+void FloatingiceMeltingRateIsmip7x(FemModel* femmodel);
 
 #endif  /* _FloatingiceMeltingRatex_H*/

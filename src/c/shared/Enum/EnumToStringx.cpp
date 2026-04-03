@@ -87,6 +87,9 @@ const char* EnumToStringx(int en){
 		case BasalforcingsIsmip6IsLocalEnum : return "BasalforcingsIsmip6IsLocal";
 		case BasalforcingsIsmip6NumBasinsEnum : return "BasalforcingsIsmip6NumBasins";
 		case BasalforcingsIsmip6TfDepthsEnum : return "BasalforcingsIsmip6TfDepths";
+		case BasalforcingsIsmip7TfDepthsEnum : return "BasalforcingsIsmip7TfDepths";
+		case BasalforcingsIsmip7NumBasinsEnum : return "BasalforcingsIsmip7NumBasins";
+		case BasalforcingsIsmip7GammaEnum : return "BasalforcingsIsmip7Gamma";
 		case BasalforcingsLinearNumBasinsEnum : return "BasalforcingsLinearNumBasins";
 		case BasalforcingsLinearNumBreaksEnum : return "BasalforcingsLinearNumBreaks";
 		case BasalforcingsLinearNumParamsEnum : return "BasalforcingsLinearNumParams";
@@ -250,11 +253,17 @@ const char* EnumToStringx(int en){
 		case FeFSNitscheGammaEnum : return "FeFSNitscheGamma";
 		case FrictionCouplingEnum : return "FrictionCoupling";
 		case FrictionDeltaEnum : return "FrictionDelta";
+		case FrictionDNNEnum : return "FrictionDNN";
+		case FrictionDNNpsEnum : return "FrictionDNNps";
+		case FrictionDNNstEnum : return "FrictionDNNst";
+		case FrictionDNNInputScaleEnum : return "FrictionDNNInputScale";
+		case FrictionDNNOutputScaleEnum : return "FrictionDNNOutputScale";
 		case FrictionEffectivePressureLimitEnum : return "FrictionEffectivePressureLimit";
 		case FrictionFEnum : return "FrictionF";
 		case FrictionGammaEnum : return "FrictionGamma";
 		case FrictionLawEnum : return "FrictionLaw";
 		case FrictionLinearizeEnum : return "FrictionLinearize";
+		case FrictionMaxCoefficientEnum : return "FrictionMaxCoefficient";
 		case FrictionPseudoplasticityExponentEnum : return "FrictionPseudoplasticityExponent";
 		case FrictionU0Enum : return "FrictionU0";
 		case FrictionThresholdSpeedEnum : return "FrictionThresholdSpeed";
@@ -288,7 +297,6 @@ const char* EnumToStringx(int en){
 		case FrontalForcingsSdpolyparamsEnum : return "FrontalForcingsSdpolyparams";
 		case GrdModelEnum : return "GrdModel";
 		case GroundinglineFrictionInterpolationEnum : return "GroundinglineFrictionInterpolation";
-		case GroundinglineIntrusionDistanceEnum : return "GroundinglineIntrusionDistance";
 		case GroundinglineMeltInterpolationEnum : return "GroundinglineMeltInterpolation";
 		case GroundinglineMigrationEnum : return "GroundinglineMigration";
 		case GroundinglineNumRequestedOutputsEnum : return "GroundinglineNumRequestedOutputs";
@@ -468,6 +476,8 @@ const char* EnumToStringx(int en){
 		case OutputFileNameEnum : return "OutputFileName";
 		case OutputFilePointerEnum : return "OutputFilePointer";
 		case OutputdefinitionEnum : return "Outputdefinition";
+		case PddfacIceEnum : return "PddfacIce";
+		case PddfacSnowEnum : return "PddfacSnow";
 		case QmuErrNameEnum : return "QmuErrName";
 		case QmuInNameEnum : return "QmuInName";
 		case QmuIsdakotaEnum : return "QmuIsdakota";
@@ -498,6 +508,7 @@ const char* EnumToStringx(int en){
 		case SamplingRobinEnum : return "SamplingRobin";
 		case SamplingSeedEnum : return "SamplingSeed";
 		case SaveResultsEnum : return "SaveResults";
+		case SaveFinalResultsEnum : return "SaveFinalResults";
 		case SolidearthPartitionIceEnum : return "SolidearthPartitionIce";
 		case SolidearthPartitionHydroEnum : return "SolidearthPartitionHydro";
 		case SolidearthPartitionOceanEnum : return "SolidearthPartitionOcean";
@@ -806,6 +817,7 @@ const char* EnumToStringx(int en){
 		case BalancethicknessSpcthicknessEnum : return "BalancethicknessSpcthickness";
 		case BalancethicknessThickeningRateEnum : return "BalancethicknessThickeningRate";
 		case BasalCrevasseEnum : return "BasalCrevasse";
+		case BasalforcingsCoriolisFEnum : return "BasalforcingsCoriolisF";
 		case BasalforcingsDeepwaterMeltingRatearmaEnum : return "BasalforcingsDeepwaterMeltingRatearma";
 		case BasalforcingsDeepwaterMeltingRateNoiseEnum : return "BasalforcingsDeepwaterMeltingRateNoise";
 		case BasalforcingsDeepwaterMeltingRateValuesAutoregressionEnum : return "BasalforcingsDeepwaterMeltingRateValuesAutoregression";
@@ -825,6 +837,10 @@ const char* EnumToStringx(int en){
 		case BasalforcingsIsmip6TfEnum : return "BasalforcingsIsmip6Tf";
 		case BasalforcingsIsmip6TfShelfEnum : return "BasalforcingsIsmip6TfShelf";
 		case BasalforcingsIsmip6MeltAnomalyEnum : return "BasalforcingsIsmip6MeltAnomaly";
+		case BasalforcingsIsmip7TfEnum : return "BasalforcingsIsmip7Tf";
+		case BasalforcingsIsmip7TfShelfEnum : return "BasalforcingsIsmip7TfShelf";
+		case BasalforcingsIsmip7SalinityEnum : return "BasalforcingsIsmip7Salinity";
+		case BasalforcingsIsmip7SalinityShelfEnum : return "BasalforcingsIsmip7SalinityShelf";
 		case BasalforcingsMeltrateFactorEnum : return "BasalforcingsMeltrateFactor";
 		case BasalforcingsOceanSalinityEnum : return "BasalforcingsOceanSalinity";
 		case BasalforcingsOceanTempEnum : return "BasalforcingsOceanTemp";
@@ -976,6 +992,7 @@ const char* EnumToStringx(int en){
 		case FrontalForcingsSubglacialDischargearmaEnum : return "FrontalForcingsSubglacialDischargearma";
 		case FrontalForcingsSubglacialDischargeEnum : return "FrontalForcingsSubglacialDischarge";
 		case GeometryHydrostaticRatioEnum : return "GeometryHydrostaticRatio";
+		case GroundinglineIntrusionDistanceEnum : return "GroundinglineIntrusionDistance";
 		case NGiaEnum : return "NGia";
 		case NGiaRateEnum : return "NGiaRate";
 		case UGiaEnum : return "UGia";
@@ -1245,6 +1262,7 @@ const char* EnumToStringx(int en){
 		case SmbIsInitializedEnum : return "SmbIsInitialized";
 		case SmbMAddEnum : return "SmbMAdd";
 		case SmbMappedforcingpointEnum : return "SmbMappedforcingpoint";
+		case SmbMappedforcingprecipscalingEnum : return "SmbMappedforcingprecipscaling";
 		case SmbMassBalanceEnum : return "SmbMassBalance";
 		case SmbMassBalanceSnowEnum : return "SmbMassBalanceSnow";
 		case SmbMassBalanceIceEnum : return "SmbMassBalanceIce";
@@ -1302,6 +1320,9 @@ const char* EnumToStringx(int en){
 		case SmbSummerAlbedoEnum : return "SmbSummerAlbedo";
 		case SmbSnowheightEnum : return "SmbSnowheight";
 		case SmbTEnum : return "SmbT";
+		case SmbT10Enum : return "SmbT10";
+		case SmbT30Enum : return "SmbT30";
+		case SmbT50Enum : return "SmbT50";
 		case SmbTaEnum : return "SmbTa";
 		case SmbTampEnum : return "SmbTamp";
 		case SmbTeValueEnum : return "SmbTeValue";
@@ -1312,6 +1333,7 @@ const char* EnumToStringx(int en){
 		case SmbTemperaturesReconstructedEnum : return "SmbTemperaturesReconstructed";
 		case SmbTiniEnum : return "SmbTini";
 		case SmbTmeanEnum : return "SmbTmean";
+		case SmbTsEnum : return "SmbTs";
 		case SmbTzEnum : return "SmbTz";
 		case SmbValuesAutoregressionEnum : return "SmbValuesAutoregression";
 		case SmbValuesMovingaverageEnum : return "SmbValuesMovingaverage";
@@ -3445,6 +3467,7 @@ const char* EnumToStringx(int en){
 		case BalancevelocityAnalysisEnum : return "BalancevelocityAnalysis";
 		case BalancevelocitySolutionEnum : return "BalancevelocitySolution";
 		case BasalforcingsIsmip6Enum : return "BasalforcingsIsmip6";
+		case BasalforcingsIsmip7Enum : return "BasalforcingsIsmip7";
 		case BasalforcingsPicoEnum : return "BasalforcingsPico";
 		case BasalforcingsConvergenceNumStepsEnum : return "BasalforcingsConvergenceNumSteps";
 		case BasalforcingsLaddieEnum : return "BasalforcingsLaddie";
@@ -3752,6 +3775,7 @@ const char* EnumToStringx(int en){
 		case SMBpddEnum : return "SMBpdd";
 		case SMBpddSicopolisEnum : return "SMBpddSicopolis";
 		case SMBpddGCMEnum : return "SMBpddGCM";
+		case SMBpddFastEnum : return "SMBpddFast";
 		case SMBsemicEnum : return "SMBsemic";
 		case SSAApproximationEnum : return "SSAApproximation";
 		case SSAFSApproximationEnum : return "SSAFSApproximation";
@@ -3811,6 +3835,7 @@ const char* EnumToStringx(int en){
 		case TotalFloatingBmbScaledEnum : return "TotalFloatingBmbScaled";
 		case TotalGroundedBmbEnum : return "TotalGroundedBmb";
 		case TotalGroundedBmbScaledEnum : return "TotalGroundedBmbScaled";
+		case TotalHydrologyBasalFluxEnum : return "TotalHydrologyBasalFlux";
 		case TotalSmbEnum : return "TotalSmb";
 		case TotalSmbScaledEnum : return "TotalSmbScaled";
 		case TotalSmbRefreezeEnum : return "TotalSmbRefreeze";

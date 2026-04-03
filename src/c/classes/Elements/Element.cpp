@@ -2504,6 +2504,67 @@ void       Element::Ismip6FloatingiceMeltingRate(){/*{{{*/
 	xDelete<IssmDouble>(depths);
 
 }/*}}}*/
+void       Element::Ismip7FloatingiceMeltingRate(){/*{{{*/
+	if(!this->IsIceInElement() || !this->IsAllFloating() || !this->IsOnBase()) return;
+
+	int         basinid,num_basins,M,N;
+	IssmDouble* xyz_list;
+	
+	IssmDouble  tf,gamma0;
+	IssmDouble  salinity; /*local salinity [psu]*/
+	IssmDouble  coriolis; /*Coriolis parameter*/
+	IssmDouble  dbase[2]; /*derivative of z_b*/
+	IssmDouble  theta, slope;
+	IssmDouble* depths  = NULL;
+	
+
+	/*Allocate some arrays*/
+	const int numvertices = this->GetNumberOfVertices();
+	IssmDouble basalmeltrate[MAXVERTICES];
+
+	/*Get variables*/
+	this->GetVerticesCoordinates(&xyz_list);
+
+	IssmDouble rhoi = this->FindParam(MaterialsRhoIceEnum);
+	IssmDouble rhow = this->FindParam(MaterialsRhoSeawaterEnum);
+	IssmDouble lf   = this->FindParam(MaterialsLatentheatEnum);
+	IssmDouble cp   = this->FindParam(MaterialsMixedLayerCapacityEnum);
+	IssmDouble betaS = 7.86e-4; /*Salinity expansion coefficient [psu-1]*/
+	IssmDouble g   = this->FindParam(ConstantsGEnum);
+
+	/* Get parameters and inputs */
+	this->parameters->FindParam(&gamma0,BasalforcingsIsmip7GammaEnum);
+	
+	Input* base_input = this->GetInput(BaseEnum); _assert_(base_input);
+	Input* tf_input   = this->GetInput(BasalforcingsIsmip7TfShelfEnum); _assert_(tf_input);
+	Input* salinity_input = this->GetInput(BasalforcingsIsmip7SalinityShelfEnum); _assert_(salinity_input);
+	Input* coriolis_input = this->GetInput(BasalforcingsCoriolisFEnum); _assert_(coriolis_input);
+	
+	/*Compute melt rate for Local and Nonlocal parameterizations*/
+	Gauss* gauss=this->NewGauss();
+	for(int i=0;i<numvertices;i++){
+		gauss->GaussVertex(i);
+
+		tf_input->GetInputValue(&tf,gauss);
+		salinity_input->GetInputValue(&salinity,gauss);
+		coriolis_input->GetInputValue(&coriolis,gauss);
+
+		base_input->GetInputDerivativeValue(&dbase[0],xyz_list,gauss);
+		slope = sqrt(pow(dbase[0],2)+pow(dbase[1],2));
+		theta = atan(slope);
+
+		basalmeltrate[i] = gamma0*sin(theta)*(rhow/rhoi)*pow(cp/lf,2.0)*betaS*salinity*g/2.0/abs(coriolis)*abs(tf)*tf;
+
+	}
+
+	/*Return basal melt rate*/
+	this->AddInput(BasalforcingsFloatingiceMeltingRateEnum,basalmeltrate,P1DGEnum);
+
+	/*Cleanup and return*/
+	delete gauss;
+	xDelete<IssmDouble>(depths);
+
+}/*}}}*/
 void       Element::LapseRateBasinSMB(int numelevbins, IssmDouble* lapserates, IssmDouble* elevbins,IssmDouble* refelevation){/*{{{*/
 
 	/*Variable declaration*/
@@ -3695,6 +3756,7 @@ void       Element::PositiveDegreeDaySicopolis(bool isfirnwarming){/*{{{*/
 	IssmDouble* p_ampl=xNew<IssmDouble>(NUM_VERTICES);	// precip anomaly
 	IssmDouble* t_ampl=xNew<IssmDouble>(NUM_VERTICES);	// remperature anomaly
 	IssmDouble rho_water,rho_ice,desfac,rlaps;
+	IssmDouble pdd_fac_ice,pdd_fac_snow;
 	IssmDouble inv_twelve=1./12.;								//factor for monthly average
 	IssmDouble time,yts,time_yr;
 
@@ -3708,6 +3770,10 @@ void       Element::PositiveDegreeDaySicopolis(bool isfirnwarming){/*{{{*/
 	/*Get parameters for height corrections*/
 	desfac=this->FindParam(SmbDesfacEnum);
 	rlaps=this->FindParam(SmbRlapsEnum);
+
+	/*Get pdd melt factors*/
+	pdd_fac_ice=this->FindParam(PddfacIceEnum);
+	pdd_fac_snow=this->FindParam(PddfacSnowEnum);
 
 	/* Get time */
 	this->parameters->FindParam(&time,TimeEnum);
@@ -3747,7 +3813,199 @@ void       Element::PositiveDegreeDaySicopolis(bool isfirnwarming){/*{{{*/
 	for (int iv = 0; iv<NUM_VERTICES; iv++){
 		smb[iv]=PddSurfaceMassBalanceSicopolis(&monthlytemperatures[iv*12], &monthlyprec[iv*12],
 					&melt[iv], &accu[iv], &melt_star[iv], &t_ampl[iv], &p_ampl[iv], yts, s[iv],
-					desfac, s0t[iv], s0p[iv],rlaps,rho_water,rho_ice);
+					desfac, s0t[iv], s0p[iv],rlaps,rho_water,rho_ice,pdd_fac_ice,pdd_fac_snow);
+
+		/* make correction */
+		smb[iv] = smb[iv]+smbcorr[iv];
+		/*Get yearlytemperatures */
+		for(int month=0;month<12;month++) yearlytemperatures[iv]=yearlytemperatures[iv]+((monthlytemperatures[iv*12+month]+273.15)+t_ampl[iv])*inv_twelve; // Has to be in Kelvin
+
+		if(isfirnwarming){
+			if(melt_star[iv]>=melt[iv]){
+				yearlytemperatures[iv]= yearlytemperatures[iv]+mu*(melt_star[iv]-melt[iv]);
+			}
+			else{
+				yearlytemperatures[iv]= yearlytemperatures[iv];
+			}
+		}
+		if (yearlytemperatures[iv]>273.15) yearlytemperatures[iv]=273.15;
+	}
+
+	switch(this->ObjectEnum()){
+		case TriaEnum:
+			//this->AddInput(TemperatureEnum,&yearlytemperatures[0],P1Enum);
+			this->AddInput(TemperaturePDDEnum,&yearlytemperatures[0],P1Enum);
+			this->AddInput(SmbMassBalanceEnum,&smb[0],P1Enum);
+			this->AddInput(SmbAccumulationEnum,&accu[0],P1Enum);
+			this->AddInput(SmbMeltEnum,&melt[0],P1Enum);
+			break;
+		case PentaEnum:
+			bool isthermal;
+			this->parameters->FindParam(&isthermal,TransientIsthermalEnum);
+			if(isthermal){
+				bool isenthalpy;
+				this->parameters->FindParam(&isenthalpy,ThermalIsenthalpyEnum);
+				if(IsOnSurface()){
+					/*Here, we want to change the BC of the thermal model, keep
+					 * the temperatures as they are for the base of the penta and
+					 * use yearlytemperatures for the top*/
+
+					/*FIXME: look at other function Element::PositiveDegreeDay and propagate change! Just assert for now*/
+					PentaInput* temp_input = xDynamicCast<PentaInput*>(this->GetInput(TemperatureEnum)); _assert_(temp_input);
+					switch(temp_input->GetInputInterpolationType()){
+						case P1Enum:
+							temp_input->element_values[3] = yearlytemperatures[3];
+							temp_input->element_values[4] = yearlytemperatures[4];
+							temp_input->element_values[5] = yearlytemperatures[5];
+							temp_input->SetInput(P1Enum,NUM_VERTICES,&vertexlids[0],temp_input->element_values);
+							break;
+						case P1DGEnum:
+						case P1xP2Enum:
+						case P1xP3Enum:
+						case P1xP4Enum:
+							temp_input->element_values[3] = yearlytemperatures[3];
+							temp_input->element_values[4] = yearlytemperatures[4];
+							temp_input->element_values[5] = yearlytemperatures[5];
+							temp_input->SetInput(temp_input->GetInputInterpolationType(),this->lid,this->GetNumberOfNodes(temp_input->GetInputInterpolationType()),temp_input->element_values);
+							break;
+						default:
+							_error_("Interpolation "<<EnumToStringx(temp_input->GetInputInterpolationType())<<" not supported yet");
+					}
+
+					if(isenthalpy){
+						/*Convert that to enthalpy for the enthalpy model*/
+						PentaInput* enth_input = xDynamicCast<PentaInput*>(this->GetInput(EnthalpyEnum)); _assert_(enth_input);
+						switch(enth_input->GetInputInterpolationType()){
+							case P1Enum:
+								ThermalToEnthalpy(&enth_input->element_values[3],yearlytemperatures[3],0.,0.);
+								ThermalToEnthalpy(&enth_input->element_values[4],yearlytemperatures[4],0.,0.);
+								ThermalToEnthalpy(&enth_input->element_values[5],yearlytemperatures[5],0.,0.);
+								enth_input->SetInput(P1Enum,NUM_VERTICES,&vertexlids[0],enth_input->element_values);
+								break;
+							case P1DGEnum:
+							case P1xP2Enum:
+							case P1xP3Enum:
+							case P1xP4Enum:
+								ThermalToEnthalpy(&enth_input->element_values[3],yearlytemperatures[3],0.,0.);
+								ThermalToEnthalpy(&enth_input->element_values[4],yearlytemperatures[4],0.,0.);
+								ThermalToEnthalpy(&enth_input->element_values[5],yearlytemperatures[5],0.,0.);
+								enth_input->SetInput(enth_input->GetInputInterpolationType(),this->lid,this->GetNumberOfNodes(enth_input->GetInputInterpolationType()),enth_input->element_values);
+								break;
+							default:
+								_error_("Interpolation "<<EnumToStringx(temp_input->GetInputInterpolationType())<<" not supported yet");
+						}
+					}
+				}
+			}
+			this->AddInput(SmbMassBalanceEnum,&smb[0],P1Enum);
+			this->AddInput(TemperaturePDDEnum,&yearlytemperatures[0],P1Enum);
+			this->AddInput(SmbAccumulationEnum,&accu[0],P1Enum);
+			this->AddInput(SmbMeltEnum,&melt[0],P1Enum);
+			this->InputExtrude(TemperaturePDDEnum,-1);
+			this->InputExtrude(SmbMassBalanceEnum,-1);
+			this->InputExtrude(SmbAccumulationEnum,-1);
+			this->InputExtrude(SmbMeltEnum,-1);
+			break;
+		default: _error_("Not implemented yet");
+	}
+
+	/*clean-up*/
+	delete gauss;
+	xDelete<IssmDouble>(monthlytemperatures);
+	xDelete<IssmDouble>(monthlyprec);
+	xDelete<IssmDouble>(smb);
+	xDelete<IssmDouble>(melt);
+	xDelete<IssmDouble>(accu);
+	xDelete<IssmDouble>(yearlytemperatures);
+	xDelete<IssmDouble>(s);
+	xDelete<IssmDouble>(s0t);
+	xDelete<IssmDouble>(s0p);
+	xDelete<IssmDouble>(t_ampl);
+	xDelete<IssmDouble>(p_ampl);
+	xDelete<IssmDouble>(smbcorr);
+	xDelete<IssmDouble>(melt_star);
+}
+/*}}}*/
+void       Element::PositiveDegreeDayFast(bool isfirnwarming){/*{{{*/
+
+	/* General FIXMEs: get Tmelting point, pddicefactor, pddsnowfactor, sigma from parameters/user input */
+
+	const int NUM_VERTICES 		= this->GetNumberOfVertices();
+	const int NUM_VERTICES_MONTHS_PER_YEAR	= NUM_VERTICES * 12;
+
+	int        	i,vertexlids[MAXVERTICES];;
+	IssmDouble* smb=xNew<IssmDouble>(NUM_VERTICES);		// surface mass balance
+	IssmDouble* melt=xNew<IssmDouble>(NUM_VERTICES);		// melting comp. of surface mass balance
+	IssmDouble* accu=xNew<IssmDouble>(NUM_VERTICES);		// accuumulation comp. of surface mass balance
+	IssmDouble* melt_star=xNew<IssmDouble>(NUM_VERTICES);
+	IssmDouble* monthlytemperatures=xNew<IssmDouble>(NUM_VERTICES_MONTHS_PER_YEAR);
+	IssmDouble* monthlyprec=xNew<IssmDouble>(NUM_VERTICES_MONTHS_PER_YEAR);
+	IssmDouble* yearlytemperatures=xNew<IssmDouble>(NUM_VERTICES); memset(yearlytemperatures, 0., NUM_VERTICES*sizeof(IssmDouble));
+	IssmDouble* s=xNew<IssmDouble>(NUM_VERTICES);			// actual surface height
+	IssmDouble* s0p=xNew<IssmDouble>(NUM_VERTICES);		// reference elevation for precip.
+	IssmDouble* s0t=xNew<IssmDouble>(NUM_VERTICES);		// reference elevation for temperature
+	IssmDouble* smbcorr=xNew<IssmDouble>(NUM_VERTICES); // surface mass balance correction; will be added after pdd call
+	IssmDouble* p_ampl=xNew<IssmDouble>(NUM_VERTICES);	// precip anomaly
+	IssmDouble* t_ampl=xNew<IssmDouble>(NUM_VERTICES);	// remperature anomaly
+	IssmDouble rho_water,rho_ice,desfac,rlaps;
+	IssmDouble pdd_fac_ice,pdd_fac_snow;
+	IssmDouble inv_twelve=1./12.;								//factor for monthly average
+	IssmDouble time,yts,time_yr;
+
+	/*Get vertex Lids for later*/
+	this->GetVerticesLidList(&vertexlids[0]);
+
+	/*Get material parameters :*/
+	rho_water=this->FindParam(MaterialsRhoSeawaterEnum);
+	rho_ice=this->FindParam(MaterialsRhoIceEnum);
+
+	/*Get parameters for height corrections*/
+	desfac=this->FindParam(SmbDesfacEnum);
+	rlaps=this->FindParam(SmbRlapsEnum);
+
+	/*Get pdd melt factors*/
+	pdd_fac_ice=this->FindParam(PddfacIceEnum);
+	pdd_fac_snow=this->FindParam(PddfacSnowEnum);
+
+	/* Get time */
+	this->parameters->FindParam(&time,TimeEnum);
+	this->parameters->FindParam(&yts,ConstantsYtsEnum);
+	time_yr=floor(time/yts)*yts;
+
+	/* Set parameters for finrnwarming */
+	IssmDouble MU_0         = 9.7155; //Firn-warming correction, in (d*deg C)/(mm WE)
+	IssmDouble mu           = MU_0*(1000.0*86400.0)*(rho_ice/rho_water);   // (d*deg C)/(mm WE) --> (s*deg C)/(m IE)
+
+	/*Get inputs*/
+	DatasetInput* dinput =this->GetDatasetInput(SmbMonthlytemperaturesEnum); _assert_(dinput);
+	DatasetInput* dinput2=this->GetDatasetInput(SmbPrecipitationEnum);       _assert_(dinput2);
+
+	/*loop over vertices: */
+	Gauss* gauss=this->NewGauss();
+	for(int month=0;month<12;month++){
+
+		for(int iv=0;iv<NUM_VERTICES;iv++){
+			gauss->GaussVertex(iv);
+			dinput->GetInputValue(&monthlytemperatures[iv*12+month],gauss,month);
+			monthlytemperatures[iv*12+month]=monthlytemperatures[iv*12+month]-273.15; // conversion from Kelvin to celcius for PDD module
+			dinput2->GetInputValue(&monthlyprec[iv*12+month],gauss,month);
+			monthlyprec[iv*12+month]=monthlyprec[iv*12+month]*yts;
+		}
+	}
+
+	/*Recover info at the vertices: */
+	GetInputListOnVertices(&s[0],SurfaceEnum);
+	GetInputListOnVertices(&s0p[0],SmbS0pEnum);
+	GetInputListOnVertices(&s0t[0],SmbS0tEnum);
+	GetInputListOnVertices(&smbcorr[0],SmbSmbCorrEnum);
+	GetInputListOnVertices(&t_ampl[0],SmbTemperaturesAnomalyEnum);
+	GetInputListOnVertices(&p_ampl[0],SmbPrecipitationsAnomalyEnum);
+
+	/*measure the surface mass balance*/
+	for (int iv = 0; iv<NUM_VERTICES; iv++){
+		smb[iv]=PddSurfaceMassBalanceFast(&monthlytemperatures[iv*12], &monthlyprec[iv*12],
+					&melt[iv], &accu[iv], &melt_star[iv], &t_ampl[iv], &p_ampl[iv], yts, s[iv],
+					desfac, s0t[iv], s0p[iv],rlaps,rho_water,rho_ice,pdd_fac_ice,pdd_fac_snow);
 
 		/* make correction */
 		smb[iv] = smb[iv]+smbcorr[iv];
@@ -5185,6 +5443,11 @@ void       Element::SmbGemb(IssmDouble timeinputs, int count, int steps){/*{{{*/
 	IssmDouble sumMassAdd=0.0;
 	IssmDouble fac=0.0;
 	IssmDouble sumMass=0.0;
+	IssmDouble sumH=0.0;
+	IssmDouble T0m=0.0;
+	IssmDouble T10m=0.0;
+	IssmDouble T30m=0.0;
+	IssmDouble T50m=0.0;
 	IssmDouble dMass=0.0;
 	IssmDouble accsumR=0.0;
 	IssmDouble accsumF=0.0;
@@ -5610,8 +5873,11 @@ void       Element::SmbGemb(IssmDouble timeinputs, int count, int steps){/*{{{*/
 		bool isprecipmap=true;
 		parameters->FindParam(&isprecipmap,SmbIsprecipforcingremappedEnum);
 
-		parameters->FindParam(&tlapse,SmbLapseTaValueEnum);
-		parameters->FindParam(&dlwlapse,SmbLapsedlwrfValueEnum);
+		IssmDouble* tlapse = NULL;
+		parameters->FindParam(&tlapse,&N,SmbLapseTaValueEnum); _assert_(tlapse);
+
+		IssmDouble* dlwlapse = NULL;
+		parameters->FindParam(&dlwlapse,&N,SmbLapsedlwrfValueEnum); _assert_(dlwlapse);
 
 		IssmDouble* elevation = NULL;
 		parameters->FindParam(&elevation,&N,SmbMappedforcingelevationEnum); _assert_(elevation);
@@ -5629,9 +5895,11 @@ void       Element::SmbGemb(IssmDouble timeinputs, int count, int steps){/*{{{*/
 		parameters->FindParam(&dsw, Mappedpoint-1, timeinputs, timestepping, dt, SmbDswrfParamEnum);
 		parameters->FindParam(&dswdiff, Mappedpoint-1, timeinputs, timestepping, dt, SmbDswdiffrfParamEnum);
 
-		Ta = taparam + (currentsurface - elevation[Mappedpoint-1])*tlapse;
-		if (fabs(dlwlapse) > Dtol) dlw = fmax(dlwrfparam + (currentsurface - elevation[Mappedpoint-1])*dlwlapse,0.0);
-		else{
+		Ta = taparam + (currentsurface - elevation[Mappedpoint-1])*tlapse[Mappedpoint-1];
+		Tmean = Tmean + (currentsurface - elevation[Mappedpoint-1])*tlapse[Mappedpoint-1];
+		if (fabs(dlwlapse[Mappedpoint-1]) > Dtol){
+			dlw = fmax(dlwrfparam + (currentsurface - elevation[Mappedpoint-1])*dlwlapse[Mappedpoint-1],0.0);
+		}else{
 			//adjust downward longwave, holding emissivity equal (Glover et al, 1999)
 			IssmDouble SB = 5.67e-8; // Stefan-Boltzmann constant (W m-2 K-4)
 			IssmDouble effe = 1.;
@@ -5639,7 +5907,7 @@ void       Element::SmbGemb(IssmDouble timeinputs, int count, int steps){/*{{{*/
 			dlw = fmax(effe*SB*pow(Ta,4.0),0.0);
 		}
 
-		if ( (fabs(dlwlapse) > Dtol) || (fabs(tlapse) > Dtol)){
+		if ( (fabs(dlwlapse[Mappedpoint-1]) > Dtol) || (fabs(tlapse[Mappedpoint-1]) > Dtol)){
 			IssmDouble Rg = 8.314; // gas constant (J mol-1 K-1)
 			IssmDouble dAir = 0.0;
 			// calculated air density [kg/m3]
@@ -5649,20 +5917,34 @@ void       Element::SmbGemb(IssmDouble timeinputs, int count, int steps){/*{{{*/
 		}
 		else pAir=pparam;
 
-		//Hold relative humidity constant and calculte new saturation vapor pressure
+		//Hold relative humidity constant, calculte new saturation vapor pressure,
+		// and new saturation specific humidity to scale precipitation
 		//https://cran.r-project.org/web/packages/humidity/vignettes/humidity-measures.html
 		//es over ice calculation
 		//Ding et al., 2019 after Bolton, 1980
 		//ea37 = rh37*100*6.112.*exp((17.67*(t237-273.15))./(t237-29.65));
-		rhparam=eaparam/6.112/exp((17.67*(taparam-273.15))/(taparam-29.65));
-		eAir=rhparam*6.112*exp((17.67*(Ta-273.15))/(Ta-29.65));
+		//ea37s (hPa) = 6.1121*exp(22.587*(t-273.15)/(t-273.15+273.86)); (with respect to ice)
+		IssmDouble esparam, es, qsparam, qs;
+		esparam=6.112*exp((17.67*(taparam-273.15))/(taparam-29.65));
+		es=6.112*exp((17.67*(Ta-273.15))/(Ta-29.65));
+		rhparam=eaparam/esparam;
+		eAir=fmax(rhparam*es,0.0);
+		qs=fmax(0.622*es/(pAir/100 - 0.378*es),0);
+		qsparam=fmax(0.622*esparam/(pparam/100 - 0.378*esparam),0);
 
-		if (isprecipmap && (eaparam>0)){
-			P=prparam*eAir/eaparam;
+		if ((isprecipmap) && (qsparam>0)){ 
+			IssmDouble precipscaling = 1.0;
+			Input *pscaling_input            = NULL;
+			pscaling_input = this->GetInput(SmbMappedforcingprecipscalingEnum);  _assert_(pscaling_input);
+			pscaling_input->GetInputAverage(&precipscaling);
+			P=fmax(prparam*qs/qsparam*precipscaling,0.0);
+			C=fmax(C*qs/qsparam*precipscaling,0.0);
 		}
 		else P=prparam;
 
 		xDelete<IssmDouble>(elevation);
+		xDelete<IssmDouble>(tlapse);
+		xDelete<IssmDouble>(dlwlapse);
 	}
 	/*}}}*/
 
@@ -5739,9 +6021,18 @@ void       Element::SmbGemb(IssmDouble timeinputs, int count, int steps){/*{{{*/
 	/*Calculate total system mass:*/
 	sumMass=0;
 	fac=0;
+	T0m=0;
+	T10m=0;
+	T30m=0;
+	T50m=0;
 	for(int i=0;i<m;i++){
 		sumMass += dz[i]*d[i];
+		sumH += dz[i];
 		if (d[i] > 0) fac += dz[i]*(rho_ice - fmin(d[i],rho_ice));
+		if (i==0 || (d[i]<rho_ice && d[i]>0 && sumH <= 50)) T50m = T[i];
+		if (i==0 || (d[i]<rho_ice && d[i]>0 && sumH <= 30)) T30m = T[i];
+		if (i==0 || (d[i]<rho_ice && d[i]>0 && sumH <= 10)) T10m = T[i];
+		if (i==0) T0m = T[i];
 	}
 
 	#if defined(_HAVE_AD_)
@@ -5852,6 +6143,10 @@ void       Element::SmbGemb(IssmDouble timeinputs, int count, int steps){/*{{{*/
 	this->SetElementInput(SmbMSurfSumEnum,sumMsurf/dt/rho_ice);
 	this->SetElementInput(SmbWAddEnum,sumW/dt);
 	this->SetElementInput(SmbFACEnum,fac/1000.); // output in meters
+	this->SetElementInput(SmbTsEnum,T0m); // output in K at surface
+	this->SetElementInput(SmbT10Enum,T10m); // output in K at 10m depth
+	this->SetElementInput(SmbT30Enum,T30m); // output in K at 10m depth
+	this->SetElementInput(SmbT50Enum,T50m); // output in K ar 10m depth
 	this->SetElementInput(SmbECDtEnum,EC);
 
 	/*Free allocations:{{{*/
@@ -6214,6 +6509,19 @@ IssmDouble Element::TotalGroundedBmb(IssmDouble* mask, bool scaled){/*{{{*/
 
 	/*Return: */
 	return this->TotalGroundedBmb(scaled);
+}
+/*}}}*/
+IssmDouble Element::TotalHydrologyBasalFlux(IssmDouble* mask, bool scaled){/*{{{*/
+
+	/*Retrieve values of the mask defining the element: */
+	for(int i=0;i<this->GetNumberOfVertices();i++){
+		if(mask[this->vertices[i]->Sid()]<=0.){
+			return 0.;
+		}
+	}
+
+	/*Return: */
+	return this->TotalHydrologyBasalFlux(scaled);
 }
 /*}}}*/
 IssmDouble Element::TotalSmb(IssmDouble* mask, bool scaled){/*{{{*/
