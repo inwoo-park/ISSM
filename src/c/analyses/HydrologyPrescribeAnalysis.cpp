@@ -44,7 +44,7 @@ void HydrologyPrescribeAnalysis::UpdateParameters(Parameters* parameters,IoModel
 	iomodel->FindConstant(&hydrology_model,"md.hydrology.model");
 
 	/*Now, do we really want Prescribe?*/
-	if(hydrology_model!=HydrologypismEnum) return;
+	if(hydrology_model!=HydrologyprescribeEnum) return;
 	parameters->AddObject(new IntParam(HydrologyModelEnum,hydrology_model));
 
 	/*Requested outputs*/
