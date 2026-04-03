@@ -324,7 +324,7 @@ classdef basalforcingsladdie
 
 			yts=md.constants.yts;
 
-			WriteData(fid,prefix,'name','md.basalforcings.model','data',10,'format','Integer');
+			WriteData(fid,prefix,'name','md.basalforcings.model','data',11,'format','Integer');
 			WriteData(fid,prefix,'object',self,'fieldname','groundedice_melting_rate','format','DoubleMat','mattype',1,'scale',1./yts,'timeserieslength',md.mesh.numberofvertices+1,'yts',yts)
 			WriteData(fid,prefix,'object',self,'fieldname','D','format','DoubleMat','mattype',1);
 			WriteData(fid,prefix,'object',self,'fieldname','vx','format','DoubleMat','mattype',1);
