@@ -497,6 +497,8 @@ void CreateParameters(Parameters* parameters,IoModel* iomodel,char* rootpath,FIL
    }
 	else if(hydrology_model==HydrologycuasEnum){
 		/*Nothing to add*/
+	else if(hydrology_model==HydrologyprescribeEnum){
+		/*Nothing to add*/
 	}
 	else{
 		_error_("Hydrology model "<<EnumToStringx(hydrology_model)<<" not supported yet");

@@ -3538,6 +3538,7 @@
 	HydrologyShaktiAnalysisEnum
 	HydrologyShreveAnalysisEnum
 	HydrologyCuasAnalysisEnum
+	HydrologyPrescribeAnalysisEnum
 	HydrologySolutionEnum
 	HydrologySubstepsEnum
 	HydrologySubTimeEnum
@@ -3546,6 +3547,7 @@
 	HydrologyshaktiEnum
 	HydrologyshreveEnum
 	HydrologycuasEnum
+	HydrologyprescribeEnum
 	IceMassEnum
 	IceMassScaledEnum
 	IceVolumeAboveFloatationEnum
@@ -7348,6 +7350,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==HydrologyShaktiAnalysisEnum) return "HydrologyShaktiAnalysis" end
 	if(enum==HydrologyShreveAnalysisEnum) return "HydrologyShreveAnalysis" end
 	if(enum==HydrologyCuasAnalysisEnum) return "HydrologyCuasAnalysis" end
+	if(enum==HydrologyPrescribeAnalysisEnum) return "HydrologyPrescribeAnalysis" end
 	if(enum==HydrologySolutionEnum) return "HydrologySolution" end
 	if(enum==HydrologySubstepsEnum) return "HydrologySubsteps" end
 	if(enum==HydrologySubTimeEnum) return "HydrologySubTime" end
@@ -7356,6 +7359,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==HydrologyshaktiEnum) return "Hydrologyshakti" end
 	if(enum==HydrologyshreveEnum) return "Hydrologyshreve" end
 	if(enum==HydrologycuasEnum) return "Hydrologycuas" end
+	if(enum==HydrologyprescribeEnum) return "Hydrologyprescribe" end
 	if(enum==IceMassEnum) return "IceMass" end
 	if(enum==IceMassScaledEnum) return "IceMassScaled" end
 	if(enum==IceVolumeAboveFloatationEnum) return "IceVolumeAboveFloatation" end
@@ -11158,6 +11162,7 @@ function StringToEnum(name::String)
 	if(name=="HydrologyShaktiAnalysis") return HydrologyShaktiAnalysisEnum  end
 	if(name=="HydrologyShreveAnalysis") return HydrologyShreveAnalysisEnum  end
 	if(name=="HydrologyCuasAnalysis") return HydrologyCuasAnalysisEnum  end
+	if(name=="HydrologyPrescribeAnalysis") return HydrologyPrescribeAnalysisEnum  end
 	if(name=="HydrologySolution") return HydrologySolutionEnum  end
 	if(name=="HydrologySubsteps") return HydrologySubstepsEnum  end
 	if(name=="HydrologySubTime") return HydrologySubTimeEnum  end
@@ -11166,6 +11171,7 @@ function StringToEnum(name::String)
 	if(name=="Hydrologyshakti") return HydrologyshaktiEnum  end
 	if(name=="Hydrologyshreve") return HydrologyshreveEnum  end
 	if(name=="Hydrologycuas") return HydrologycuasEnum  end
+	if(name=="Hydrologyprescribe") return HydrologyprescribeEnum  end
 	if(name=="IceMass") return IceMassEnum  end
 	if(name=="IceMassScaled") return IceMassScaledEnum  end
 	if(name=="IceVolumeAboveFloatation") return IceVolumeAboveFloatationEnum  end

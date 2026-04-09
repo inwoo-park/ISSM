@@ -267,6 +267,7 @@ void hydrology_core(FemModel* femmodel){ /*{{{*/
 	  analysis->UpdateSubglacialWaterPressure(femmodel);
 	  delete analysis;
    }
+<<<<<<< HEAD
 	
 	/*Using the CUAS hydrology model*/
 	else if (hydrology_model==HydrologycuasEnum){
@@ -303,9 +304,21 @@ void hydrology_core(FemModel* femmodel){ /*{{{*/
 		delete analysis;
 	}
 
+=======
+
+   /*Using the prescribed hydrology model*/
+   else if (hydrology_model==HydrologyprescribeEnum){
+      femmodel->SetCurrentConfiguration(HydrologyPrescribeAnalysisEnum);
+      if(VerboseSolution()) _printf0_("   updating effective pressure\n");
+      HydrologyPrescribeAnalysis* analysis = new HydrologyPrescribeAnalysis();
+      analysis->UpdateEffectivePressure(femmodel);
+      delete analysis;
+	}
+>>>>>>> main
 	else{
 		_error_("Hydrology model "<< EnumToStringx(hydrology_model) <<" not supported yet");
 	}
+
 	if(save_results){
 		if(hydrology_model==HydrologydcEnum && ThawedNodes==0){
 			if(VerboseSolution()) _printf0_("   No thawed node hydro is skiped \n");}

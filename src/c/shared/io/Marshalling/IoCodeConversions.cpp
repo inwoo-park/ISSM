@@ -322,6 +322,7 @@ int IoCodeToEnumHydrology(int enum_in){/*{{{*/
 		case 6: return HydrologyTwsEnum;
 		case 7: return HydrologyarmapwEnum;
 		case 8: return HydrologycuasEnum;
+		case 10: return HydrologyprescribeEnum;
 		default: _error_("Marshalled hydrology code \""<<enum_in<<"\" not supported yet");
 	}
 }/*}}}*/

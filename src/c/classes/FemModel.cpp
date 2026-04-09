@@ -32,7 +32,6 @@
 #include "../modules/ModelProcessorx/ModelProcessorx.h"
 #include "../modules/SpcNodesx/SpcNodesx.h"
 #include "../modules/ConfigureObjectsx/ConfigureObjectsx.h"
-#include "../modules/ParseToolkitsOptionsx/ParseToolkitsOptionsx.h"
 #include "../modules/GetVectorFromInputsx/GetVectorFromInputsx.h"
 #include "../modules/InputUpdateFromVectorx/InputUpdateFromVectorx.h"
 #include "../modules/NodesDofx/NodesDofx.h"
@@ -805,6 +804,8 @@ void FemModel::SolutionAnalysesList(int** panalyses,int* pnumanalyses,IoModel* i
 			}
 			if(hydrology_model==HydrologycuasEnum){
 				analyses_temp[numanalyses++]=HydrologyCuasAnalysisEnum;
+			if(hydrology_model==HydrologyprescribeEnum){
+				analyses_temp[numanalyses++]=HydrologyPrescribeAnalysisEnum;
 			}
 		}
 			break;
