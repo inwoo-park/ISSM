@@ -755,6 +755,8 @@ syn keyword cConstant YyeEnum
 syn keyword cConstant ZzeEnum
 syn keyword cConstant AreaeEnum
 syn keyword cConstant WorldCommEnum
+syn keyword cConstant FrictionEmulatorEnum
+syn keyword cConstant SmbEmulatorEnum
 syn keyword cConstant ParametersENDEnum
 syn keyword cConstant InputsSTARTEnum
 syn keyword cConstant AccumulatedDeltaBottomPressureEnum
@@ -1282,6 +1284,16 @@ syn keyword cConstant SmbZMaxEnum
 syn keyword cConstant SmbZMinEnum
 syn keyword cConstant SmbZTopEnum
 syn keyword cConstant SmbZYEnum
+syn keyword cConstant SmbElevEnum
+syn keyword cConstant SmbAlEnum
+syn keyword cConstant SmbStEnum
+syn keyword cConstant SmbTtEnum
+syn keyword cConstant SmbSwdEnum
+syn keyword cConstant SmbLwdEnum
+syn keyword cConstant SmbSwuEnum
+syn keyword cConstant SmbLwuEnum
+syn keyword cConstant SmbShfEnum
+syn keyword cConstant SmbLhfEnum
 syn keyword cConstant SolidearthExternalDisplacementEastRateEnum
 syn keyword cConstant SolidearthExternalDisplacementNorthRateEnum
 syn keyword cConstant SolidearthExternalDisplacementUpRateEnum
@@ -3476,6 +3488,7 @@ syn keyword cConstant DoubleVecParamEnum
 syn keyword cConstant ElementEnum
 syn keyword cConstant ElementHookEnum
 syn keyword cConstant ElementSIdEnum
+syn keyword cConstant EmulatorParamEnum
 syn keyword cConstant EnthalpyAnalysisEnum
 syn keyword cConstant EsaAnalysisEnum
 syn keyword cConstant EsaSolutionEnum
@@ -3704,6 +3717,7 @@ syn keyword cConstant SMBpddSicopolisEnum
 syn keyword cConstant SMBpddGCMEnum
 syn keyword cConstant SMBpddFastEnum
 syn keyword cConstant SMBsemicEnum
+syn keyword cConstant SMBmariaEnum
 syn keyword cConstant SSAApproximationEnum
 syn keyword cConstant SSAFSApproximationEnum
 syn keyword cConstant SSAHOApproximationEnum
@@ -3847,6 +3861,7 @@ syn keyword cType ElementInput
 syn keyword cType ElementMatrix
 syn keyword cType Elements
 syn keyword cType ElementVector
+syn keyword cType EmulatorParam
 syn keyword cType ExponentialVariogram
 syn keyword cType ExternalResult
 syn keyword cType FemModel
