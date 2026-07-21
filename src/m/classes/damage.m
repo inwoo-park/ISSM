@@ -88,7 +88,7 @@ classdef damage
 			
 			md = checkfield(md,'fieldname','damage.isdamage','values',[1,0]);
 			if self.isdamage
-				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3]);
+				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3,4,5]);
 				md = checkfield(md,'fieldname','damage.D','>=',0,'<=',self.max_damage,'size',[md.mesh.numberofvertices 1]);
 				md = checkfield(md,'fieldname','damage.spcdamage','Inf',1,'timeseries',1);
 				md = checkfield(md,'fieldname','damage.max_damage','<',1,'>=',0);
@@ -103,7 +103,7 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.c2','>=',0);
 				md = checkfield(md,'fieldname','damage.c3','>=',0);
 				md = checkfield(md,'fieldname','damage.c4','>=',0);
-				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1]);
+				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.requested_outputs','stringrow',1);
 			elseif (self.law~=0)
 				if (strcmp(solution,'DamageEvolutionSolution'))
@@ -124,7 +124,7 @@ classdef damage
 
 			fielddisplay(self,'isdamage','is damage mechanics being used? {true,false}');
 			if self.isdamage
-				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong''}');
+				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong'',''4: test'',''5: linear''}');
 				fielddisplay(self,'D','damage tensor (scalar)');
 				fielddisplay(self,'spcdamage','damage constraints (NaN means no constraint)');
 				fielddisplay(self,'max_damage','maximum possible damage (0<=max_damage<1)');
@@ -135,12 +135,24 @@ classdef damage
 				fielddisplay(self,'stress_threshold','stress threshold for damage initiation (Pa)');
 				fielddisplay(self,'stress_ubound','stress upper bound for damage healing (Pa), arctan law');
 				fielddisplay(self,'kappa','ductility parameter for stress softening and damage');
-				fielddisplay(self,'c1','damage parameter 1');
-				fielddisplay(self,'c2','damage parameter 2');
-				fielddisplay(self,'c3','damage parameter 3');
-				fielddisplay(self,'c4','damage parameter 4');
+				if self.law < 4
+					fielddisplay(self,'c1','damage parameter 1');
+					fielddisplay(self,'c2','damage parameter 2');
+					fielddisplay(self,'c3','damage parameter 3');
+					fielddisplay(self,'c4','damage parameter 4');
+				elseif self.law == 4
+					fielddisplay(self,'c1','damage parameter 1');
+					fielddisplay(self,'c2','damage parameter 2');
+					fielddisplay(self,'c3','damage parameter 3');
+				elseif slef.law == 5
+					fielddisplay(self,'c1','damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)');
+				end
 				fielddisplay(self,'healing','damage healing parameter');
-				fielddisplay(self,'equiv_stress','0: von Mises, 1: max principal');
+				fielddisplay(self,'equiv_stress','0: von Mises, 1: max prinecipal, 2: Hayhurst criterion');
+				if self.equiv_stress == 3
+					fielddisplay(self,'alpha','alpha parameter for Hayhurst criterion');
+					fielddisplay(self,'beta','alpha parameter for Hayhurst criterion');
+				end
 				fielddisplay(self,'requested_outputs','additional outputs requested');
 			end
 

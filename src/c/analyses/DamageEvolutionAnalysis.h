@@ -26,6 +26,8 @@ class DamageEvolutionAnalysis: public Analysis{
 		void           CreateDamageFInputArctan(Element* element);
 		void           CreateDamageFInputExp(Element* element);
 		void           CreateDamageFInputPralong(Element* element);
+		void           CreateDamageFInputTest(Element* element);
+		void           CreateDamageFInputLinear(Element* element);
 		ElementVector* CreateDVector(Element* element);
 		ElementMatrix* CreateJacobianMatrix(Element* element);
 		ElementMatrix* CreateKMatrix(Element* element);
