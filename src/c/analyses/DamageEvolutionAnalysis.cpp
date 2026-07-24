@@ -474,7 +474,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	int equivstress,domaintype,dim;
 
 	IssmDouble  k_sigma=0.0; /* k_sigma in exponential damage model*/
-	int isexperiment=1;
+	int isexperiment=2;
 
 	/*Fetch number of vertices and allocate output*/
 	int numnodes = element->GetNumberOfNodes();
@@ -536,6 +536,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 		if(dim==2){
 			pressure = 0.5*pressure; /* pressure is defined in 2d as half of the 3d pressure */
 		}
+		//pressure = 0.0;
 		damage_input->GetInputValue(&damage,gauss);
 		tau_xx_input->GetInputValue(&tau_xx,gauss);
 		tau_xy_input->GetInputValue(&tau_xy,gauss);
@@ -562,6 +563,8 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 			s_yz=sigma_yz/(1.-damage);
 			s_zz=sigma_zz/(1.-damage);
 		}
+
+		s_inv1 = s_xx + s_yy + s_zz;
 
 		/*Calculate k_simga value*/
 		if(isexperiment==0){
