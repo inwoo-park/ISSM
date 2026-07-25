@@ -113,6 +113,8 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.kappa",DamageKappaEnum));
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.healing",DamageHealingEnum));
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.equiv_stress",DamageEquivStressEnum));
+		parameters->AddObject(iomodel->CopyConstantObject("md.damage.isdamage_exponent",DamageIsDamageExponentEnum));
+		parameters->AddObject(iomodel->CopyConstantObject("md.damage.ispressure_ssa",DamageIsPressureSSAEnum));
 	}
 
 }/*}}}*/
@@ -474,7 +476,8 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	int equivstress,domaintype,dim;
 
 	IssmDouble  k_sigma=0.0; /* k_sigma in exponential damage model*/
-	int isexperiment=2;
+	int isdamage_exponent;
+	int ispressure_ssa;
 
 	/*Fetch number of vertices and allocate output*/
 	int numnodes = element->GetNumberOfNodes();
@@ -487,6 +490,8 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	element->FindParam(&c4,DamageC4Enum);
 	element->FindParam(&healing,DamageHealingEnum);
 	element->FindParam(&stress_threshold,DamageStressThresholdEnum);
+	element->FindParam(&isdamage_exponent,DamageIsDamageExponentEnum);
+	element->FindParam(&ispressure_ssa,DamageIsPressureSSAEnum);
 	element->FindParam(&domaintype,DomainTypeEnum);
 
 	/*Get problem dimension*/
@@ -508,7 +513,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	Input* tau_xz_input  = NULL;
 	Input* tau_yz_input  = NULL;
 	Input* tau_zz_input  = NULL;
-	Input* pressure_input = element->GetInput(PressureEnum);           _assert_(pressure_input);
+	Input* pressure_input = element->GetInput(PressureEnum);          _assert_(pressure_input);
 	Input* stressMaxPrincipal_input = NULL;
 	if(dim==3){
 		tau_xz_input  = element->GetInput(DeviatoricStressxzEnum);     _assert_(tau_xz_input);
@@ -534,9 +539,16 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 
 		pressure_input->GetInputValue(&pressure,gauss);
 		if(dim==2){
-			pressure = 0.5*pressure; /* pressure is defined in 2d as half of the 3d pressure */
+			if(ispressure_ssa==0){ /* Assume pressure at surface */
+				pressure=0.0;
+			}else if(ispressure_ssa==1){
+				pressure=0.5*pressure; /* pressure is defined in 2d as half of the 3d pressure */
+			}else if(ispressure_ssa==2){
+				/*Nothing to be done*/
+				continue;
+			}
 		}
-		//pressure = 0.0;
+
 		damage_input->GetInputValue(&damage,gauss);
 		tau_xx_input->GetInputValue(&tau_xx,gauss);
 		tau_xy_input->GetInputValue(&tau_xy,gauss);
@@ -564,20 +576,21 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 			s_zz=sigma_zz/(1.-damage);
 		}
 
-		s_inv1 = s_xx + s_yy + s_zz;
-
 		/*Calculate k_simga value*/
-		if(isexperiment==0){
+		if(isdamage_exponent==0){
 			k_sigma = c3;
-		}else if(isexperiment==1){
+		}else if(isdamage_exponent==1){
 			/* Eq 23. Pralong et al. (2005) */
 			IssmDouble k1=3.75e-3; // [Pa-1] Table 3 in Pralong et al. (2005)
 
+			s_inv1 = (s_xx + s_yy + s_zz);
 			k_sigma = k1 * ( sqrt(max(s_inv1,0.0)) - healing * sqrt(max(-s_inv1,0.0)) );
-		}else if(isexperiment==2){
+		}else if(isdamage_exponent==2){
 			/*FIXME: Hard coding. Parameters from Duddu et al. (2020)*/
 			IssmDouble k1=-2.63; // unit: -
 			IssmDouble k2=7.24*1e-6; // unit:  Pa-1
+
+			s_inv1 = (s_xx + s_yy + s_zz);
 			k_sigma = k1 + k2*s_inv1;
 		}else{
 			_error_("not implemented");

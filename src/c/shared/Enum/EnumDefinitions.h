@@ -161,6 +161,8 @@ enum definitions{
 	DamageEvolutionNumRequestedOutputsEnum,
 	DamageEvolutionRequestedOutputsEnum,
 	DamageHealingEnum,
+	DamageIsDamageExponentEnum,
+	DamageIsPressureSSAEnum,
 	DamageKappaEnum,
 	DamageLawEnum,
 	DamageMaxDamageEnum,

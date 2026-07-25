@@ -156,6 +156,8 @@
 	DamageEvolutionNumRequestedOutputsEnum
 	DamageEvolutionRequestedOutputsEnum
 	DamageHealingEnum
+	DamageIsDamageExponentEnum
+	DamageIsPressureSSAEnum
 	DamageKappaEnum
 	DamageLawEnum
 	DamageMaxDamageEnum
@@ -4018,6 +4020,8 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageEvolutionNumRequestedOutputsEnum) return "DamageEvolutionNumRequestedOutputs" end
 	if(enum==DamageEvolutionRequestedOutputsEnum) return "DamageEvolutionRequestedOutputs" end
 	if(enum==DamageHealingEnum) return "DamageHealing" end
+	if(enum==DamageIsDamageExponentEnum) return "DamageIsDamageExponent" end
+	if(enum==DamageIsPressureSSAEnum) return "DamageIsPressureSSA" end
 	if(enum==DamageKappaEnum) return "DamageKappa" end
 	if(enum==DamageLawEnum) return "DamageLaw" end
 	if(enum==DamageMaxDamageEnum) return "DamageMaxDamage" end
@@ -7723,7 +7727,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==SubelementMigration4Enum) return "SubelementMigration4" end
 	if(enum==TimesteppingTimeAdaptEnum) return "TimesteppingTimeAdapt" end
 	if(enum==TriangleInterpEnum) return "TriangleInterp" end
-	if(enum==MaximumNumberOfDefinitionsEnum) return "MaximumNumberOfDefinitionsE" end
+	if(enum==MaximumNumberOfDefinitionsEnum) return "MaximumNumberOfDefinitions" end
 end
 
 function StringToEnum(name::String)
@@ -7880,6 +7884,8 @@ function StringToEnum(name::String)
 	if(name=="DamageEvolutionNumRequestedOutputs") return DamageEvolutionNumRequestedOutputsEnum  end
 	if(name=="DamageEvolutionRequestedOutputs") return DamageEvolutionRequestedOutputsEnum  end
 	if(name=="DamageHealing") return DamageHealingEnum  end
+	if(name=="DamageIsDamageExponent") return DamageIsDamageExponentEnum  end
+	if(name=="DamageIsPressureSSA") return DamageIsPressureSSAEnum  end
 	if(name=="DamageKappa") return DamageKappaEnum  end
 	if(name=="DamageLaw") return DamageLawEnum  end
 	if(name=="DamageMaxDamage") return DamageMaxDamageEnum  end
@@ -11585,6 +11591,6 @@ function StringToEnum(name::String)
 	if(name=="SubelementMigration4") return SubelementMigration4Enum  end
 	if(name=="TimesteppingTimeAdapt") return TimesteppingTimeAdaptEnum  end
 	if(name=="TriangleInterp") return TriangleInterpEnum  end
-	if(name=="MaximumNumberOfDefinitionsE") return MaximumNumberOfDefinitionsEnum  end
+	if(name=="MaximumNumberOfDefinitions") return MaximumNumberOfDefinitionsEnum  end
 	error("Enum ", name, " not found");
 end

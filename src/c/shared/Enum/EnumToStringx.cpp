@@ -169,6 +169,8 @@ const char* EnumToStringx(int en){
 		case DamageEvolutionNumRequestedOutputsEnum : return "DamageEvolutionNumRequestedOutputs";
 		case DamageEvolutionRequestedOutputsEnum : return "DamageEvolutionRequestedOutputs";
 		case DamageHealingEnum : return "DamageHealing";
+		case DamageIsDamageExponentEnum : return "DamageIsDamageExponent";
+		case DamageIsPressureSSAEnum : return "DamageIsPressureSSA";
 		case DamageKappaEnum : return "DamageKappa";
 		case DamageLawEnum : return "DamageLaw";
 		case DamageMaxDamageEnum : return "DamageMaxDamage";
@@ -3874,7 +3876,7 @@ const char* EnumToStringx(int en){
 		case SubelementMigration4Enum : return "SubelementMigration4";
 		case TimesteppingTimeAdaptEnum : return "TimesteppingTimeAdapt";
 		case TriangleInterpEnum : return "TriangleInterp";
-		case MaximumNumberOfDefinitionsEnum : return "MaximumNumberOfDefinitionsE";
+		case MaximumNumberOfDefinitionsEnum : return "MaximumNumberOfDefinitions";
 		default : return "unknown";
 
 	}

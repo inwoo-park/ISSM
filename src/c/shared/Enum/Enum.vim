@@ -167,6 +167,8 @@ syn keyword cConstant DamageEquivStressEnum
 syn keyword cConstant DamageEvolutionNumRequestedOutputsEnum
 syn keyword cConstant DamageEvolutionRequestedOutputsEnum
 syn keyword cConstant DamageHealingEnum
+syn keyword cConstant DamageIsDamageExponentEnum
+syn keyword cConstant DamageIsPressureSSAEnum
 syn keyword cConstant DamageKappaEnum
 syn keyword cConstant DamageLawEnum
 syn keyword cConstant DamageMaxDamageEnum
@@ -3969,7 +3971,6 @@ syn keyword cType Observation
 syn keyword cType Observations
 syn keyword cType Option
 syn keyword cType Options
-syn keyword cType OptionUtilities
 syn keyword cType Param
 syn keyword cType Parameters
 syn keyword cType Pengrid
