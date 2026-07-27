@@ -47,6 +47,7 @@ function smb = interpISMIP7AntarcticaSMB(md, modelname, scenario, start_end)
 
 	% Searching forcing files
 	smb_file = search_forcing_file(datadir, modelname, scenario, start_time, end_time);
+	assert(length(smb_file)>0, ['Error: No SMB file found for model ' modelname]);
 
 	% Load RACMO24p1_ERA5 dataset
 	% Compute climatological mean value of SMB (Jan. 1995 - Dec. 2014 in Nowicki et al. (2020@TC))
@@ -55,7 +56,11 @@ function smb = interpISMIP7AntarcticaSMB(md, modelname, scenario, start_end)
 
 	% Load data from files
 	disp('   == loading SMB anomaly data');
-	x_n = double(ncread(smb_file{1},'x'));
+	try
+		x_n = double(ncread(smb_file{1},'x'));
+	catch	
+		error(['Error: Check your dataset with ' smb_file{1}]);
+	end
 	y_n = double(ncread(smb_file{1},'y'));	
 
 	temp_matrix_smb_anon = [];
@@ -139,17 +144,24 @@ function smb_file = search_forcing_file(datadir, modelname, scenario, start_time
 	%	SMB forcing files, respectively.
 	%}
 
-	modelname = lower(modelname);
+	% Fix modelname to upper case
+	if strcmpi(lower(modelname),'cesm2-waccm')
+		modelname = 'CESM2-WACCM';
+		isversion = 2;
+	elseif strcmpi(lower(modelname),'mri-esm2-0')
+		modelname = 'MRI-ESM2-0';
+		isversion = 1;
+	end
 
-	switch modelname
+	switch lower(modelname)
 		case 'obs'
 			%FIXME: Assign smb file lists.
 			error('Not supported yet. We do not find any observation data set for SMB.');
 
-		case 'cesm2-waccm'
+		case {'cesm2-waccm','mri-esm2-0'}
 			%FIXME: SDBN1 now is replaced with SDBN1-2000m or SDBN1-8000m. These search logic should be changed according to ISMIP7 repository.
-			smb_file_hist = dir(fullfile(datadir,'CESM2-WACCM','historical','SDBN1-8000m/acabf-anomaly/v2/acabf*.nc'));
-			smb_file_proj = dir(fullfile(datadir,'CESM2-WACCM',scenario,'SDBN1-8000m/acabf-anomaly/v2/acabf*.nc'));
+			smb_file_hist = dir(fullfile(datadir,modelname,'historical',['SDBN1-8000m/acabf-anomaly/v' num2str(isversion) '/acabf*.nc']));
+			smb_file_proj = dir(fullfile(datadir,modelname,scenario,['SDBN1-8000m/acabf-anomaly/v' num2str(isversion) '/acabf*.nc']));
 
 			[~,pos]=sort({smb_file_hist.name});
 			smb_file_hist = smb_file_hist(pos);
@@ -185,6 +197,6 @@ function smb_file = search_forcing_file(datadir, modelname, scenario, start_time
 			smb_file = fullfile({smb_file.folder},{smb_file.name});
 
 		otherwise
-			error('Error: not implemented yet.');
+			error(['Error: modelname (=' modelname ') not implemented yet.']);
 	end
 end % }}}

@@ -77,6 +77,8 @@ function basalforcings = interpISMIP7AntarcticaOcn(md, modelname, scenario, star
 	end
 
 	% Searching forcing files
+	assert(any(strcmpi(lower(modelname), {'cesm2-waccm','mri-esm2-0'})),...
+		['Error: Given model name (=' modelname ') is not supported.']);
 	[tf_file, so_file] = search_forcing_file(datadir, modelname, scenario, start_time, end_time);
 
 	switch modelname
@@ -127,7 +129,7 @@ function basalforcings = interpISMIP7AntarcticaOcn(md, modelname, scenario, star
 		start_idx = 1;
 		final_idx = 1;
 		time = 1996; % set default starting time for observation.
-	elseif any(strcmpi(lower(modelname),{'cesm2-waccm'}))
+	elseif any(strcmpi(lower(modelname),{'cesm2-waccm','mri-esm2-0'}))
 		%Find start_idx and final_idx in given file
 		start_idx = find(time_data == start_time);
 		final_idx = find(time_data == end_time);
@@ -146,7 +148,7 @@ function basalforcings = interpISMIP7AntarcticaOcn(md, modelname, scenario, star
 			time = time';  % transpose to (1,ntime);
 		end
 	else
-		error(['Error: Given ' modelanem ' is not supported.']);
+		error(['Error: Given ' modelname ' is not supported.']);
 	end
 
 	%fprintf('   start_idx: %d, final_idx: %d\n',start_idx,final_idx);
@@ -235,8 +237,17 @@ function [tf_file, so_file] = search_forcing_file(datadir, modelname, scenario, 
 	%}
 
 	modelname = lower(modelname);
+	if strcmpi(upper(modelname),'CESM2-WACCM')
+		modelname = 'CESM2-WACCM';
+	elseif strcmpi(upper(modelname),'MRI-ESM2-0')
+		modelname = 'MRI-ESM2-0';
+	elseif strcmpi(lower(modelname),'obs')	
+		modelname = 'obs';
+	else
+		error(['Error: Given ' modelname ' is not supported.']);
+	end
 
-	switch modelname
+	switch lower(modelname)
 		case 'obs'
 			tf_file = fullfile(datadir,'obs/ocean/climatology/zhou_annual_06_nov/tf/v3/tf_AIS_obs_ocean_climatology_zhou_annual_06_nov_v3_1972-2024.nc');
 			so_file = fullfile(datadir,'obs/ocean/climatology/zhou_annual_06_nov/so/v4/so_AIS_obs_ocean_climatology_zhou_annual_06_nov_v4_1972-2024.nc');
@@ -246,17 +257,17 @@ function [tf_file, so_file] = search_forcing_file(datadir, modelname, scenario, 
 
 			tf_file = {tf_file};
 			so_file = {so_file};
-		case 'cesm2-waccm'
-			tf_file_hist = dir(fullfile(datadir,'CESM2-WACCM','historical','ocean/tf/v3/tf*.nc'));
-			tf_file_proj = dir(fullfile(datadir,'CESM2-WACCM',scenario,'ocean/tf/v3/tf*.nc'));
+		case {'cesm2-waccm','mri-esm2-0'}
+			tf_file_hist = dir(fullfile(datadir,modelname,'historical','ocean/tf/v3/tf*.nc'));
+			tf_file_proj = dir(fullfile(datadir,modelname,scenario,'ocean/tf/v3/tf*.nc'));
 
 			[~,pos]=sort({tf_file_hist.name});
 			tf_file_hist = tf_file_hist(pos);
 			[~,pos]=sort({tf_file_proj.name});
 			tf_file_proj = tf_file_proj(pos);
 
-			so_file_hist = dir(fullfile(datadir,'CESM2-WACCM','historical','ocean/so/v3/so*.nc'));
-			so_file_proj = dir(fullfile(datadir,'CESM2-WACCM',scenario,'ocean/so/v3/so*.nc'));
+			so_file_hist = dir(fullfile(datadir,modelname,'historical','ocean/so/v3/so*.nc'));
+			so_file_proj = dir(fullfile(datadir,modelname,scenario,'ocean/so/v3/so*.nc'));
 
 			[~,pos]=sort({so_file_hist.name});
 			so_file_hist = so_file_hist(pos);
