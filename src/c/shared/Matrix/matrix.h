@@ -19,7 +19,7 @@ void Matrix3x3Invert(IssmDouble* Ainv, IssmDouble* A);
 void Matrix3x3Determinant(IssmDouble* Adet,IssmDouble* A);
 IssmDouble Matrix3x3Determinant( IssmDouble a1,IssmDouble a2,IssmDouble a3, IssmDouble b1,IssmDouble b2,IssmDouble b3, IssmDouble c1,IssmDouble c2,IssmDouble c3);
 void Matrix3x3Solve(IssmDouble* X,IssmDouble* A,IssmDouble* B);
-void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plambda3, IssmDouble* pvx, IssmDouble* pvy, IssmDouble* pvz, IssmDouble a11, IssmDouble a12, IssmDouble a13, IssmDouble a21, IssmDouble a22, IssmDouble a23, IssmDouble a31, IssmDouble a32, IssmDouble a33)
+void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plambda3, IssmDouble* pvx, IssmDouble* pvy, IssmDouble* pvz, IssmDouble a11, IssmDouble a12, IssmDouble a13, IssmDouble a21, IssmDouble a22, IssmDouble a23, IssmDouble a31, IssmDouble a32, IssmDouble a33);
 
 void Matrix4x4Adjoint(IssmDouble* Aadj, IssmDouble* A);
 void Matrix4x4Invert(IssmDouble* Ainv, IssmDouble* A);
