@@ -108,8 +108,8 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.c2','>=',0);
 				md = checkfield(md,'fieldname','damage.c3','>=',0);
 				md = checkfield(md,'fieldname','damage.c4','>=',0);
-				md = checkfield(md,'fieldname','damage.isdamage_exponent','numel',[1],'values',[0,1,2]);
-				md = checkfield(md,'fieldname','damage.ispressure_ssa','numel',[0],'values',[0,1]);
+				md = checkfield(md,'fieldname','damage.isdamage_exponent','numel',[1],'values',[0 1 2]);
+				md = checkfield(md,'fieldname','damage.ispressure_ssa','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.requested_outputs','stringrow',1);
 			elseif (self.law~=0)
@@ -152,7 +152,7 @@ classdef damage
 					fielddisplay(self,'c2','damage parameter 2');
 					fielddisplay(self,'c3','damage parameter 3');
 					fielddisplay(self,'isdamage_exponent','damage exponent parameter. 0: constant, 1: Pralong (2005), 2: Duddu et al. (2020)');
-					fielddisplay(self,'ispressure_ssa','pressure for SSA2D. 0: surface, 1: bottom');
+					fielddisplay(self,'ispressure_ssa','pressure for SSA2D. 0: surface, 1: mid, 2: bottom');
 				elseif slef.law == 5
 					fielddisplay(self,'c1','damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)');
 				end
