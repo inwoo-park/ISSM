@@ -78,6 +78,9 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ice_levelset",MaskIceLevelsetEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.initialization.pressure",PressureEnum);
 
+	/*Initialize requested outptus in case they are not defined later for this partition*/
+   iomodel->ConstantToInput(inputs,elements,0.,DamageStressEquivalentEnum,P1Enum);
+
 }/*}}}*/
 void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 
@@ -636,21 +639,6 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 		}
 		else{
 			stress_equivalent_input->GetInputValue(&Chi,gauss);
-			// if(equivstress==1){/* max principal stress */
-			// 	stressMaxPrincipal_input->GetInputValue(&stressMaxPrincipal,gauss);
-			// 	Chi=stressMaxPrincipal/(1.-damage);
-			// }
-			// else if(equivstress==0){/* von Mises */
-			// 	Chi=sqrt(((s_xx-s_yy)*(s_xx-s_yy)+(s_yy-s_zz)*(s_yy-s_zz)+(s_zz-s_xx)*(s_zz-s_xx)+6.*(s_xy*s_xy+s_yz*s_yz+s_xz*s_xz))/2.);
-			// }
-			// else if(equivstress==2){ /* Hayhurst stress invariant */
-			// 	IssmDouble alpha=0.21;
-			// 	IssmDouble beta=0.63;
-			// 	Chi=alpha*s1 \
-			// 		 + beta*sqrt(((s_xx-s_yy)*(s_xx-s_yy)+(s_yy-s_zz)*(s_yy-s_zz)+(s_zz-s_xx)*(s_zz-s_xx)+6.*(s_xy*s_xy+s_yz*s_yz+s_xz*s_xz))/2.);
-			// 		 + (1-alpha-beta)*(s_xx + s_yy + s_zz);
-			// }
-			
 			Psi=Chi-stress_threshold;
 
 			NegPsi=max(-Psi,0.); /* healing only for compressive stresses */
@@ -1443,7 +1431,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	}
 
 	/* Assign values */
-	element->AddInput(DamageStressEquivalentEnum,sigma_equiv,P1DGEnum);
+	element->AddInput(DamageStressEquivalentEnum,sigma_equiv,P1Enum);
 
 	/* Clear memory */
 	xDelete<IssmDouble>(sigma_equiv);
