@@ -46,6 +46,7 @@ class DamageEvolutionAnalysis: public Analysis{
 		void				FctPVector(Vector<IssmDouble>** ppf,FemModel* femmodel);
 
 		/*Others*/
+		void           ComputeStressEquivalent(FemModel* femmodel);
 		void           ComputeStressEquivalent(Element* element);
 };
 #endif

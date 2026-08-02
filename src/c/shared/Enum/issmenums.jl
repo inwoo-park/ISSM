@@ -876,6 +876,7 @@
 	DamageDbarEnum
 	DamageDbarOldEnum
 	DamageFEnum
+	DamageStressEquivalentEnum
 	DebrisThicknessEnum
 	DegreeOfChannelizationEnum
 	DepthBelowSurfaceEnum
@@ -4740,6 +4741,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageDbarEnum) return "DamageDbar" end
 	if(enum==DamageDbarOldEnum) return "DamageDbarOld" end
 	if(enum==DamageFEnum) return "DamageF" end
+	if(enum==DamageStressEquivalentEnum) return "DamageStressEquivalent" end
 	if(enum==DebrisThicknessEnum) return "DebrisThickness" end
 	if(enum==DegreeOfChannelizationEnum) return "DegreeOfChannelization" end
 	if(enum==DepthBelowSurfaceEnum) return "DepthBelowSurface" end
@@ -8604,6 +8606,7 @@ function StringToEnum(name::String)
 	if(name=="DamageDbar") return DamageDbarEnum  end
 	if(name=="DamageDbarOld") return DamageDbarOldEnum  end
 	if(name=="DamageF") return DamageFEnum  end
+	if(name=="DamageStressEquivalent") return DamageStressEquivalentEnum  end
 	if(name=="DebrisThickness") return DebrisThicknessEnum  end
 	if(name=="DegreeOfChannelization") return DegreeOfChannelizationEnum  end
 	if(name=="DepthBelowSurface") return DepthBelowSurfaceEnum  end
