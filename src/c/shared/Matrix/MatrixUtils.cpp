@@ -15,6 +15,7 @@
 #include "../Exceptions/exceptions.h"
 #include "../MemOps/MemOps.h"
 #include "../io/io.h"
+#include "petscblaslapack.h"
 /*}}}*/
 
 int TripleMultiply(IssmDouble* a, int nrowa, int ncola, int itrna, IssmDouble* b, int nrowb, int ncolb, int itrnb, IssmDouble* c, int nrowc, int ncolc, int itrnc, IssmDouble* d, int iaddd){/*{{{*/
@@ -476,7 +477,63 @@ void Matrix3x3Solve(IssmDouble* X,IssmDouble* A,IssmDouble* B){/*{{{*/
 	for(int i=0;i<3;i++) X[i]=Ainv[i][0]*B[0] + Ainv[i][1]*B[1] + Ainv[i][2]*B[2];
 
 }/*}}}*/
+void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plambda3, IssmDouble* pvx, IssmDouble* pvy, IssmDouble* pvz, IssmDouble a11, IssmDouble a12, IssmDouble a13, IssmDouble a21, IssmDouble a22, IssmDouble a23, IssmDouble a31, IssmDouble a32, IssmDouble a33){/*{{{*/
+	/*@brief Compute eigen values of 3x3 matrix using LAPACK. The eigen values are sorted in decreasing order.
+	*
+	* @param[out] plambda1, plambda2, plambda3: eigen values
+	* @param[out] pvx, pvy, pvz: eigen vector
+	* @param[in] a11, a12, a13, a21, a22, a23, a31, a32, a33: matrix entries
+	*/
 
+	/* Compute Eigen value through LAPACK */
+
+	/* Initialize variables*/
+	int n = 3; /* Size of matrix*/
+	PetscScalar A[9] = {a11, a12, a13, a21, a22, a23, a31, a32, a33};
+	double eigen_real[3]; /*Real part of eigen value*/
+	double eigen_img[3];  /*Imaginary part of eigen value*/
+	
+	int ldvl = 1;
+	int ldvr = 1;
+	PetscReal wr[3]; /*Real part of eigen value*/
+	PetscReal wi[3]; /*Imaginary part of eigen value*/
+
+	int info;
+	
+	double workopt;
+	int lwork = -1;
+
+	/* Dummy arrays are still required by the LAPACK interface */
+	double vl[1];
+	double vr[1];
+	
+	/* Presume optimal workspace query */
+	LAPACKgeev_("N","N",&n, A,
+		&n, wr, wi,
+		vl, &ldvl,
+		vr, &ldvr,
+		&workopt, &lwork, &info
+	);
+	/* Go solve eigen value */
+	lwork = (int)workopt;
+	double* work = xNew<double>(lwork);
+	LAPACKgeev_("N","N",&n, A,
+		&n, eigen_real, eigen_img,
+		vl, &ldvl,
+		vr, &ldvr,
+		work, &lwork, &info
+	);
+	xDelete<double>(work);
+
+	/* Symmetric condition */
+	// LAPACKsyev_("V", "U", &n, A, &n, eigvalue,work,&lwork,&info);
+
+	/* Assign eigen value */
+	/* eigvalue is increasing order */
+	*plambda1 = eigen_real[0];
+	*plambda2 = eigen_real[1];
+	*plambda3 = eigen_real[2];
+}/*}}}*/
 void Matrix4x4Determinant(IssmDouble* Adet,IssmDouble* A){/*{{{*/
 	/*Compute determinant of a 4x4 matrix*/
 
