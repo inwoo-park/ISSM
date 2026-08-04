@@ -15,7 +15,10 @@
 #include "../Exceptions/exceptions.h"
 #include "../MemOps/MemOps.h"
 #include "../io/io.h"
+#ifdef _HAVE_PETSC_
+#include "petscsys.h"
 #include "petscblaslapack.h"
+#endif
 /*}}}*/
 
 int TripleMultiply(IssmDouble* a, int nrowa, int ncola, int itrna, IssmDouble* b, int nrowb, int ncolb, int itrnb, IssmDouble* c, int nrowc, int ncolc, int itrnc, IssmDouble* d, int iaddd){/*{{{*/
@@ -477,6 +480,7 @@ void Matrix3x3Solve(IssmDouble* X,IssmDouble* A,IssmDouble* B){/*{{{*/
 	for(int i=0;i<3;i++) X[i]=Ainv[i][0]*B[0] + Ainv[i][1]*B[1] + Ainv[i][2]*B[2];
 
 }/*}}}*/
+#ifdef _HAVE_PETSC_
 void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plambda3, IssmDouble* pvx, IssmDouble* pvy, IssmDouble* pvz, IssmDouble a11, IssmDouble a12, IssmDouble a13, IssmDouble a21, IssmDouble a22, IssmDouble a23, IssmDouble a31, IssmDouble a32, IssmDouble a33){/*{{{*/
 	/*@brief Compute eigen values of 3x3 matrix using LAPACK. The eigen values are sorted in decreasing order.
 	*
@@ -484,6 +488,10 @@ void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plam
 	* @param[out] pvx, pvy, pvz: eigen vector
 	* @param[in] a11, a12, a13, a21, a22, a23, a31, a32, a33: matrix entries
 	*/
+
+	#ifndef _HAVE_PETSC_
+		_error_("Error: To compute Matrix3x3Eigen, you need to have PETSC isntalled.");
+	#endif
 
 	/* Compute Eigen value through LAPACK */
 
@@ -534,6 +542,7 @@ void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plam
 	*plambda2 = eigen_real[1];
 	*plambda3 = eigen_real[2];
 }/*}}}*/
+#endif
 void Matrix4x4Determinant(IssmDouble* Adet,IssmDouble* A){/*{{{*/
 	/*Compute determinant of a 4x4 matrix*/
 
