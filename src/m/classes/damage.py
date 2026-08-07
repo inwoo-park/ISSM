@@ -2,6 +2,7 @@ from fielddisplay import fielddisplay
 from project3d import project3d
 from checkfield import checkfield
 from WriteData import WriteData
+from structtoobj import structtoobj
 
 
 class damage(object):
@@ -14,7 +15,7 @@ class damage(object):
 
     def __init__(self, *args):  # {{{
         #damage:
-        self.isdamage = 0.
+        self.isdamage = 0
         self.D = float('NaN')
         self.law = float('NaN')
         self.spcdamage = float('NaN')
@@ -39,6 +40,9 @@ class damage(object):
 
         if not len(args):
             self.setdefaultparameters()
+        elif len(args) == 1:
+            self.setdefaultparameters()
+            self = structtoobj(self, args[0])
         else:
             raise RuntimeError("constructor not supported")
     # }}}
@@ -55,7 +59,7 @@ class damage(object):
             s += "%s\n" % fielddisplay(self, "maxiter", "maximum number of non linear iterations")
             s += "%s\n" % fielddisplay(self, "elementinterp", "interpolation scheme for finite elements [''P1'', ''P2'']")
             s += "%s\n" % fielddisplay(self, "stress_threshold", "stress threshold for damage initiation (Pa)")
-            s += "%s\n" % fielddisplay(self, "stress_ubound", "stress upper bound for damage healing (Pa)")
+            s += "%s\n" % fielddisplay(self, "stress_ubound", "stress upper bound for damage healing (Pa), arctan law")
             s += "%s\n" % fielddisplay(self, "kappa", "ductility parameter for stress softening and damage [ > 1]")
             s += "%s\n" % fielddisplay(self, "c1", "damage parameter 1 ")
             s += "%s\n" % fielddisplay(self, "c2", "damage parameter 2 ")
@@ -69,10 +73,9 @@ class damage(object):
     # }}}
 
     def extrude(self, md):  # {{{
-        if self.isdamage:
-            self.D = project3d(md, 'vector', self.D, 'type', 'node')
-            self.spcdamage = project3d(md, 'vector', self.spcdamage, 'type', 'node')
-            return self
+        self.D = project3d(md, 'vector', self.D, 'type', 'node')
+        self.spcdamage = project3d(md, 'vector', self.spcdamage, 'type', 'node')
+        return self
     # }}}
 
     def setdefaultparameters(self):  # {{{
@@ -89,6 +92,7 @@ class damage(object):
         self.elementinterp = 'P1'
         #damage evolution parameters
         self.stress_threshold = 1.3e5
+        self.stress_ubound = 0
         self.kappa = 2.8
         self.c1 = 0
         self.c2 = 0
@@ -158,12 +162,11 @@ class damage(object):
             WriteData(fid, prefix, 'object', self, 'fieldname', 'healing', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'equiv_stress', 'format', 'Integer')
 
-    #process requested outputs
+        #process requested outputs
         outputs = self.requested_outputs
-        indices = [i for i, x in enumerate(outputs) if x == 'default']
-        if len(indices) > 0:
-            outputscopy = outputs[0:max(0, indices[0] - 1)] + self.defaultoutputs(md) + outputs[indices[0] + 1:]
-            outputs = outputscopy
+        outputs = [output for output in outputs if output != 'default']
+        if len(outputs) != len(self.requested_outputs):
+            outputs += self.defaultoutputs(md)
         if self.isdamage:
             WriteData(fid, prefix, 'data', outputs, 'name', 'md.damage.requested_outputs', 'format', 'StringArray')
     # }}}
