@@ -889,6 +889,9 @@ const char* EnumToStringx(int en){
 		case DamageDbarEnum : return "DamageDbar";
 		case DamageDbarOldEnum : return "DamageDbarOld";
 		case DamageFEnum : return "DamageF";
+		case DamageStressInvariant1Enum : return "DamageStressInvariant1";
+		case DamageStressInvariant2Enum : return "DamageStressInvariant2";
+		case DamageStressInvariant3Enum : return "DamageStressInvariant3";
 		case DamageStressEquivalentEnum : return "DamageStressEquivalent";
 		case DebrisThicknessEnum : return "DebrisThickness";
 		case DegreeOfChannelizationEnum : return "DegreeOfChannelization";

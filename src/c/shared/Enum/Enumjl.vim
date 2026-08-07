@@ -880,6 +880,9 @@ syn keyword juliaConstC DamageDOldEnum
 syn keyword juliaConstC DamageDbarEnum
 syn keyword juliaConstC DamageDbarOldEnum
 syn keyword juliaConstC DamageFEnum
+syn keyword juliaConstC DamageStressInvariant1Enum
+syn keyword juliaConstC DamageStressInvariant2Enum
+syn keyword juliaConstC DamageStressInvariant3Enum
 syn keyword juliaConstC DamageStressEquivalentEnum
 syn keyword juliaConstC DebrisThicknessEnum
 syn keyword juliaConstC DegreeOfChannelizationEnum

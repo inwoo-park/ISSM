@@ -28,6 +28,11 @@ void damage_core(FemModel* femmodel){
 	if(numoutputs) femmodel->parameters->FindParam(&requested_outputs,&numoutputs,DamageEvolutionRequestedOutputsEnum);
 	femmodel->parameters->FindParam(&stabilization,DamageStabilizationEnum);
 
+	DamageEvolutionAnalysis* analysis = new DamageEvolutionAnalysis();
+
+	if(VerboseSolution()) _printf0_("   update stress equilvalent criterion\n");
+	analysis->ComputeStressEquivalent(femmodel);
+
 	if(VerboseSolution()) _printf0_("   computing damage\n");
 	Damagex(femmodel); /* optionally calculate damage analytically first */
 	femmodel->SetCurrentConfiguration(DamageEvolutionAnalysisEnum);
@@ -37,6 +42,8 @@ void damage_core(FemModel* femmodel){
 	else{
 		solutionsequence_linear(femmodel);
 	}
+
+	delete analysis;
 
 	if(save_results){
 		femmodel->RequestedOutputsx(&femmodel->results,requested_outputs,numoutputs);
