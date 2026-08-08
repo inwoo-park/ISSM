@@ -108,6 +108,13 @@
 %DamageDbar
 %DamageDbarOld
 %DamageF
+%DamageEffectiveStressEquivalent
+%DamageEffectiveStressInvariant1
+%DamageEffectiveStressInvariant2
+%DamageEffectiveStressInvariant3
+%DamageEffectiveStressPrincipalValue1
+%DamageEffectiveStressPrincipalValue2
+%DamageEffectiveStressPrincipalValue3
 %DebrisThickness
 %DegreeOfChannelization
 %DepthBelowSurface

@@ -79,10 +79,14 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	iomodel->FetchDataToInput(inputs,elements,"md.initialization.pressure",PressureEnum);
 
 	/*Initialize requested outptus in case they are not defined later for this partition*/
-   iomodel->ConstantToInput(inputs,elements,0.,DamageStressEquivalentEnum,P1Enum);
-   iomodel->ConstantToInput(inputs,elements,0.,DamageStressInvariant1Enum,P1Enum);
-   iomodel->ConstantToInput(inputs,elements,0.,DamageStressInvariant2Enum,P1Enum);
-   iomodel->ConstantToInput(inputs,elements,0.,DamageStressInvariant3Enum,P1Enum);
+   iomodel->ConstantToInput(inputs,elements,0.,DamageEffectiveStressEquivalentEnum,P1Enum);
+   iomodel->ConstantToInput(inputs,elements,0.,DamageEffectiveStressInvariant1Enum,P1Enum);
+   iomodel->ConstantToInput(inputs,elements,0.,DamageEffectiveStressInvariant2Enum,P1Enum);
+   iomodel->ConstantToInput(inputs,elements,0.,DamageEffectiveStressInvariant3Enum,P1Enum);
+
+   iomodel->ConstantToInput(inputs,elements,0.,DamageEffectiveStressPrincipalValue1Enum,P1Enum);
+   iomodel->ConstantToInput(inputs,elements,0.,DamageEffectiveStressPrincipalValue2Enum,P1Enum);
+   iomodel->ConstantToInput(inputs,elements,0.,DamageEffectiveStressPrincipalValue3Enum,P1Enum);
 }/*}}}*/
 void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 
@@ -120,6 +124,7 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.equiv_stress",DamageEquivStressEnum));
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.isdamage_exponent",DamageIsDamageExponentEnum));
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.ispressure_ssa",DamageIsPressureSSAEnum));
+		parameters->AddObject(iomodel->CopyConstantObject("md.damage.isPeff",DamageIsPeffEnum));
 	}
 
 }/*}}}*/
@@ -515,8 +520,8 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 		damage_input = element->GetInput(DamageDEnum);   _assert_(damage_input);
 	}
 
-	Input* stress_equivalent_input = element->GetInput(DamageStressEquivalentEnum); _assert_(stress_equivalent_input);
-	Input* stress_inv1_input = element->GetInput(DamageStressInvariant1Enum); _assert_(stress_inv1_input);
+	Input* stress_equivalent_input = element->GetInput(DamageEffectiveStressEquivalentEnum); _assert_(stress_equivalent_input);
+	Input* stress_inv1_input = element->GetInput(DamageEffectiveStressInvariant1Enum); _assert_(stress_inv1_input);
 
 	/*retrieve the desired type of equivalent stress*/
 	element->FindParam(&equivstress,DamageEquivStressEnum);
@@ -1206,7 +1211,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	/* Intermediaries */
 	IssmDouble tau_xx, tau_xy, tau_xz, tau_yy, tau_yz, tau_zz; /* Deviatoric stress tensor components [Pa] */
 	IssmDouble sigma_xx, sigma_xy, sigma_xz, sigma_yy, sigma_yz, sigma_zz; /* Cauchy stress tensor components [Pa] */
-	IssmDouble s1, s2, s3; /* principal effective stresses [Pa] */
+	IssmDouble s1, s2, s3; /* principal effective stress [Pa] */
 	IssmDouble stmp;
 	IssmDouble D; /* Damage value [unit: 1]*/
 	IssmDouble z; /* elevation [m] */
@@ -1217,7 +1222,15 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	IssmDouble *sigma_inv2 = NULL; /* second invariant stress [Pa] */
 	IssmDouble *sigma_inv3 = NULL; /* third invariant stress [Pa] */
 
+	/*    Principal stress for each vertex */
+	IssmDouble *sigma_1 = NULL;
+	IssmDouble *sigma_2 = NULL;
+	IssmDouble *sigma_3 = NULL;
+
 	IssmDouble *xyz_list = NULL;
+	
+	/*    ice flow equation */
+	bool isSSA, isL1L2, isMOLHO, isHO, isF;
 	
 	/* Pressure term
 	P  : pressure for stress tensor [Pa]
@@ -1225,7 +1238,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	Pw : Water pressure [Pa]
 	*/
 	IssmDouble P, Pi, Pw;
-	bool isPeff = false; /* if true, we compute the effective stress, else we compute the Cauchy stress */
+	bool isPeff; /* if true, we compute the effective stress, else we compute the Cauchy stress */
 
 	int isequivstress; /* stress equivalent stress */
 	int ispressure_ssa; /* treatment for pressure in SSA2D model */
@@ -1233,15 +1246,21 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	/*Fetch number of vertices and allocate output*/
 	int numnodes = element->GetNumberOfNodes();
 	sigma_equiv = xNewZeroInit<IssmDouble>(numnodes);
+
 	sigma_inv1  = xNewZeroInit<IssmDouble>(numnodes);
 	sigma_inv2  = xNewZeroInit<IssmDouble>(numnodes);
 	sigma_inv3  = xNewZeroInit<IssmDouble>(numnodes);
+
+	sigma_1  = xNewZeroInit<IssmDouble>(numnodes);
+	sigma_2  = xNewZeroInit<IssmDouble>(numnodes);
+	sigma_3  = xNewZeroInit<IssmDouble>(numnodes);
 
 	/* Retrieve constants */
 	element->FindParam(&rho_w,MaterialsRhoSeawaterEnum);
 	element->FindParam(&g,ConstantsGEnum);
 	element->FindParam(&isequivstress,DamageEquivStressEnum);
 	element->FindParam(&ispressure_ssa,DamageIsPressureSSAEnum);
+	element->FindParam(&isPeff,DamageIsPeffEnum);
 
 	/* Retrieve all input and parameters */
 	element->GetVerticesCoordinates(&xyz_list);
@@ -1281,7 +1300,6 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		gauss->GaussNode(element->GetElementType(),i);
 
 		damage_input->GetInputValue(&D,gauss);
-		z = xyz_list[i*3+2];
 
 		tau_xx_input->GetInputValue(&tau_xx,gauss);
 		tau_xy_input->GetInputValue(&tau_xy,gauss);
@@ -1293,7 +1311,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 			// stressMaxPrincipal_input = element->GetInput(StressMaxPrincipalEnum); _assert_(stressMaxPrincipal_input);
 		}
 		
-		/* Compute pressure Cauchy stress tensor*/
+		/* Compute pressure in Cauchy stress tensor*/
 		pressure_input->GetInputValue(&Pi,gauss);
 	
 		if(dim==2){
@@ -1307,6 +1325,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 				P=1.0*Pi; /* pressure at bed */
 			}
 		}else if(dim==3){
+			z = xyz_list[i*3+2];
 			Pw = 0.0;
 			if (isPeff){
 				if (z > 0){ /* explicitly set Pw value */
@@ -1331,6 +1350,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		/*Calculate principal effective stresses*/
 		if(dim==2){
 			/* Compute principal effective stresses */
+			s3 = -P;
 			Matrix2x2Eigen(&s1,&s2,NULL,NULL,sigma_xx,sigma_xy,sigma_yy);
 
 			if(s2>s1){stmp=s2; s2=s1; s1=stmp;}
@@ -1353,6 +1373,14 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 				sigma_xy,sigma_yy,sigma_yz,
 				0.0, 0.0, sigma_zz);
 
+			/* Ordering large value (descending order) ... */
+			if(s1<s2); swap(s1,s2);
+			if(s1<s3); swap(s1,s3);
+			if(s2<s3); swap(s2,s3);
+		
+			//inv1 = sigma_xx + sigma_yy + sigma_zz;
+			//inv2 = sigma_xx*sigma_yy + sigma_yy*sigma_zz + sigma_zz*sigma_xx - sigma_xy*sigma_xy - sigma_yz*sigma_yz - sigma_xz*sigma_xz;
+
 			if(isequivstress==0){ /* von Mises */
 				sigma_equiv[i]=sqrt(((s1-s2)*(s1-s2)+(s2-s3)*(s2-s3)+(s3-s1)*(s3-s1))/2.);
 			}else if(isequivstress==1){ /* max principal stress */
@@ -1369,19 +1397,29 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		sigma_inv2[i] = s1*s2 + s1*s3 + s2*s3;
 		sigma_inv3[i] = s1*s2*s3;
 
+		sigma_1[i] = s1;
+		sigma_2[i] = s2;
+		sigma_3[i] = s3;
 	}
 
 	/* Assign values */
-	element->AddInput(DamageStressEquivalentEnum,sigma_equiv,P1Enum);
-	element->AddInput(DamageStressInvariant1Enum,sigma_inv1,P1Enum);
-	element->AddInput(DamageStressInvariant2Enum,sigma_inv2,P1Enum);
-	element->AddInput(DamageStressInvariant3Enum,sigma_inv3,P1Enum);
+	element->AddInput(DamageEffectiveStressEquivalentEnum,sigma_equiv,P1Enum);
+	element->AddInput(DamageEffectiveStressInvariant1Enum,sigma_inv1,P1Enum);
+	element->AddInput(DamageEffectiveStressInvariant2Enum,sigma_inv2,P1Enum);
+	element->AddInput(DamageEffectiveStressInvariant3Enum,sigma_inv3,P1Enum);
+
+	element->AddInput(DamageEffectiveStressPrincipalValue1Enum,sigma_1,P1Enum);
+	element->AddInput(DamageEffectiveStressPrincipalValue2Enum,sigma_2,P1Enum);
+	element->AddInput(DamageEffectiveStressPrincipalValue3Enum,sigma_3,P1Enum);
 
 	/* Clear memory */
 	xDelete<IssmDouble>(sigma_equiv);
 	xDelete<IssmDouble>(sigma_inv1);
 	xDelete<IssmDouble>(sigma_inv2);
 	xDelete<IssmDouble>(sigma_inv3);
+	xDelete<IssmDouble>(sigma_1);
+	xDelete<IssmDouble>(sigma_2);
+	xDelete<IssmDouble>(sigma_3);
 	xDelete<IssmDouble>(xyz_list);
 	delete gauss;
 }/*}}}*/

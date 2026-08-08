@@ -168,6 +168,7 @@ syn keyword cConstant DamageEvolutionNumRequestedOutputsEnum
 syn keyword cConstant DamageEvolutionRequestedOutputsEnum
 syn keyword cConstant DamageHealingEnum
 syn keyword cConstant DamageIsDamageExponentEnum
+syn keyword cConstant DamageIsPeffEnum
 syn keyword cConstant DamageIsPressureSSAEnum
 syn keyword cConstant DamageKappaEnum
 syn keyword cConstant DamageLawEnum
@@ -887,10 +888,13 @@ syn keyword cConstant DamageDOldEnum
 syn keyword cConstant DamageDbarEnum
 syn keyword cConstant DamageDbarOldEnum
 syn keyword cConstant DamageFEnum
-syn keyword cConstant DamageStressInvariant1Enum
-syn keyword cConstant DamageStressInvariant2Enum
-syn keyword cConstant DamageStressInvariant3Enum
-syn keyword cConstant DamageStressEquivalentEnum
+syn keyword cConstant DamageEffectiveStressEquivalentEnum
+syn keyword cConstant DamageEffectiveStressInvariant1Enum
+syn keyword cConstant DamageEffectiveStressInvariant2Enum
+syn keyword cConstant DamageEffectiveStressInvariant3Enum
+syn keyword cConstant DamageEffectiveStressPrincipalValue1Enum
+syn keyword cConstant DamageEffectiveStressPrincipalValue2Enum
+syn keyword cConstant DamageEffectiveStressPrincipalValue3Enum
 syn keyword cConstant DebrisThicknessEnum
 syn keyword cConstant DegreeOfChannelizationEnum
 syn keyword cConstant DepthBelowSurfaceEnum

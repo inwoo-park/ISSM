@@ -28,6 +28,7 @@ classdef damage
 		healing             = 0;
 		isdamage_exponent   = 0;
 		ispressure_ssa      = 0;
+		isPeff              = 0;
 		equiv_stress		  = 0;
 		requested_outputs   = {};
 	end
@@ -84,6 +85,7 @@ classdef damage
 
 			self.isdamage_exponent=0;
 			self.ispressure_ssa=0;
+			self.isPeff=0;
 
 			%output default:
 			self.requested_outputs={'default'};
@@ -110,6 +112,7 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.c4','>=',0);
 				md = checkfield(md,'fieldname','damage.isdamage_exponent','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.ispressure_ssa','numel',[1],'values',[0 1 2]);
+				md = checkfield(md,'fieldname','damage.isPeff','numel',[1],'values',[0 1]);
 				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.requested_outputs','stringrow',1);
 			elseif (self.law~=0)
@@ -148,20 +151,25 @@ classdef damage
 					fielddisplay(self,'c3','damage parameter 3');
 					fielddisplay(self,'c4','damage parameter 4');
 				elseif self.law == 4
+					fprintf('\n');
+					disp(sprintf('   Damage source term in Pralong et al. (2005)'));
+					disp(sprintf('   f_D = c1 * max((sigma_cr - sigma_th),0)^c2 (1-D)^{k_sigma}'));
+					fprintf('\n');
+					disp(sprintf('   exponent in damage term, k_sigma'));
+					disp(sprintf('   0 : c3'));
+					disp(sprintf('   1 : k1 * (sqrt(max(s_inv1,0)) - healing * sqrt(max(-s_inv1,0)))'));
+					disp(sprintf('   2 : k1 + k2 * s_inv1'));
 					fielddisplay(self,'c1','damage parameter 1');
 					fielddisplay(self,'c2','damage parameter 2');
 					fielddisplay(self,'c3','damage parameter 3');
-					fielddisplay(self,'isdamage_exponent','damage exponent parameter. 0: constant, 1: Pralong (2005), 2: Duddu et al. (2020)');
+					fielddisplay(self,'isdamage_exponent','damage exponent parameter (k_sigma). 0: constant, 1: Pralong (2005), 2: Duddu et al. (2020)');
 					fielddisplay(self,'ispressure_ssa','pressure for SSA2D. 0: surface, 1: mid, 2: bottom');
 				elseif slef.law == 5
 					fielddisplay(self,'c1','damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)');
 				end
 				fielddisplay(self,'healing','damage healing parameter');
 				fielddisplay(self,'equiv_stress','0: von Mises, 1: max prinecipal, 2: Hayhurst criterion');
-				if self.equiv_stress == 3
-					fielddisplay(self,'alpha','alpha parameter for Hayhurst criterion');
-					fielddisplay(self,'beta','alpha parameter for Hayhurst criterion');
-				end
+				fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)');
 				fielddisplay(self,'requested_outputs','additional outputs requested');
 			end
 
@@ -189,6 +197,7 @@ classdef damage
 				WriteData(fid,prefix,'object',self,'fieldname','equiv_stress','format','Integer');
 				WriteData(fid,prefix,'object',self,'fieldname','isdamage_exponent','format','Integer');
 				WriteData(fid,prefix,'object',self,'fieldname','ispressure_ssa','format','Integer');
+				WriteData(fid,prefix,'object',self,'fieldname','isPeff','format','Boolean');
 			end
 
 			%process requested outputs
