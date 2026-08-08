@@ -1313,6 +1313,8 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		
 		/* Compute pressure in Cauchy stress tensor*/
 		pressure_input->GetInputValue(&Pi,gauss);
+		/* Eq. 15 in Huth et al. (2021) / SSA approximation with hydrostatic assumption (Greve and Blatter et al., 2009) */
+		Pi = Pi - tau_xx - tau_yy; 
 	
 		if(dim==2){
 			P = 0.0; /* pressure at surface*/
