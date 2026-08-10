@@ -15,7 +15,7 @@ void movingfront_core(FemModel* femmodel){
 	femmodel->profiler->Start(MOVINGFRONTCORE);
 
 	/* intermediaries */
-	bool save_results,isstressbalance,ismasstransport,isthermal,isenthalpy,islevelset,ismovingfront,killicebergs;
+	bool save_results,isstressbalance,ismasstransport,isdamage,isthermal,isenthalpy,islevelset,ismovingfront,killicebergs;
 	int  domaintype, reinit_frequency,step;
 	Analysis  *analysis=NULL;
 	IssmDouble maxVel;
@@ -24,6 +24,7 @@ void movingfront_core(FemModel* femmodel){
 	femmodel->parameters->FindParam(&domaintype,DomainTypeEnum);
 	femmodel->parameters->FindParam(&save_results,SaveResultsEnum);
 	femmodel->parameters->FindParam(&isstressbalance,TransientIsstressbalanceEnum);
+	femmodel->parameters->FindParam(&isdamage,TransientIsdamageevolutionEnum);
 	femmodel->parameters->FindParam(&ismasstransport,TransientIsmasstransportEnum);
 	femmodel->parameters->FindParam(&isthermal,TransientIsthermalEnum);
 	femmodel->parameters->FindParam(&ismovingfront,TransientIsmovingfrontEnum);
@@ -62,6 +63,12 @@ void movingfront_core(FemModel* femmodel){
 		extrapol_vars.push_back(VxEnum);
 		extrapol_vars.push_back(VyEnum);
 		if(domaintype==Domain3DEnum) extrapol_vars.push_back(VzEnum);
+	}
+	/* FIXME: DamageD is only defined for SSA3D. How to handle this for DamageDbar and DamageD? */
+	if(isdamage){
+		if(domaintype==Domain2DhorizontalEnum) extrapol_vars.push_back(DamageDbarEnum);
+		else if(domaintype==Domain2DverticalEnum) extrapol_vars.push_back(DamageDEnum);
+		else if(domaintype==Domain3DEnum) extrapol_vars.push_back(DamageDEnum);
 	}
 	if(ismasstransport) extrapol_vars.push_back(ThicknessEnum);
 	if(isthermal && domaintype==Domain3DEnum){
