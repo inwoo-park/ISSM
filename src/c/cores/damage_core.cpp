@@ -17,6 +17,7 @@ void damage_core(FemModel* femmodel){
 	/*intermediary*/
 	bool   save_results;
 	bool   dakota_analysis     = false;
+	int    domaintype;
 	int    solution_type,stabilization;
 	int    numoutputs          = 0;
 	char   **requested_outputs = NULL;
@@ -24,6 +25,7 @@ void damage_core(FemModel* femmodel){
 	//first recover parameters common to all solutions
 	femmodel->parameters->FindParam(&save_results,SaveResultsEnum);
 	femmodel->parameters->FindParam(&solution_type,SolutionTypeEnum);
+	femmodel->parameters->FindParam(&domaintype,DomainTypeEnum);
 	femmodel->parameters->FindParam(&numoutputs,DamageEvolutionNumRequestedOutputsEnum);
 	if(numoutputs) femmodel->parameters->FindParam(&requested_outputs,&numoutputs,DamageEvolutionRequestedOutputsEnum);
 	femmodel->parameters->FindParam(&stabilization,DamageStabilizationEnum);
@@ -41,6 +43,13 @@ void damage_core(FemModel* femmodel){
 	}
 	else{
 		solutionsequence_linear(femmodel);
+	}
+
+	/*Depth average for DamageDbar in 3D domain*/
+	if(domaintype==Domain3DEnum){
+		femmodel->parameters->SetParam(DamageDEnum,InputToDepthaverageInEnum);
+		femmodel->parameters->SetParam(DamageDbarEnum,InputToDepthaverageOutEnum);
+		depthaverage_core(femmodel);
 	}
 
 	delete analysis;

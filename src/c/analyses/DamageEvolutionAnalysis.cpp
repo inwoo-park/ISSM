@@ -127,6 +127,14 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.isPeff",DamageIsPeffEnum));
 	}
 
+	/* Relevant for flow equation */
+	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isSIA",FlowequationIsSIAEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isSSA",FlowequationIsSSAEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isL1L2",FlowequationIsL1L2Enum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isMOLHO",FlowequationIsMOLHOEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isHO",FlowequationIsHOEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isFS",FlowequationIsFSEnum));
+
 }/*}}}*/
 
 /*Finite Element Analysis*/
@@ -1194,7 +1202,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(FemModel* femmodel){/*{{{*
 	}
 }/*}}}*/
 void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
-	/* Compute the equivalent stress for determining the damage evolution and save effective stress tensor..?
+	/* Compute the equivalent stress for determining the damage evolution and store values relavant to effective stress tensor: principal and invariants
 	*/
 	
 	/* Intermediaries */
@@ -1230,7 +1238,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	IssmDouble *xyz_list = NULL;
 	
 	/*    ice flow equation */
-	bool isSSA, isL1L2, isMOLHO, isHO, isF;
+	bool isSSA, isL1L2, isMOLHO, isHO, isFS;
 	
 	/* Pressure term
 	P  : pressure for stress tensor [Pa]
@@ -1262,6 +1270,12 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	element->FindParam(&ispressure_ssa,DamageIsPressureSSAEnum);
 	element->FindParam(&isPeff,DamageIsPeffEnum);
 
+	element->FindParam(&isSSA,FlowequationIsSSAEnum);
+	element->FindParam(&isL1L2,FlowequationIsL1L2Enum);
+	element->FindParam(&isMOLHO,FlowequationIsMOLHOEnum);
+	element->FindParam(&isHO,FlowequationIsHOEnum);
+	element->FindParam(&isFS,FlowequationIsFSEnum);
+
 	/* Retrieve all input and parameters */
 	element->GetVerticesCoordinates(&xyz_list);
 
@@ -1279,7 +1293,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	Input* tau_xz_input  = NULL;
 	Input* tau_yz_input  = NULL;
 	Input* tau_zz_input  = NULL;
-	if (dim==3){
+	if(dim==3){
 		tau_xz_input  = element->GetInput(DeviatoricStressxzEnum);     _assert_(tau_xz_input);
 		tau_yz_input  = element->GetInput(DeviatoricStressyzEnum);     _assert_(tau_yz_input);
 		tau_zz_input  = element->GetInput(DeviatoricStresszzEnum);     _assert_(tau_zz_input);
@@ -1288,7 +1302,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	Input* pressure_input = element->GetInput(PressureEnum);          _assert_(pressure_input);
 
 	Input* damage_input = NULL;
-	if (domaintype==Domain2DhorizontalEnum){
+	if(domaintype==Domain2DhorizontalEnum){
 		damage_input = element->GetInput(DamageDbarEnum); 	_assert_(damage_input);
 	}
 	else{
@@ -1314,7 +1328,12 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		/* Compute pressure in Cauchy stress tensor*/
 		pressure_input->GetInputValue(&Pi,gauss);
 		/* Eq. 15 in Huth et al. (2021) / SSA approximation with hydrostatic assumption (Greve and Blatter et al., 2009) */
-		Pi = Pi - tau_xx - tau_yy; 
+		if (isSSA || isHO || isMOLHO) {
+			/* NOTE: deviratoric stress should be damaged? ~ tau^{D} = tau/(1-D) */
+			Pi = Pi - tau_xx - tau_yy; 
+		}else{
+			_error_("not implemented yet");
+		}
 	
 		if(dim==2){
 			P = 0.0; /* pressure at surface*/
@@ -1370,10 +1389,14 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		}else if(dim==3){
 			/* Compute principal effective stresses*/
 			/* FIXME: Now, stress equivalent would be only computed for SSA and HO, not FS.*/
-			Matrix3x3Eigen(&s1,&s2,&s3,NULL,NULL,NULL,
-				sigma_xx,sigma_xy,sigma_xz,
-				sigma_xy,sigma_yy,sigma_yz,
-				0.0, 0.0, sigma_zz);
+			if(isSSA || isHO){ /* Hydrostatic assumption : neglect sigma_zx, sigma_zy */
+				Matrix3x3Eigen(&s1,&s2,&s3,NULL,NULL,NULL,
+					sigma_xx,sigma_xy,sigma_xz,
+					sigma_xy,sigma_yy,sigma_yz,
+					0.0, 0.0, sigma_zz);
+			}else{
+				_error_("not implemented yet");
+			}
 
 			/* Ordering large value (descending order) ... */
 			if(s1<s2); swap(s1,s2);
