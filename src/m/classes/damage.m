@@ -31,6 +31,10 @@ classdef damage
 		isPeff              = 0;
 		equiv_stress		  = 0;
 		requested_outputs   = {};
+
+		equiv_stress_alpha  = 0; % For hayhurst
+		equiv_stress_beta   = 0; % For hayhurst
+		equiv_stress_mu     = 0; % For Coulomb
 	end
 	methods
 		function self = damage(varargin) % {{{
@@ -87,6 +91,13 @@ classdef damage
 			self.ispressure_ssa=0;
 			self.isPeff=0;
 
+			% Criterion of Hayhurst (Pralong et al., 2005)
+			self.equiv_stress_alpha=0.21;
+			self.equiv_stress_beta=0.63;
+
+			% Criterion of Coulomb (Vaughan 1993)
+			self.equiv_stress_mu = 0.1;
+
 			%output default:
 			self.requested_outputs={'default'};
 
@@ -113,7 +124,7 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.isdamage_exponent','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.ispressure_ssa','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.isPeff','numel',[1],'values',[0 1]);
-				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2]);
+				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2 3]);
 				md = checkfield(md,'fieldname','damage.requested_outputs','stringrow',1);
 			elseif (self.law~=0)
 				if (strcmp(solution,'DamageEvolutionSolution'))
@@ -168,7 +179,20 @@ classdef damage
 					fielddisplay(self,'c1','damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)');
 				end
 				fielddisplay(self,'healing','damage healing parameter');
-				fielddisplay(self,'equiv_stress','0: von Mises, 1: max prinecipal, 2: Hayhurst criterion');
+				fielddisplay(self,'equiv_stress','0: von Mises, 1: max prinecipal, 2: Hayhurst criterion 3: Coulomb');
+				if self.equiv_stress == 2
+					disp(sprintf('\n   Hayhurst criterion'));
+					disp(sprintf('      sigma_equiv = alpha*sigma_1 + beta*sigma_{VM} + (1-alpha-beta)*(sigma_1+sigma_2+sigma_3)'));
+					disp(sprintf('      sigma_i : principal stress value'));
+					fielddisplay(self,'equiv_stress_alpha','alpha parameter for Hayhurst criterion (default: 0.21)');
+					fielddisplay(self,'equiv_stress_beta','beta parameter for Hayhurst criterion (default: 0.63)');
+				elseif self.equiv_stress == 3
+					disp(sprintf('\n   Coulomb criterion'));
+					disp(sprintf('      sigma_equiv = (sigma_1 - sigma_3)/2 + mu (sigma_1 + sigma_3)/2'));
+					disp(sprintf('      sigma_i : principal stress value'));
+					fielddisplay(self,'equiv_stress_mu','mu parameter for Coulomb criterion (default: 0.1)');
+				end
+				fprintf('\n');
 				fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)');
 				fielddisplay(self,'requested_outputs','additional outputs requested');
 			end
@@ -195,6 +219,9 @@ classdef damage
 				WriteData(fid,prefix,'object',self,'fieldname','c4','format','Double');
 				WriteData(fid,prefix,'object',self,'fieldname','healing','format','Double');
 				WriteData(fid,prefix,'object',self,'fieldname','equiv_stress','format','Integer');
+				WriteData(fid,prefix,'object',self,'fieldname','equiv_stress_alpha','format','Double');
+				WriteData(fid,prefix,'object',self,'fieldname','equiv_stress_beta','format','Double');
+				WriteData(fid,prefix,'object',self,'fieldname','equiv_stress_mu','format','Double');
 				WriteData(fid,prefix,'object',self,'fieldname','isdamage_exponent','format','Integer');
 				WriteData(fid,prefix,'object',self,'fieldname','ispressure_ssa','format','Integer');
 				WriteData(fid,prefix,'object',self,'fieldname','isPeff','format','Boolean');

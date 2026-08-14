@@ -127,6 +127,11 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 		parameters->AddObject(iomodel->CopyConstantObject("md.damage.isPeff",DamageIsPeffEnum));
 	}
 
+	/* Parameters relevant for stress criterion */
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.equiv_stress_alpha",DamageEquivStressAlphaEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.equiv_stress_beta",DamageEquivStressBetaEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.equiv_stress_mu",DamageEquivStressMuEnum));
+
 	/* Relevant for flow equation */
 	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isSIA",FlowequationIsSIAEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.flowequation.isSSA",FlowequationIsSSAEnum));
@@ -1229,6 +1234,8 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	IssmDouble *sigma_inv1 = NULL; /* first invariant stress [Pa] */
 	IssmDouble *sigma_inv2 = NULL; /* second invariant stress [Pa] */
 	IssmDouble *sigma_inv3 = NULL; /* third invariant stress [Pa] */
+	IssmDouble alpha, beta; /* parameter for Hayhurst */
+	IssmDouble mu; /* parameter for Coulomb */
 
 	/*    Principal stress for each vertex */
 	IssmDouble *sigma_1 = NULL;
@@ -1267,6 +1274,9 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	element->FindParam(&rho_w,MaterialsRhoSeawaterEnum);
 	element->FindParam(&g,ConstantsGEnum);
 	element->FindParam(&isequivstress,DamageEquivStressEnum);
+	element->FindParam(&alpha,DamageEquivStressAlphaEnum);
+	element->FindParam(&beta,DamageEquivStressBetaEnum);
+	element->FindParam(&mu,DamageEquivStressMuEnum);
 	element->FindParam(&ispressure_ssa,DamageIsPressureSSAEnum);
 	element->FindParam(&isPeff,DamageIsPeffEnum);
 
@@ -1382,9 +1392,9 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 				sigma_equiv[i]=s1;
 			}
 			else if(isequivstress==2){ /* Hayhurst stress invariant */
-				IssmDouble alpha=0.21;
-				IssmDouble beta=0.63;
 				sigma_equiv[i]=alpha*s1 + beta*sqrt(s1*s1-s1*s2+s2*s2) + (1-alpha-beta)*(s1 + s2);
+			}else if(isequivstress==3){ /* Coulomb criteron */
+				sigma_equiv[i]=(s1-s3)/2 + mu*(s1+s2)/2;
 			}
 		}else if(dim==3){
 			/* Compute principal effective stresses*/
@@ -1411,9 +1421,9 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 			}else if(isequivstress==1){ /* max principal stress */
 				sigma_equiv[i]=s1;
 			}else if(isequivstress==2){ /* Hayhurst stress invariant */
-				IssmDouble alpha=0.21;
-				IssmDouble beta=0.63;
 				sigma_equiv[i]=alpha*s1 + beta*sqrt(((s1-s2)*(s1-s2)+(s2-s3)*(s2-s3)+(s3-s1)*(s3-s1))/2.) + (1-alpha-beta)*(s1 + s2 + s3);
+			}else if(isequivstress==3){ /* Coulomb criteron */
+				sigma_equiv[i]=(s1-s3)/2 + mu*(s1+s2)/2;
 			}
 		}
 		

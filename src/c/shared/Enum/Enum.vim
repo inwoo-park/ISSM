@@ -164,6 +164,9 @@ syn keyword cConstant DamageC3Enum
 syn keyword cConstant DamageC4Enum
 syn keyword cConstant DamageEnum
 syn keyword cConstant DamageEquivStressEnum
+syn keyword cConstant DamageEquivStressAlphaEnum
+syn keyword cConstant DamageEquivStressBetaEnum
+syn keyword cConstant DamageEquivStressMuEnum
 syn keyword cConstant DamageEvolutionNumRequestedOutputsEnum
 syn keyword cConstant DamageEvolutionRequestedOutputsEnum
 syn keyword cConstant DamageHealingEnum
