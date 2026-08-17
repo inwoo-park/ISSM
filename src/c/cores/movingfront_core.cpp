@@ -67,8 +67,11 @@ void movingfront_core(FemModel* femmodel){
 	/* FIXME: DamageD is only defined for SSA3D. How to handle this for DamageDbar and DamageD? */
 	if(isdamage){
 		if(domaintype==Domain2DhorizontalEnum) extrapol_vars.push_back(DamageDbarEnum);
-		else if(domaintype==Domain2DverticalEnum) extrapol_vars.push_back(DamageDEnum);
-		else if(domaintype==Domain3DEnum) extrapol_vars.push_back(DamageDEnum);
+		else if((domaintype==Domain2DverticalEnum) |
+				  (domaintype==Domain3DEnum)){
+			extrapol_vars.push_back(DamageDEnum);
+			extrapol_vars.push_back(DamageDbarEnum);
+		}
 	}
 	if(ismasstransport) extrapol_vars.push_back(ThicknessEnum);
 	if(isthermal && domaintype==Domain3DEnum){
