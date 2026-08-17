@@ -1290,6 +1290,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	element->GetVerticesCoordinates(&xyz_list);
 
 	/* Precompute deviatoric stress tensor*/
+	/* NOTE: ComputeDeviatoricStressTensor already contains damage i.g. tau_eff = tau/(1-D)*E; therefore, tau_eff is the effective deviatoric stress. */
 	element->ComputeDeviatoricStressTensor();
 	// if(dim==3){
 	// 	/*Only works in 3d because the pressure is defined*/
@@ -1369,13 +1370,21 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		}
 
 		/* Compute effective Cauchy stress tensor baed on deviatoric stress */
-		sigma_xx =   tau_xx/(1-D) - P;
-		sigma_xy =   tau_xy/(1-D);
-		sigma_yy =   tau_yy/(1-D) - P;
+		//sigma_xx =   tau_xx/(1-D) - P;
+		//sigma_xy =   tau_xy/(1-D);
+		//sigma_yy =   tau_yy/(1-D) - P;
+		//if(dim==3){
+		//	sigma_xz = tau_xz/(1-D);
+		//	sigma_yz = tau_yz/(1-D);
+		//	sigma_zz = tau_zz/(1-D) - P;
+		//}
+		sigma_xx =   tau_xx - P;
+		sigma_xy =   tau_xy;
+		sigma_yy =   tau_yy - P;
 		if(dim==3){
-			sigma_xz = tau_xz/(1-D);
-			sigma_yz = tau_yz/(1-D);
-			sigma_zz = tau_zz/(1-D) - P;
+			sigma_xz = tau_xz;
+			sigma_yz = tau_yz;
+			sigma_zz = tau_zz - P;
 		}
 
 		/*Calculate principal effective stresses*/
