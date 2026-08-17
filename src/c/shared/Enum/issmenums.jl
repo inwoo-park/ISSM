@@ -153,6 +153,9 @@
 	DamageC4Enum
 	DamageEnum
 	DamageEquivStressEnum
+	DamageEquivStressAlphaEnum
+	DamageEquivStressBetaEnum
+	DamageEquivStressMuEnum
 	DamageEvolutionNumRequestedOutputsEnum
 	DamageEvolutionRequestedOutputsEnum
 	DamageHealingEnum
@@ -4025,6 +4028,9 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageC4Enum) return "DamageC4" end
 	if(enum==DamageEnum) return "Damage" end
 	if(enum==DamageEquivStressEnum) return "DamageEquivStress" end
+	if(enum==DamageEquivStressAlphaEnum) return "DamageEquivStressAlpha" end
+	if(enum==DamageEquivStressBetaEnum) return "DamageEquivStressBeta" end
+	if(enum==DamageEquivStressMuEnum) return "DamageEquivStressMu" end
 	if(enum==DamageEvolutionNumRequestedOutputsEnum) return "DamageEvolutionNumRequestedOutputs" end
 	if(enum==DamageEvolutionRequestedOutputsEnum) return "DamageEvolutionRequestedOutputs" end
 	if(enum==DamageHealingEnum) return "DamageHealing" end
@@ -7897,6 +7903,9 @@ function StringToEnum(name::String)
 	if(name=="DamageC4") return DamageC4Enum  end
 	if(name=="Damage") return DamageEnum  end
 	if(name=="DamageEquivStress") return DamageEquivStressEnum  end
+	if(name=="DamageEquivStressAlpha") return DamageEquivStressAlphaEnum  end
+	if(name=="DamageEquivStressBeta") return DamageEquivStressBetaEnum  end
+	if(name=="DamageEquivStressMu") return DamageEquivStressMuEnum  end
 	if(name=="DamageEvolutionNumRequestedOutputs") return DamageEvolutionNumRequestedOutputsEnum  end
 	if(name=="DamageEvolutionRequestedOutputs") return DamageEvolutionRequestedOutputsEnum  end
 	if(name=="DamageHealing") return DamageHealingEnum  end
