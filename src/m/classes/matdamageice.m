@@ -107,6 +107,9 @@ classdef matdamageice
 			md = checkfield(md,'fieldname','materials.rheology_n','>',0,'size',[md.mesh.numberofelements 1]);
 			md = checkfield(md,'fieldname','materials.rheology_law','values',{'None' 'BuddJacka' 'Cuffey' 'CuffeyTemperate' 'Paterson' 'Arrhenius' 'LliboutryDuval'});
 			md = checkfield(md,'fieldname','materials.effectiveconductivity_averaging','numel',[1],'values',[0 1 2]);
+
+			%Check variable in Damage
+			md = checkfield(md,'fieldname','damage.D','size',[md.mesh.numberofvertices 1],'>=',0,'<',1);
 			
 			if ismember('SealevelchangeAnalysis',analyses)
 				md = checkfield(md,'fieldname','materials.earth_density','>',0,'numel',1);

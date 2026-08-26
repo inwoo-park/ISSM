@@ -106,6 +106,11 @@ classdef damage
 			
 			md = checkfield(md,'fieldname','damage.isdamage','values',[1,0]);
 			if self.isdamage
+				%Check class of md.materials.
+				if ~isa(md.materials,'matdamageice')
+					error('Error: Invalid class of md.materials (=%s). md.materials should be a subclass of "matdamageice".',class(md.materials));
+				end
+
 				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3,4,5]);
 				md = checkfield(md,'fieldname','damage.D','>=',0,'<=',self.max_damage,'size',[md.mesh.numberofvertices 1]);
 				md = checkfield(md,'fieldname','damage.spcdamage','Inf',1,'timeseries',1);
