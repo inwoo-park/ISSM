@@ -153,6 +153,10 @@ function smb_file = search_forcing_file(datadir, modelname, scenario, start_time
 		isversion = 1;
 	end
 
+	if strcmpi(scenario,'ctrl')
+		isversion = 2;
+	end
+
 	switch lower(modelname)
 		case 'obs'
 			%FIXME: Assign smb file lists.
