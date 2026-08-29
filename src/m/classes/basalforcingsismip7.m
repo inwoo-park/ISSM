@@ -101,7 +101,7 @@ classdef basalforcingsismip7
 			fielddisplay(self,'tf_depths','elevation of vertical layers in ocean thermal forcing dataset');
 			fielddisplay(self,'tf','thermal forcing (ocean temperature minus freezing point) (degrees C)');
 			fielddisplay(self,'delta_t','Ocean temperature correction per basin (degrees C)');
-			fielddisplay(self,'islocal','[TODO] boolean to use the local version of the ISMIP7 melt rate parameter (default: true)');
+			fielddisplay(self,'islocal','boolean to use the local slope of the ISMIP7 melt rate parameter (default: true). true: use local slope; false: use mean slope.');
 			fielddisplay(self,'salinity','salinity (psu)');
 			fielddisplay(self,'coriolis_f','Coriolis parameter (s^-1)');
 			fielddisplay(self,'geothermalflux','geothermal heat flux (W/m^2)');

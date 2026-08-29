@@ -80,6 +80,7 @@ syn keyword juliaConstC BasalforcingsIsmip6NumBasinsEnum
 syn keyword juliaConstC BasalforcingsIsmip6TfDepthsEnum
 syn keyword juliaConstC BasalforcingsIsmip7DeltaTEnum
 syn keyword juliaConstC BasalforcingsIsmip7IsLocalEnum
+syn keyword juliaConstC BasalforcingsIsmip7AverageThetaEnum
 syn keyword juliaConstC BasalforcingsIsmip7TfDepthsEnum
 syn keyword juliaConstC BasalforcingsIsmip7NumBasinsEnum
 syn keyword juliaConstC BasalforcingsIsmip7GammaEnum
@@ -828,6 +829,7 @@ syn keyword juliaConstC BasalforcingsIsmip7TfEnum
 syn keyword juliaConstC BasalforcingsIsmip7TfShelfEnum
 syn keyword juliaConstC BasalforcingsIsmip7SalinityEnum
 syn keyword juliaConstC BasalforcingsIsmip7SalinityShelfEnum
+syn keyword juliaConstC BasalforcingsIsmip7ThetaEnum
 syn keyword juliaConstC BasalforcingsMeltrateFactorEnum
 syn keyword juliaConstC BasalforcingsOceanSalinityEnum
 syn keyword juliaConstC BasalforcingsOceanTempEnum

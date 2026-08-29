@@ -2670,7 +2670,8 @@ void       Element::Ismip6FloatingiceMeltingRate(){/*{{{*/
 void       Element::Ismip7FloatingiceMeltingRate(){/*{{{*/
 	if(!this->IsIceInElement() || !this->IsAllFloating() || !this->IsOnBase()) return;
 
-	int         basinid,num_basins,M;
+	int         basinid,num_basins,M,N;
+	bool        islocal;
 	IssmDouble  delta_t_basin;
 	IssmDouble* xyz_list = NULL;
 	
@@ -2678,7 +2679,7 @@ void       Element::Ismip7FloatingiceMeltingRate(){/*{{{*/
 	IssmDouble  salinity; /*local salinity [psu]*/
 	IssmDouble  coriolis; /*Coriolis parameter*/
 	IssmDouble  dbase[2]; /*derivative of z_b*/
-	IssmDouble  theta, slope;
+	IssmDouble  theta, theta_Ant,slope;
 	IssmDouble* delta_t = NULL;
 	IssmDouble* depths  = NULL;
 	
@@ -2702,11 +2703,16 @@ void       Element::Ismip7FloatingiceMeltingRate(){/*{{{*/
 	this->parameters->FindParam(&num_basins,BasalforcingsIsmip7NumBasinsEnum);
 	this->parameters->FindParam(&delta_t,&M,BasalforcingsIsmip7DeltaTEnum);    _assert_(M==num_basins);
 	this->parameters->FindParam(&gamma0,BasalforcingsIsmip7GammaEnum);
+	this->parameters->FindParam(&islocal,BasalforcingsIsmip7IsLocalEnum);
+	if(!islocal){
+		this->parameters->FindParam(&theta_Ant,BasalforcingsIsmip7AverageThetaEnum);
+	}
 	
 	Input* base_input = this->GetInput(BaseEnum); _assert_(base_input);
 	Input* tf_input   = this->GetInput(BasalforcingsIsmip7TfShelfEnum); _assert_(tf_input);
 	Input* salinity_input = this->GetInput(BasalforcingsIsmip7SalinityShelfEnum); _assert_(salinity_input);
 	Input* coriolis_input = this->GetInput(BasalforcingsCoriolisFEnum); _assert_(coriolis_input);
+	Input* theta_input    = this->GetInput(BasalforcingsIsmip7ThetaEnum); _assert_(theta_input);
 
 	delta_t_basin = delta_t[basinid];
 	
@@ -2719,9 +2725,11 @@ void       Element::Ismip7FloatingiceMeltingRate(){/*{{{*/
 		salinity_input->GetInputValue(&salinity,gauss);
 		coriolis_input->GetInputValue(&coriolis,gauss);
 
-		base_input->GetInputDerivativeValue(&dbase[0],xyz_list,gauss);
-		slope = sqrt(pow(dbase[0],2)+pow(dbase[1],2));
-		theta = atan(slope);
+		if(islocal){
+			theta_input->GetInputValue(&theta,gauss);
+		}else{
+			theta=theta_Ant;
+		}
 
 		basalmeltrate[i] = gamma0*sin(theta)*(rhow/rhoi)*pow(cp/lf,2)*betaS*salinity*g/2.0/fabs(coriolis)*fabs(tf+delta_t_basin)*(tf+delta_t_basin);
 	}

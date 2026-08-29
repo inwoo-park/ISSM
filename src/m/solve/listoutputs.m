@@ -57,6 +57,7 @@
 %BasalforcingsIsmip7TfShelf
 %BasalforcingsIsmip7Salinity
 %BasalforcingsIsmip7SalinityShelf
+%BasalforcingsIsmip7Theta
 %BasalforcingsMeltrateFactor
 %BasalforcingsOceanSalinity
 %BasalforcingsOceanTemp

@@ -221,22 +221,19 @@ void FloatingiceMeltingRateIsmip7x(FemModel* femmodel){/*{{{*/
 
 	IssmDouble  time;
 	IssmDouble* tf_depths=NULL;
-	int		   num_depths;
+	IssmDouble  dbase[2];
+	int		   num_depths, domaintype;
 	bool        islocal;
 
 	femmodel->parameters->FindParam(&time,TimeEnum);
-
-	//femmodel->parameters->FindParam(&num_basins,BasalforcingsIsmip7NumBasinsEnum);
 	femmodel->parameters->FindParam(&tf_depths,&num_depths,BasalforcingsIsmip7TfDepthsEnum); _assert_(tf_depths);
 	/* FIXME: What does Ismip7IsLocal value contribute to? */
 	femmodel->parameters->FindParam(&islocal,BasalforcingsIsmip7IsLocalEnum);
 
 	/*Binary search works for vectors that are sorted in increasing order only, make depths positive*/
-	//if(VerboseSolution())_printf0_("	  ismip7: prepare binary search\n");
 	for(int i=0;i<num_depths;i++) tf_depths[i] = -tf_depths[i];
 
 	/*Get TF and salinity at each ice shelf point - linearly intepolate in depth and time*/
-	//if(VerboseSolution())_printf0_("	  ismip7: get tf and salinity\n");
 	for(Object* & object : femmodel->elements->objects){
       Element* element = xDynamicCast<Element*>(object);
 		int      numvertices = element->GetNumberOfVertices();
@@ -308,8 +305,76 @@ void FloatingiceMeltingRateIsmip7x(FemModel* femmodel){/*{{{*/
 		delete gauss;
 	}
 
+	/*Compute global mean slope over ice shelf*/
+	for(Object* & object : femmodel->elements->objects){
+		Element* element = xDynamicCast<Element*>(object);
+		/*Spawn basal element if on base to compute element area*/
+		Element* basalelement = element->SpawnBasalElement();
+		int numvertices=element->GetNumberOfVertices();
+		if(!element->IsOnBase() || !element->IsIceInElement() || !element->IsAllFloating()){
+			IssmDouble* values = xNewZeroInit<IssmDouble>(numvertices);
+			element->AddInput(BasalforcingsIsmip7ThetaEnum,values,P1DGEnum);
+			/*Delete spawned element if we are in 3D*/
+			basalelement->FindParam(&domaintype,DomainTypeEnum);
+			if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+			xDelete<IssmDouble>(values);
+			continue;
+		}
+
+		IssmDouble* slope=NULL;
+		IssmDouble* theta=NULL;
+		IssmDouble* xyz_list=NULL;
+		Input* base_input=basalelement->GetInput(BaseEnum); _assert_(base_input);
+		basalelement->GetVerticesCoordinates(&xyz_list);
+
+		slope=xNewZeroInit<IssmDouble>(numvertices);
+		theta=xNewZeroInit<IssmDouble>(numvertices);
+
+		Gauss* gauss=basalelement->NewGauss();
+		for(int iv=0;iv<numvertices;iv++){
+			gauss->GaussVertex(iv);
+			base_input->GetInputDerivativeValue(&dbase[0],xyz_list,gauss);
+			slope[iv] = sqrt(pow(dbase[0],2.0)+pow(dbase[1],2.0));
+			theta[iv] = atan(slope[iv]);
+		}
+		/*Return basal slope*/
+		basalelement->AddInput(BasalforcingsIsmip7ThetaEnum,theta,P1DGEnum);
+
+		/*Delete spawned element if we are in 3D*/
+		basalelement->FindParam(&domaintype,DomainTypeEnum);
+		if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+		xDelete<IssmDouble>(xyz_list);
+		xDelete<IssmDouble>(slope);
+		xDelete<IssmDouble>(theta);
+		delete gauss;
+	}
+
+	/*Compute weighted means and save*/
+	if(!islocal){
+		IssmDouble  area;
+		IssmDouble  theta_test, theta_weighted_avg=0.0; //,theta_weighted_avg_cpu=0.0;;
+		IssmDouble  areas_summed=0.0; //,areas_summed_cpu=0.0;
+		for(Object* & object : femmodel->elements->objects){
+			Element* element = xDynamicCast<Element*>(object);
+			if(!element->IsOnBase() || !element->IsIceInElement() || !element->IsAllFloating()) continue;
+			Element* basalelement = element->SpawnBasalElement();
+			Gauss* gauss=basalelement->NewGauss(1); gauss->GaussPoint(0);
+			Input* theta_input=basalelement->GetInput(BasalforcingsIsmip7ThetaEnum); _assert_(theta_input);
+			theta_input->GetInputValue(&theta_test,gauss);
+			area=basalelement->GetHorizontalSurfaceArea();
+			theta_weighted_avg +=theta_test*area;
+			areas_summed       +=area;
+
+			/*Delete spawned element if we are in 3D*/
+			basalelement->FindParam(&domaintype,DomainTypeEnum);
+			if(basalelement->IsSpawnedElement()){basalelement->DeleteMaterials(); delete basalelement;};
+			delete gauss;
+		}
+		theta_weighted_avg=theta_weighted_avg/areas_summed;
+		femmodel->parameters->AddObject(new DoubleParam(BasalforcingsIsmip7AverageThetaEnum,theta_weighted_avg));
+	}
+
 	/*Compute meltrates*/
-	//if(VerboseSolution())_printf0_("	  ismip7: compute melting rate\n");
 	for(Object* & object : femmodel->elements->objects){
 		Element* element = xDynamicCast<Element*>(object);
 		element->Ismip7FloatingiceMeltingRate();
