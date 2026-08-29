@@ -733,6 +733,7 @@ syn keyword cConstant StressbalanceRequestedOutputsEnum
 syn keyword cConstant StressbalanceRestolEnum
 syn keyword cConstant StressbalanceRiftPenaltyThresholdEnum
 syn keyword cConstant StressbalanceShelfDampeningEnum
+syn keyword cConstant StressbalanceThetaEnum
 syn keyword cConstant ThermalForcingMonthlyEffectsEnum
 syn keyword cConstant ThermalIsdrainicecolumnEnum
 syn keyword cConstant ThermalIsdynamicbasalspcEnum

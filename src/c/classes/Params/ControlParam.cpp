@@ -90,8 +90,6 @@ void ControlParam::Echo(void){/*{{{*/
 	this->DeepEcho();
 }
 /*}}}*/
-int  ControlParam::Id(void){ return -1; }/*{{{*/
-/*}}}*/
 void ControlParam::Marshall(MarshallHandle* marshallhandle){ /*{{{*/
 
 	int object_enum = ControlParamEnum;
@@ -102,12 +100,6 @@ void ControlParam::Marshall(MarshallHandle* marshallhandle){ /*{{{*/
 	marshallhandle->call(this->value,this->M*this->N);
 	marshallhandle->call(this->minvalue,this->N);
 	marshallhandle->call(this->maxvalue,this->N);
-
-}
-/*}}}*/
-int  ControlParam::ObjectEnum(void){/*{{{*/
-
-	return ControlParamEnum;
 
 }
 /*}}}*/

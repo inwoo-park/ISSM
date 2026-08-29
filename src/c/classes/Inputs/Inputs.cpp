@@ -316,17 +316,6 @@ void Inputs::Shift(int xenum, IssmDouble alpha){/*{{{*/
 	this->inputs[index_x]->Shift(alpha);
 }
 /*}}}*/
-void Inputs::AverageAndReplace(int inputenum){/*{{{*/
-
-	_assert_(this);
-
-	/*Get indices from enums*/
-	int index = EnumToIndex(inputenum);
-	if(!this->inputs[index]) _error_("Input "<<EnumToStringx(inputenum)<<" not found");
-
-	this->inputs[index]->AverageAndReplace();
-}
-/*}}}*/
 int  Inputs::EnumToIndex(int enum_in){/*{{{*/
 
 	_assert_(this);
@@ -661,7 +650,6 @@ void Inputs::GetInputValue(int* pvalue,int enum_in,int index){/*{{{*/
 		if(this->inputs[id]->ObjectEnum()!=IntInputEnum) _error_(EnumToStringx(this->inputs[id]->ObjectEnum())<<" cannot return a int");
 	}
 	else{
-		int* temp = xNew<int>(3);
 		_error_("Input "<<EnumToStringx(enum_in)<<" not found");
 	}
 
@@ -679,7 +667,6 @@ void Inputs::GetInputValue(IssmDouble* pvalue,int enum_in,int index){/*{{{*/
 		if(this->inputs[id]->ObjectEnum()!=DoubleInputEnum) _error_(EnumToStringx(this->inputs[id]->ObjectEnum())<<" cannot return a double!");
 	}
 	else{
-		int* temp = xNew<int>(3);
 		_error_("Input "<<EnumToStringx(enum_in)<<" not found");
 	}
 

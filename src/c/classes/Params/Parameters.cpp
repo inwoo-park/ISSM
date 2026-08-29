@@ -472,10 +472,6 @@ void Parameters::FindControlParam(IssmDouble** pvec,int* pM, int param_enum, con
 
 	int index = EnumToIndex(param_enum);
 
-	/*Output*/
-	int         n;
-	IssmDouble* vector = NULL;
-
 	if(!this->params[index]) _error_("Parameter " << EnumToStringx(param_enum) <<" not set");
 	this->params[index]->GetParameterValue(pvec,pM,data);
 
@@ -693,6 +689,18 @@ void  Parameters::GetVectorFromControl(Vector<IssmDouble>* vector,int control_en
 	param->GetVectorFromControl(vector, control_index, N, data, offset);
 }/*}}}*/
 
+bool Parameters::IsInRequestedOutput(int requested_outputs_enum,int output_enum){/*{{{*/
+
+	Param* param=this->FindParamObject(requested_outputs_enum);
+	if(!param) return false;
+
+	if(param->ObjectEnum()!=StringArrayParamEnum){
+		_error_("Parameter "<<EnumToStringx(requested_outputs_enum)<<" is not a StringArrayParam");
+	}
+
+	StringArrayParam* requested_outputs=xDynamicCast<StringArrayParam*>(param);
+	return requested_outputs->IsMember(EnumToStringx(output_enum));
+}/*}}}*/
 Param* Parameters::FindParamObject(int param_enum){/*{{{*/
 
 	return this->params[EnumToIndex(param_enum)];
@@ -712,9 +720,7 @@ char* OptionsFromAnalysis(char** pouttoolkit,Parameters* parameters,int analysis
 	int          dummy;
 	int         *analyses    = NULL;
 	char       **strings     = NULL;
-	char        *string      = NULL;
 	char       **toolkits    = NULL;
-	char        *toolkit     = NULL;
 	int          numanalyses;
 	int          found       = -1;
 	int          i;

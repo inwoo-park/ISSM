@@ -722,6 +722,7 @@
 	StressbalanceRestolEnum
 	StressbalanceRiftPenaltyThresholdEnum
 	StressbalanceShelfDampeningEnum
+	StressbalanceThetaEnum
 	ThermalForcingMonthlyEffectsEnum
 	ThermalIsdrainicecolumnEnum
 	ThermalIsdynamicbasalspcEnum
@@ -4597,6 +4598,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==StressbalanceRestolEnum) return "StressbalanceRestol" end
 	if(enum==StressbalanceRiftPenaltyThresholdEnum) return "StressbalanceRiftPenaltyThreshold" end
 	if(enum==StressbalanceShelfDampeningEnum) return "StressbalanceShelfDampening" end
+	if(enum==StressbalanceThetaEnum) return "StressbalanceTheta" end
 	if(enum==ThermalForcingMonthlyEffectsEnum) return "ThermalForcingMonthlyEffects" end
 	if(enum==ThermalIsdrainicecolumnEnum) return "ThermalIsdrainicecolumn" end
 	if(enum==ThermalIsdynamicbasalspcEnum) return "ThermalIsdynamicbasalspc" end
@@ -8472,6 +8474,7 @@ function StringToEnum(name::String)
 	if(name=="StressbalanceRestol") return StressbalanceRestolEnum  end
 	if(name=="StressbalanceRiftPenaltyThreshold") return StressbalanceRiftPenaltyThresholdEnum  end
 	if(name=="StressbalanceShelfDampening") return StressbalanceShelfDampeningEnum  end
+	if(name=="StressbalanceTheta") return StressbalanceThetaEnum  end
 	if(name=="ThermalForcingMonthlyEffects") return ThermalForcingMonthlyEffectsEnum  end
 	if(name=="ThermalIsdrainicecolumn") return ThermalIsdrainicecolumnEnum  end
 	if(name=="ThermalIsdynamicbasalspc") return ThermalIsdynamicbasalspcEnum  end

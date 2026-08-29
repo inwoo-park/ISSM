@@ -99,8 +99,6 @@ void ControlInput::Echo(void){/*{{{*/
 	this->DeepEcho();
 }
 /*}}}*/
-int  ControlInput::Id(void){ return -1; }/*{{{*/
-/*}}}*/
 void ControlInput::Marshall(MarshallHandle* marshallhandle){ /*{{{*/
 
 	int object_enum = ControlInputEnum;
@@ -138,12 +136,6 @@ void ControlInput::Marshall(MarshallHandle* marshallhandle){ /*{{{*/
 	this->maxvalues->Marshall(marshallhandle);
 }
 /*}}}*/
-int  ControlInput::ObjectEnum(void){/*{{{*/
-
-	return ControlInputEnum;
-
-}
-/*}}}*/
 
 void ControlInput::SetControl(int interp,int numindices,int* indices,IssmDouble* values_in,IssmDouble* values_min,IssmDouble* values_max){/*{{{*/
 
@@ -158,10 +150,6 @@ void ControlInput::SetControl(int interp,int numindices,int* indices,IssmDouble*
 	else{
 		_error_("not supported");
 	}
-}
-/*}}}*/
-void ControlInput::AverageAndReplace(void){/*{{{*/
-	this->values->AverageAndReplace();
 }
 /*}}}*/
 TriaInput* ControlInput::GetTriaInput(){/*{{{*/
