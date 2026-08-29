@@ -349,7 +349,6 @@ void           DamageEvolutionAnalysis::CreateDamageFInputPralong(Element* eleme
 	element->FindParam(&c1,DamageC1Enum);
 	element->FindParam(&c2,DamageC2Enum);
 	element->FindParam(&c3,DamageC3Enum);
-	element->FindParam(&c4,DamageC4Enum);
 	element->FindParam(&healing,DamageHealingEnum);
 	element->FindParam(&stress_threshold,DamageStressThresholdEnum);
 	element->FindParam(&domaintype,DomainTypeEnum);
@@ -491,10 +490,10 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	/*Intermediaries */
 	IssmDouble c1,c2,c3,c4,healing,stress_threshold;
 	IssmDouble tau_xx, tau_xy, tau_yy, tau_xz, tau_yz, tau_zz;
-	IssmDouble s_xx,s_xy,s_xz,s_yy,s_yz,s_zz,s1,s2,s3,stmp;
+	IssmDouble s_xx,s_xy,s_xz,s_yy,s_yz,s_zz,s1,s2,stmp;
 	IssmDouble s_inv1, s_inv2;
 	IssmDouble pressure;
-	IssmDouble J2s,Chi,Psi,PosPsi,NegPsi;
+	IssmDouble Chi,Psi,PosPsi,NegPsi;
 	IssmDouble damage,sigma_xx,sigma_xy,sigma_xz,sigma_yy,sigma_yz,sigma_zz,stressMaxPrincipal;
 	int equivstress,domaintype,dim;
 
