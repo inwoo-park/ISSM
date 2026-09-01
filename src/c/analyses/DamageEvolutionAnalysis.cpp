@@ -1431,7 +1431,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 			}else if(isequivstress==2){ /* Hayhurst stress invariant */
 				sigma_equiv[i]=alpha*s1 + beta*sqrt(((s1-s2)*(s1-s2)+(s2-s3)*(s2-s3)+(s3-s1)*(s3-s1))/2.) + (1-alpha-beta)*(s1 + s2 + s3);
 			}else if(isequivstress==3){ /* Coulomb criteron */
-				sigma_equiv[i]=(s1-s3)/2 + mu*(s1+s2)/2;
+				sigma_equiv[i]=(s1-s3)/2 + mu*(s1+s3)/2;
 			}
 		}
 		
