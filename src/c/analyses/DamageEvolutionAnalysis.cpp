@@ -76,6 +76,10 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	if(iomodel->domaintype==Domain3DEnum) iomodel->FetchDataToInput(inputs,elements,"md.initialization.vz",VzEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ice_levelset",MaskIceLevelsetEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.mask.ocean_levelset",MaskOceanLevelsetEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.geometry.thickness",ThicknessEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.geometry.surface",SurfaceEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.geometry.base",BaseEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.initialization.pressure",PressureEnum);
 
 }/*}}}*/
