@@ -33,7 +33,10 @@ def project2d(md3d, value, layer):
         value = value.reshape(-1, )
         vec2d = True
 
-    if value.size == 1:
+    if value.ndim == 0:
+        # 0-d scalar array: the single value applies to all layers, return as-is
+        projection_value = value
+    elif value.size == 1:
         projection_value = value[(layer - 1) * md3d.mesh.numberofelements2d:layer * md3d.mesh.numberofelements2d]
     elif value.shape[0] == md3d.mesh.numberofvertices:
         #print 'indices: ', (layer - 1) * md3d.mesh.numberofvertices2d, layer * md3d.mesh.numberofvertices2d
