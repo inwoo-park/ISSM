@@ -74,6 +74,10 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	iomodel->FetchDataToInput(inputs,elements,"md.initialization.vx",VxEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.initialization.vy",VyEnum);
 	if(iomodel->domaintype==Domain3DEnum) iomodel->FetchDataToInput(inputs,elements,"md.initialization.vz",VzEnum);
+	InputUpdateFromConstantx(inputs,elements,0.,VxMeshEnum);
+	InputUpdateFromConstantx(inputs,elements,0.,VyMeshEnum);
+	InputUpdateFromConstantx(inputs,elements,0.,VzMeshEnum);
+
 	iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ice_levelset",MaskIceLevelsetEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ocean_levelset",MaskOceanLevelsetEnum);
@@ -740,7 +744,9 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 	int         domaintype,dim;
 	int         stabilization;
 	IssmDouble  Jdet,dt,D_scalar,h,hx,hy,hz;
-	IssmDouble  vel,vx,vy,vz,dvxdx,dvydy,dvzdz,dvx[3],dvy[3],dvz[3];
+	IssmDouble  vel,vx,vy,vz,dvxdx,dvydy,dvzdz; //dvx[3],dvy[3],dvz[3];
+	IssmDouble  u,v,w,um,vm,wm;
+	IssmDouble  du[3],dv[3],dw[3],dum[3],dvm[3],dwm[3];
 	IssmDouble *xyz_list  = NULL;
 
 	/*Get problem dimension*/
@@ -767,8 +773,12 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 	Input* vx_input = element->GetInput(VxEnum); _assert_(vx_input);
 	Input* vy_input = element->GetInput(VyEnum); _assert_(vy_input);
 	Input* vz_input = NULL;
+	Input* vxm_input= element->GetInput(VxMeshEnum); _assert_(vxm_input);
+	Input* vym_input= element->GetInput(VyMeshEnum); _assert_(vym_input);
+	Input* vzm_input= NULL;
 	if(dim==3){
-		vz_input=element->GetInput(VzEnum); _assert_(vz_input);
+		vz_input =element->GetInput(VzEnum);     _assert_(vz_input);
+		vzm_input=element->GetInput(VzMeshEnum); _assert_(vzm_input);
 	}
 
 	if(dim==2) h=element->CharacteristicLength();
@@ -781,22 +791,22 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 		element->NodalFunctions(basis,gauss);
 		element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
 
-		vx_input->GetInputValue(&vx,gauss);
-		vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
-		vy_input->GetInputValue(&vy,gauss);
-		vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
-
+		vx_input->GetInputValue(&u,gauss); vxm_input->GetInputValue(&um,gauss); vx=u-um;
+		vy_input->GetInputValue(&v,gauss); vym_input->GetInputValue(&vm,gauss); vy=v-vm;
+		vx_input->GetInputDerivativeValue(&du[0],xyz_list,gauss); vxm_input->GetInputDerivativeValue(&dum[0],xyz_list,gauss);
+		vy_input->GetInputDerivativeValue(&dv[0],xyz_list,gauss); vym_input->GetInputDerivativeValue(&dvm[0],xyz_list,gauss);
 		if(dim==3){
-			vz_input->GetInputValue(&vz,gauss);
-			vz_input->GetInputDerivativeValue(&dvz[0],xyz_list,gauss);
+			vz_input->GetInputValue(&w,gauss); vz_input->GetInputValue(&wm,gauss); vz=w-wm;
+			vz_input->GetInputDerivativeValue(&dw[0],xyz_list,gauss); vzm_input->GetInputDerivativeValue(&dwm[0],xyz_list,gauss);
 		}
 
 		/*Transient term*/
 		D_scalar=gauss->weight*Jdet;
 		for(int i=0;i<numnodes;i++) for(int j=0;j<numnodes;j++) Ke->values[i*numnodes+j] += D_scalar*basis[i]*basis[j];
 
-		dvxdx=dvx[0];
-		dvydy=dvy[1];
+		/*Advection: */
+		dvxdx=du[0]-dum[0];
+		dvydy=dv[1]-dvm[1];
 		D_scalar=dt*gauss->weight*Jdet;
 		if(dim==2){
 			for(int i=0;i<numnodes;i++){
@@ -810,7 +820,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 		}
 		else{/*3D*/
 			_assert_(dim==3);
-			dvzdz=dvz[2];
+			dvzdz=dw[2]-dwm[2];
 			for(int i=0;i<numnodes;i++){
 				for(int j=0;j<numnodes;j++){
 					/*\phi_i \phi_j \nabla\cdot v*/
@@ -821,6 +831,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 			}
 		}
 
+		/*Streamline upwinding: */
 		if(stabilization==2){
 			if(dim==3){
 				vel=sqrt(vx*vx+vy*vy+vz*vz)+1.e-8;
@@ -834,8 +845,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[1*dim+2]=h/(2.0*vel)*vy*vz;
 				D[2*dim+2]=h/(2.0*vel)*vz*vz;
 			}
-			else{
-				/*Streamline upwinding*/
+			else if(dim=2){
 				vel=sqrt(vx*vx+vy*vy)+1.e-8;
 				D[0*dim+0]=h/(2.0*vel)*vx*vx;
 				D[1*dim+0]=h/(2.0*vel)*vy*vx;
@@ -843,6 +853,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[1*dim+1]=h/(2.0*vel)*vy*vy;
 			}
 		}
+		/*Artificial diffusivity: */
 		else if(stabilization==1){
 			if(dim==2){
 				vx_input->GetInputAverage(&vx);
