@@ -103,7 +103,7 @@ def plotmodel(md, *args):
             # Control axes vertical and horizontal spaces.
             if options.list[0].exist('axes_pad'):
                 axes_pad = options.list[0].getfieldvalue('axes_pad', 0.25)
-                if len(axes_pad) == 1: axes_pad = 2*axes_pad
+                if len(axes_pad) == 1: axes_pad=np.ones((2,))*np.array(axes_pad)
                 fig.subplots_adjust(wspace=axes_pad[0],hspace=axes_pad[1])
         else:
             # NOTE: The inline comments for each of the following parameters are
