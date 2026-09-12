@@ -1295,7 +1295,6 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	element->GetVerticesCoordinates(&xyz_list);
 
 	/* Precompute deviatoric stress tensor*/
-	/* NOTE: ComputeDeviatoricStressTensor already contains damage i.g. tau_eff = tau/(1-D)*E; therefore, tau_eff is the effective deviatoric stress. */
 	element->ComputeDeviatoricStressTensor();
 
 	/* Retrieve what we need: */
@@ -1358,7 +1357,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 						Pw = rho_w*g*(0-z);
 					}
 				}
-				/* Eq. 15 in Huth et al. (2021) / SSA approximation with hydrostatic assumption (Greve and Blatter et al., 2009) */
+				/* Eq. 15 in Huth et al. (2021) / SSA approximation with hydrostatic assumption (Greve and Blatter, 2009) */
 				P = Pi - tau_xx - tau_yy - Pw;
 			}
 		}else if(isFS){
@@ -1366,19 +1365,19 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		}
 
 		/* Compute effective Cauchy stress tensor baed on deviatoric stress */
-		sigma_xx = tau_xx - P;
-		sigma_xy = tau_xy;
-		sigma_yy = tau_yy - P;
+		sigma_xx = tau_xx/(1-D) - P;
+		sigma_xy = tau_xy/(1-D);
+		sigma_yy = tau_yy/(1-D) - P;
 		if(dim==3){
-			sigma_xz = tau_xz;
-			sigma_yz = tau_yz;
-			if(isSSA) sigma_zz = -tau_xx - tau_yy - P;
-			else if(isHO) sigma_zz = -tau_xx - tau_yy- P;
-			else if(isFS) sigma_zz = tau_zz - P;
+			sigma_xz = tau_xz/(1-D);
+			sigma_yz = tau_yz/(1-D);
+			if(isSSA) sigma_zz = (-tau_xx - tau_yy)/(1-D) - P;
+			else if(isHO) sigma_zz = (-tau_xx - tau_yy)/(1-D) - P;
+			else if(isFS) sigma_zz = tau_zz/(1-D) - P;
 			else _error_("Error: Not supported.");
 		}
 
-		/*Calculate principal effective stresses*/
+		/*Calculate stress criterion*/
 		if(dim==2){
 			/* Compute principal effective stresses */
 			s3 = -P;
@@ -1407,6 +1406,8 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 					sigma_xx,sigma_xy,sigma_xz,
 					sigma_xy,sigma_yy,sigma_yz,
 					0.0, 0.0, sigma_zz);
+			}else if(isFS){
+				_error_("Not implemented for FS equation.");
 			}else{
 				_error_("not implemented yet");
 			}
@@ -1415,6 +1416,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 			if(s1<s2) swap(s1,s2);
 			if(s1<s3) swap(s1,s3);
 			if(s2<s3) swap(s2,s3);
+			_assert_( (s1>=s2) & (s2 >= s3) );
 		
 			if(isequivstress==0){ /* von Mises */
 				sigma_equiv[i]=sqrt(((s1-s2)*(s1-s2)+(s2-s3)*(s2-s3)+(s3-s1)*(s3-s1))/2.);
