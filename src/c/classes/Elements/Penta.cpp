@@ -900,9 +900,7 @@ void       Penta::ComputeSigmaVM(){/*{{{*/
 	IssmDouble  epsilon[3]; /* epsilon=[exx,eyy,exy];*/
 	IssmDouble  lambda1,lambda2,ex,ey,vx,vy;
 	IssmDouble  B,n;
-	IssmDouble  D[NUMVERTICES]; /* damage variable */
 	IssmDouble  sigma_vm[NUMVERTICES];
-	bool isdamage=false;
 
 	/* Get node coordinates and dof list: */
 	::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
@@ -917,18 +915,9 @@ void       Penta::ComputeSigmaVM(){/*{{{*/
 	Input* vy_input = this->GetInput(VyAverageEnum); _assert_(vy_input);
 	Input* B_input  = this->GetInput(MaterialsRheologyBbarEnum);   _assert_(B_input);
 	Input* n_input  = this->GetInput(MaterialsRheologyNEnum);   _assert_(n_input);
-	this->parameters->FindParam(&isdamage,TransientIsdamageevolutionEnum);
 
 	/* Start looping on the number of vertices: */
 	GaussPenta gauss;
-	if(isdamage){
-		Input* D_input = this->GetInput(DamageDbarEnum); _assert_(D_input);
-		for(int iv=0;iv<3;iv++){
-			gauss.GaussVertex(iv);
-			D_input->GetInputValue(&D[iv],&gauss);
-		}
-	}else for(int iv=0;iv<3;iv++) D[iv]=0.;
-
 	for(int iv=0;iv<3;iv++){
 		gauss.GaussVertex(iv);
 
@@ -953,7 +942,6 @@ void       Penta::ComputeSigmaVM(){/*{{{*/
 		/*Calculate sigma_vm*/
 		IssmDouble epse_2    = 1./2. *(lambda1*lambda1 + lambda2*lambda2);
 		sigma_vm[iv] = sqrt(3.) * B * pow(epse_2,1./(2.*n));
-		sigma_vm[iv] = sigma_vm[iv]/(1-D[iv]);
 	}
 
 	/*Add input*/
