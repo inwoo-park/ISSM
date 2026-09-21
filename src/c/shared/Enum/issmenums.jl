@@ -113,6 +113,7 @@
 	CalvingADStressThresholdFloatingiceEnum
 	CalvingADStressThresholdGroundediceEnum
 	CalvingCrevasseDepthEnum
+	CalvingCrevasseDepthTypeEnum
 	CalvingCrevasseThresholdEnum
 	CalvingHeightAboveFloatationEnum
 	CalvingLawEnum
@@ -130,6 +131,10 @@
 	CalvingVelUpperboundEnum
 	CalvingRcEnum
 	CalvingNumberofBasinsEnum
+	CalvingFEnum
+	CalvingChiCritEnum
+	CalvingChiMaxEnum
+	CalvingKEnum
 	ConfigurationTypeEnum
 	ConstantsGEnum
 	ConstantsNewtonGravityEnum
@@ -3490,6 +3495,7 @@
 	CalvingVonmisesEnum
 	CalvingVonmisesADEnum
 	CalvingPollardEnum
+	CalvingStochasticEnum
 	CfdragcoeffabsgradEnum
 	CfdragcoeffabsgradtransientEnum
 	CfrheologybbarabsgradEnum
@@ -3989,6 +3995,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==CalvingADStressThresholdFloatingiceEnum) return "CalvingADStressThresholdFloatingice" end
 	if(enum==CalvingADStressThresholdGroundediceEnum) return "CalvingADStressThresholdGroundedice" end
 	if(enum==CalvingCrevasseDepthEnum) return "CalvingCrevasseDepth" end
+	if(enum==CalvingCrevasseDepthTypeEnum) return "CalvingCrevasseDepthType" end
 	if(enum==CalvingCrevasseThresholdEnum) return "CalvingCrevasseThreshold" end
 	if(enum==CalvingHeightAboveFloatationEnum) return "CalvingHeightAboveFloatation" end
 	if(enum==CalvingLawEnum) return "CalvingLaw" end
@@ -4006,6 +4013,10 @@ function EnumToString(enum::IssmEnum)
 	if(enum==CalvingVelUpperboundEnum) return "CalvingVelUpperbound" end
 	if(enum==CalvingRcEnum) return "CalvingRc" end
 	if(enum==CalvingNumberofBasinsEnum) return "CalvingNumberofBasins" end
+	if(enum==CalvingFEnum) return "CalvingF" end
+	if(enum==CalvingChiCritEnum) return "CalvingChiCrit" end
+	if(enum==CalvingChiMaxEnum) return "CalvingChiMax" end
+	if(enum==CalvingKEnum) return "CalvingK" end
 	if(enum==ConfigurationTypeEnum) return "ConfigurationType" end
 	if(enum==ConstantsGEnum) return "ConstantsG" end
 	if(enum==ConstantsNewtonGravityEnum) return "ConstantsNewtonGravity" end
@@ -7366,6 +7377,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==CalvingVonmisesEnum) return "CalvingVonmises" end
 	if(enum==CalvingVonmisesADEnum) return "CalvingVonmisesAD" end
 	if(enum==CalvingPollardEnum) return "CalvingPollard" end
+	if(enum==CalvingStochasticEnum) return "CalvingStochastic" end
 	if(enum==CfdragcoeffabsgradEnum) return "Cfdragcoeffabsgrad" end
 	if(enum==CfdragcoeffabsgradtransientEnum) return "Cfdragcoeffabsgradtransient" end
 	if(enum==CfrheologybbarabsgradEnum) return "Cfrheologybbarabsgrad" end
@@ -7865,6 +7877,7 @@ function StringToEnum(name::String)
 	if(name=="CalvingADStressThresholdFloatingice") return CalvingADStressThresholdFloatingiceEnum  end
 	if(name=="CalvingADStressThresholdGroundedice") return CalvingADStressThresholdGroundediceEnum  end
 	if(name=="CalvingCrevasseDepth") return CalvingCrevasseDepthEnum  end
+	if(name=="CalvingCrevasseDepthType") return CalvingCrevasseDepthTypeEnum  end
 	if(name=="CalvingCrevasseThreshold") return CalvingCrevasseThresholdEnum  end
 	if(name=="CalvingHeightAboveFloatation") return CalvingHeightAboveFloatationEnum  end
 	if(name=="CalvingLaw") return CalvingLawEnum  end
@@ -7882,6 +7895,10 @@ function StringToEnum(name::String)
 	if(name=="CalvingVelUpperbound") return CalvingVelUpperboundEnum  end
 	if(name=="CalvingRc") return CalvingRcEnum  end
 	if(name=="CalvingNumberofBasins") return CalvingNumberofBasinsEnum  end
+	if(name=="CalvingF") return CalvingFEnum  end
+	if(name=="CalvingChiCrit") return CalvingChiCritEnum  end
+	if(name=="CalvingChiMax") return CalvingChiMaxEnum  end
+	if(name=="CalvingK") return CalvingKEnum  end
 	if(name=="ConfigurationType") return ConfigurationTypeEnum  end
 	if(name=="ConstantsG") return ConstantsGEnum  end
 	if(name=="ConstantsNewtonGravity") return ConstantsNewtonGravityEnum  end
@@ -11242,6 +11259,7 @@ function StringToEnum(name::String)
 	if(name=="CalvingVonmises") return CalvingVonmisesEnum  end
 	if(name=="CalvingVonmisesAD") return CalvingVonmisesADEnum  end
 	if(name=="CalvingPollard") return CalvingPollardEnum  end
+	if(name=="CalvingStochastic") return CalvingStochasticEnum  end
 	if(name=="Cfdragcoeffabsgrad") return CfdragcoeffabsgradEnum  end
 	if(name=="Cfdragcoeffabsgradtransient") return CfdragcoeffabsgradtransientEnum  end
 	if(name=="Cfrheologybbarabsgrad") return CfrheologybbarabsgradEnum  end

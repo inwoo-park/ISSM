@@ -126,6 +126,7 @@ const char* EnumToStringx(int en){
 		case CalvingADStressThresholdFloatingiceEnum : return "CalvingADStressThresholdFloatingice";
 		case CalvingADStressThresholdGroundediceEnum : return "CalvingADStressThresholdGroundedice";
 		case CalvingCrevasseDepthEnum : return "CalvingCrevasseDepth";
+		case CalvingCrevasseDepthTypeEnum : return "CalvingCrevasseDepthType";
 		case CalvingCrevasseThresholdEnum : return "CalvingCrevasseThreshold";
 		case CalvingHeightAboveFloatationEnum : return "CalvingHeightAboveFloatation";
 		case CalvingLawEnum : return "CalvingLaw";
@@ -143,6 +144,10 @@ const char* EnumToStringx(int en){
 		case CalvingVelUpperboundEnum : return "CalvingVelUpperbound";
 		case CalvingRcEnum : return "CalvingRc";
 		case CalvingNumberofBasinsEnum : return "CalvingNumberofBasins";
+		case CalvingFEnum : return "CalvingF";
+		case CalvingChiCritEnum : return "CalvingChiCrit";
+		case CalvingChiMaxEnum : return "CalvingChiMax";
+		case CalvingKEnum : return "CalvingK";
 		case ConfigurationTypeEnum : return "ConfigurationType";
 		case ConstantsGEnum : return "ConstantsG";
 		case ConstantsNewtonGravityEnum : return "ConstantsNewtonGravity";
@@ -3503,6 +3508,7 @@ const char* EnumToStringx(int en){
 		case CalvingVonmisesEnum : return "CalvingVonmises";
 		case CalvingVonmisesADEnum : return "CalvingVonmisesAD";
 		case CalvingPollardEnum : return "CalvingPollard";
+		case CalvingStochasticEnum : return "CalvingStochastic";
 		case CfdragcoeffabsgradEnum : return "Cfdragcoeffabsgrad";
 		case CfdragcoeffabsgradtransientEnum : return "Cfdragcoeffabsgradtransient";
 		case CfrheologybbarabsgradEnum : return "Cfrheologybbarabsgrad";
