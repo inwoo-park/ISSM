@@ -81,26 +81,32 @@ classdef damage
 			self.stress_threshold=1.3e5;
 			self.kappa=2.8;
 			self.healing=0;
-			self.c1=0;
-			self.c2=0;
-			self.c3=0;
-			self.c4=0;
-			self.equiv_stress=0;
 
+			% Pralong 2005
+			self.c1=1.38e-9;
+			self.c2=0.43;
+			self.c3=1e-3;
+			self.c4=0; % FIXME: Which value should be assigned here?
+			self.equiv_stress=0; % von Mises
+
+			% 0: constant
+			% 1: Pralong 2005
+			% 2: Duddu 2020
 			self.isdamage_exponent=0;
 			self.ispressure_ssa=0;
-			self.isPeff=0;
+			self.isPeff=1;
 
 			% Criterion of Hayhurst (Pralong et al., 2005)
 			self.equiv_stress_alpha=0.21;
 			self.equiv_stress_beta=0.63;
 
 			% Criterion of Coulomb (Vaughan 1993)
-			self.equiv_stress_mu = 0.1;
+			% 0.1 : Vaughan 1993
+			% 0.3 : Well-Morans 2025 
+			self.equiv_stress_mu = 0.3;
 
 			%output default:
 			self.requested_outputs={'default'};
-
 		end % }}}
 		function md = checkconsistency(self,md,solution,analyses) % {{{
 			
