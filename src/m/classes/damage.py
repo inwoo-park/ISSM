@@ -3,6 +3,7 @@ from project3d import project3d
 from checkfield import checkfield
 from WriteData import WriteData
 from structtoobj import structtoobj
+from matdamageice import matdamageice
 
 
 class damage(object):
@@ -35,8 +36,15 @@ class damage(object):
         self.c3 = float('NaN')
         self.c4 = float('NaN')
         self.healing = float('NaN')
+        self.isdamage_exponent = 0
+        self.ispressure_ssa    = 0
+        self.isPeff            = 0
         self.equiv_stress = float('NaN')
         self.requested_outputs = []
+
+        self.equiv_stress_alpha = 0 # For hayhurst
+        self.equiv_stress_beta  = 0 # For hayhurst
+        self.equiv_stress_mu    = 0 # For Coulomb
 
         if not len(args):
             self.setdefaultparameters()
@@ -49,25 +57,58 @@ class damage(object):
 
     def __repr__(self):  # {{{
         s = '   Damage:\n'
-        s += "%s\n" % fielddisplay(self, "isdamage", "is damage mechanics being used? [0 (default) or 1]")
+        s += "{}\n".format(fielddisplay(self, "isdamage", "is damage mechanics being used? [0 (default) or 1]"))
         if self.isdamage:
-            s += "%s\n" % fielddisplay(self, "D", "damage tensor (scalar for now)")
-            s += "%s\n" % fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong']")
-            s += "%s\n" % fielddisplay(self, "spcdamage", "damage constraints (NaN means no constraint)")
-            s += "%s\n" % fielddisplay(self, "max_damage", "maximum possible damage (0 <=max_damage < 1)")
-            s += "%s\n" % fielddisplay(self, "stabilization", "0: no stabilization, 1: artificial diffusion, 2: SUPG (not working), 4: flux corrected transport")
-            s += "%s\n" % fielddisplay(self, "maxiter", "maximum number of non linear iterations")
+            s += "{}\n" .format(fielddisplay(self, "D", "damage tensor (scalar for now)"))
+            s += "{}\n" .format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong']"))
+            s += '{}\n'.format(fielddisplay(self, "spcdamage", "damage constraints (NaN means no constraint)"))
+            s += "{}\n".format(fielddisplay(self, "max_damage", "maximum possible damage (0 <=max_damage < 1)"))
+            s += "{}\n".format(fielddisplay(self, "stabilization", "0: no stabilization, 1: artificial diffusion, 2: SUPG (not working), 4: flux corrected transport"))
+            s += "{}\n".format(fielddisplay(self, "maxiter", "maximum number of non linear iterations"))
             s += "%s\n" % fielddisplay(self, "elementinterp", "interpolation scheme for finite elements [''P1'', ''P2'']")
             s += "%s\n" % fielddisplay(self, "stress_threshold", "stress threshold for damage initiation (Pa)")
             s += "%s\n" % fielddisplay(self, "stress_ubound", "stress upper bound for damage healing (Pa), arctan law")
             s += "%s\n" % fielddisplay(self, "kappa", "ductility parameter for stress softening and damage [ > 1]")
-            s += "%s\n" % fielddisplay(self, "c1", "damage parameter 1 ")
-            s += "%s\n" % fielddisplay(self, "c2", "damage parameter 2 ")
-            s += "%s\n" % fielddisplay(self, "c3", "damage parameter 3 ")
-            s += "%s\n" % fielddisplay(self, "c4", "damage parameter 4 ")
-            s += "%s\n" % fielddisplay(self, "healing", "damage healing parameter")
-            s += "%s\n" % fielddisplay(self, "equiv_stress", "0: von Mises, 1: max principal")
-            s += "%s\n" % fielddisplay(self, 'requested_outputs', 'additional outputs requested')
+            s += "%s\n" % fielddisplay(self, "kappa", "ductility parameter for stress softening and damage ")
+            if self.law < 4:
+                s += "%s\n" % fielddisplay(self, "c1", "damage parameter 1 ")
+                s += "%s\n" % fielddisplay(self, "c2", "damage parameter 2 ")
+                s += "%s\n" % fielddisplay(self, "c3", "damage parameter 3 ")
+                s += "%s\n" % fielddisplay(self, "c4", "damage parameter 4 ")
+            elif self.law == 4:
+                s += '\n'
+                s += '   Damage source term in Pralong et al. (2005)'
+                s += '   f_D = c1 * max((sigma_cr - sigma_th),0)^c2 (1-D)^{k_sigma}'
+                s += '   exponent in damage term, k_sigma'
+                s += '   0 : c3'
+                s += '   1 : k1 * (sqrt(max(s_inv1,0)) - healing * sqrt(max(-s_inv1,0)))'
+                s += '   2 : k1 + k2 * s_inv1'
+                s += '{}\n'.format(fielddisplay(self, 'c1', 'damage parameter 1 '))
+                s += '{}\n'.format(fielddisplay(self, 'c2', 'damage parameter 2 '))
+                s += '{}\n'.format(fielddisplay(self, 'c3', 'damage parameter 3 '))
+                s += '{}\n'.format(fielddisplay(self,'isdamage_exponent','damage exponent parameter (k_sigma). 0: constant, 1: Pralong (2005), 2: Duddu et al. (2020)'))
+                s += '{}\n'.format(fielddisplay(self,'ispressure_ssa','pressure for SSA2D. 0: surface, 1: mid, 2: bottom'))
+            elif self.law==5:
+                s += '{}\n'.format(fielddisplay(self, 'c1', 'damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)'))
+
+            s += '{}\n'.format(fielddisplay(self,'healing','damage healing parameter'))
+            s += '{}\n'.format(fielddisplay(self,'equiv_stress','0: von Mises, 1: max prinecipal, 2: Hayhurst criterion 3: Coulomb'))
+
+            if self.equiv_stress==2:
+                s += '\n   Hayhurst criterion'
+                s += '      sigma_equiv = alpha*sigma_1 + beta*sigma_{VM} + (1-alpha-beta)*(sigma_1+sigma_2+sigma_3)'
+                s += '      sigma_i : principal stress value'
+                s += '{}'.format(fielddisplay(self,'equiv_stress_alpha','alpha parameter for Hayhurst criterion (default: 0.21)'))
+                s += '{}'.format(fielddisplay(self,'equiv_stress_beta','beta parameter for Hayhurst criterion (default: 0.63)'))
+            elif self.equiv_stress==3:
+                s += '\n   Coulomb criterion'
+                s += '      sigma_equiv = (sigma_1 - sigma_3)/2 + mu (sigma_1 + sigma_3)/2'
+                s += '      sigma_i : principal stress value'
+                s += '{}'.format(fielddisplay(self,'equiv_stress_mu','mu parameter for Coulomb criterion (default: 0.1)'))
+
+            s += '\n'
+            s += '{}'.format(fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)'))
+            s += '{}'.format(fielddisplay(self,'requested_outputs','additional outputs requested'))
 
         return s
     # }}}
@@ -84,22 +125,46 @@ class damage(object):
         self.D = 0
         self.law = 0
         self.max_damage = 1 - 1e-5  #if damage reaches 1, solve becomes singular, as viscosity becomes nil
+
         #Type of stabilization used
         self.stabilization = 4
+        
         #Maximum number of iterations
         self.maxiter = 100
+        
         #finite element interpolation
         self.elementinterp = 'P1'
+        
         #damage evolution parameters
         self.stress_threshold = 1.3e5
         self.stress_ubound = 0
         self.kappa = 2.8
-        self.c1 = 0
-        self.c2 = 0
-        self.c3 = 0
-        self.c4 = 0
+
+        # Pralong 2005
+        self.c1 = 1.38e-9
+        self.c2 = 0.43
+        self.c3 = 1e-3
+        self.c4 = 0 # FIXME: Which value should be assigned here?
+
         self.healing = 0
-        self.equiv_stress = 0
+        self.equiv_stress = 0 # von Mises
+
+        # 0: constant
+        # 1: Pralong 2005
+        # 2: Duddu 2020
+        self.isdamage_exponent=0
+        self.ispressure_ssa=0
+        self.isPeff=1
+
+        # Criterion of Hayhurst (Pralong 2005)
+        self.equiv_stress_alpha=0.21
+        self.equiv_stress_beta =0.63
+
+        # Criterion of Colomb (Vaughan 1993)
+        # 0.1 : Vaughan 1993
+        # 0.3 : Well-Morans 2025
+        self.equiv_stress_mu=0.3
+
         #output default:
         self.requested_outputs = ['default']
 
@@ -117,10 +182,14 @@ class damage(object):
     def checkconsistency(self, md, solution, analyses):  # {{{
         md = checkfield(md, 'fieldname', 'damage.isdamage', 'numel', [1], 'values', [0, 1])
         if self.isdamage:
+            #Check class of md.materials
+            if not isinstance(md.materials,matdamageice):
+                raise Exception('Error: Invalid class of md.materials (=%s). md.materials should be a subclass of "matdamageice".'%(type(md.materials)))
+
+            md = checkfield(md, 'fieldname', 'damage.law', 'numel', [1], 'values', [0, 1, 2, 3, 4, 5])
             md = checkfield(md, 'fieldname', 'damage.D', '>=', 0, '<=', self.max_damage, 'size', [md.mesh.numberofvertices])
-            md = checkfield(md, 'fieldname', 'damage.max_damage', '<', 1, '>=', 0)
-            md = checkfield(md, 'fieldname', 'damage.law', 'numel', [1], 'values', [0, 1, 2, 3])
             md = checkfield(md, 'fieldname', 'damage.spcdamage', 'Inf', 1, 'timeseries', 1)
+            md = checkfield(md, 'fieldname', 'damage.max_damage', '<', 1, '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.stabilization', 'numel', [1], 'values', [0, 1, 2, 4])
             md = checkfield(md, 'fieldname', 'damage.maxiter', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.elementinterp', 'values', ['P1', 'P2'])
@@ -132,8 +201,15 @@ class damage(object):
             md = checkfield(md, 'fieldname', 'damage.c2', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.c3', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.c4', '>=', 0)
-            md = checkfield(md, 'fieldname', 'damage.healing', '>=', 0)
-            md = checkfield(md, 'fieldname', 'damage.equiv_stress', 'numel', [1], 'values', [0, 1])
+            md = checkfield(md, 'fieldname', 'damage.isdamage_exponent', 'numel', [1], 'values',[0, 1, 2])
+            md = checkfield(md, 'fieldname', 'damage.ispressure_ssa', 'numel', [1], 'values', [0, 1, 2])
+            md = checkfield(md, 'fieldname', 'damage.isPeff', 'numel', [1], 'values', [0, 1])
+            md = checkfield(md, 'fieldname', 'damage.equiv_stress', 'numel', [1], 'values', [0, 1, 2, 3])
+
+            md = checkfield(md, 'fieldname', 'damage.equiv_stress_alpha','numel',[1],'<=',1,'>=',0)
+            md = checkfield(md, 'fieldname', 'damage.equiv_stress_beta', 'numel',[1],'<=',1,'>=',0)
+            md = checkfield(md, 'fieldname', 'damage.equiv_stress_mu',   'numel',[1],'<=',1,'>=',0)
+
             md = checkfield(md, 'fieldname', 'damage.requested_outputs', 'stringrow', 1)
         elif self.law != 0:
             if (solution == 'DamageEvolutionSolution'):
@@ -145,8 +221,8 @@ class damage(object):
     def marshall(self, prefix, md, fid):  # {{{
         WriteData(fid, prefix, 'object', self, 'fieldname', 'isdamage', 'format', 'Boolean')
         if self.isdamage:
-            WriteData(fid, prefix, 'object', self, 'fieldname', 'D', 'format', 'DoubleMat', 'mattype', 1)
             WriteData(fid, prefix, 'object', self, 'fieldname', 'law', 'format', 'Integer')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'D', 'format', 'DoubleMat', 'mattype', 1)
             WriteData(fid, prefix, 'object', self, 'fieldname', 'spcdamage', 'format', 'DoubleMat', 'mattype', 1, 'timeserieslength', md.mesh.numberofvertices + 1, 'yts', md.constants.yts)
             WriteData(fid, prefix, 'object', self, 'fieldname', 'max_damage', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'stabilization', 'format', 'Integer')
@@ -161,6 +237,12 @@ class damage(object):
             WriteData(fid, prefix, 'object', self, 'fieldname', 'c4', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'healing', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'equiv_stress', 'format', 'Integer')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'equiv_stress_alpha', 'format', 'Double')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'equiv_stress_beta', 'format', 'Double')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'equiv_stress_mu', 'format', 'Double')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'isdamage_exponent', 'format', 'Integer')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'ispressure_ssa', 'format', 'Integer')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'isPeff', 'format', 'Boolean')
 
         #process requested outputs
         outputs = self.requested_outputs

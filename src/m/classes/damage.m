@@ -79,14 +79,16 @@ classdef damage
 
 			%damage evolution parameters 
 			self.stress_threshold=1.3e5;
+			self.stress_ubound = 0;
 			self.kappa=2.8;
-			self.healing=0;
 
 			% Pralong 2005
 			self.c1=1.38e-9;
 			self.c2=0.43;
 			self.c3=1e-3;
 			self.c4=0; % FIXME: Which value should be assigned here?
+
+			self.healing=0;
 			self.equiv_stress=0; % von Mises
 
 			% 0: constant
@@ -96,7 +98,7 @@ classdef damage
 			self.ispressure_ssa=0;
 			self.isPeff=1;
 
-			% Criterion of Hayhurst (Pralong et al., 2005)
+			% Criterion of Hayhurst (Pralong 2005)
 			self.equiv_stress_alpha=0.21;
 			self.equiv_stress_beta=0.63;
 
@@ -136,6 +138,11 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.ispressure_ssa','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.isPeff','numel',[1],'values',[0 1]);
 				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2 3]);
+
+				md = checkfield(md,'fieldname','damage.equiv_stress_alpha','numel',[1],'<=',1,'>=',0)
+				md = checkfield(md,'fieldname','damage.equiv_stress_beta', 'numel',[1],'<=',1,'>=',0)
+				md = checkfield(md,'fieldname','damage.equiv_stress_mu',   'numel',[1],'<=',1,'>=',0)
+
 				md = checkfield(md,'fieldname','damage.requested_outputs','stringrow',1);
 			elseif (self.law~=0)
 				if (strcmp(solution,'DamageEvolutionSolution'))
@@ -191,6 +198,7 @@ classdef damage
 				end
 				fielddisplay(self,'healing','damage healing parameter');
 				fielddisplay(self,'equiv_stress','0: von Mises, 1: max prinecipal, 2: Hayhurst criterion 3: Coulomb');
+
 				if self.equiv_stress == 2
 					disp(sprintf('\n   Hayhurst criterion'));
 					disp(sprintf('      sigma_equiv = alpha*sigma_1 + beta*sigma_{VM} + (1-alpha-beta)*(sigma_1+sigma_2+sigma_3)'));
