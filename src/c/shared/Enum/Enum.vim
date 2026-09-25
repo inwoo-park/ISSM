@@ -3597,6 +3597,7 @@ syn keyword cConstant GaussTriaEnum
 syn keyword cConstant GenericOptionEnum
 syn keyword cConstant GenericParamEnum
 syn keyword cConstant GenericExternalResultEnum
+syn keyword cConstant GPUHOParamEnum
 syn keyword cConstant Gradient1Enum
 syn keyword cConstant Gradient2Enum
 syn keyword cConstant Gradient3Enum
@@ -3940,6 +3941,7 @@ syn keyword cType ExternalResult
 syn keyword cType FemModel
 syn keyword cType FileParam
 syn keyword cType Friction
+syn keyword cType GPUHOParam
 syn keyword cType Gauss
 syn keyword cType GaussPenta
 syn keyword cType GaussSeg

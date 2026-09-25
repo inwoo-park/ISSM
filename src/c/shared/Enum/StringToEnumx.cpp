@@ -3686,6 +3686,7 @@ int  StringToEnumx(const char* name,bool notfounderror){
 	      else if (strcmp(name,"GenericOption")==0) return GenericOptionEnum;
 	      else if (strcmp(name,"GenericParam")==0) return GenericParamEnum;
 	      else if (strcmp(name,"GenericExternalResult")==0) return GenericExternalResultEnum;
+	      else if (strcmp(name,"GPUHOParam")==0) return GPUHOParamEnum;
 	      else if (strcmp(name,"Gradient1")==0) return Gradient1Enum;
 	      else if (strcmp(name,"Gradient2")==0) return Gradient2Enum;
 	      else if (strcmp(name,"Gradient3")==0) return Gradient3Enum;
@@ -3702,11 +3703,11 @@ int  StringToEnumx(const char* name,bool notfounderror){
 	      else if (strcmp(name,"HydrologyArmapwAnalysis")==0) return HydrologyArmapwAnalysisEnum;
 	      else if (strcmp(name,"Hydrologyarmapw")==0) return HydrologyarmapwEnum;
 	      else if (strcmp(name,"HydrologyDCEfficientAnalysis")==0) return HydrologyDCEfficientAnalysisEnum;
-	      else if (strcmp(name,"HydrologyDCInefficientAnalysis")==0) return HydrologyDCInefficientAnalysisEnum;
          else stage=31;
    }
    if(stage==31){
-	      if (strcmp(name,"HydrologyGlaDSAnalysis")==0) return HydrologyGlaDSAnalysisEnum;
+	      if (strcmp(name,"HydrologyDCInefficientAnalysis")==0) return HydrologyDCInefficientAnalysisEnum;
+	      else if (strcmp(name,"HydrologyGlaDSAnalysis")==0) return HydrologyGlaDSAnalysisEnum;
 	      else if (strcmp(name,"HydrologyGlaDS")==0) return HydrologyGlaDSEnum;
 	      else if (strcmp(name,"HydrologyPismAnalysis")==0) return HydrologyPismAnalysisEnum;
 	      else if (strcmp(name,"HydrologyShaktiAnalysis")==0) return HydrologyShaktiAnalysisEnum;
@@ -3825,11 +3826,11 @@ int  StringToEnumx(const char* name,bool notfounderror){
 	      else if (strcmp(name,"None")==0) return NoneEnum;
 	      else if (strcmp(name,"Numberedcostfunction")==0) return NumberedcostfunctionEnum;
 	      else if (strcmp(name,"NyeCO2")==0) return NyeCO2Enum;
-	      else if (strcmp(name,"NyeH2O")==0) return NyeH2OEnum;
          else stage=32;
    }
    if(stage==32){
-	      if (strcmp(name,"Numericalflux")==0) return NumericalfluxEnum;
+	      if (strcmp(name,"NyeH2O")==0) return NyeH2OEnum;
+	      else if (strcmp(name,"Numericalflux")==0) return NumericalfluxEnum;
 	      else if (strcmp(name,"OceantransportAnalysis")==0) return OceantransportAnalysisEnum;
 	      else if (strcmp(name,"OceantransportSolution")==0) return OceantransportSolutionEnum;
 	      else if (strcmp(name,"OldGradient")==0) return OldGradientEnum;
@@ -3948,11 +3949,11 @@ int  StringToEnumx(const char* name,bool notfounderror){
 	      else if (strcmp(name,"TotalHydrologyBasalFlux")==0) return TotalHydrologyBasalFluxEnum;
 	      else if (strcmp(name,"TotalSmb")==0) return TotalSmbEnum;
 	      else if (strcmp(name,"TotalSmbScaled")==0) return TotalSmbScaledEnum;
-	      else if (strcmp(name,"TotalSmbRefreeze")==0) return TotalSmbRefreezeEnum;
          else stage=33;
    }
    if(stage==33){
-	      if (strcmp(name,"TotalSmbMelt")==0) return TotalSmbMeltEnum;
+	      if (strcmp(name,"TotalSmbRefreeze")==0) return TotalSmbRefreezeEnum;
+	      else if (strcmp(name,"TotalSmbMelt")==0) return TotalSmbMeltEnum;
 	      else if (strcmp(name,"TransientArrayParam")==0) return TransientArrayParamEnum;
 	      else if (strcmp(name,"TransientGriddedFieldParam")==0) return TransientGriddedFieldParamEnum;
 	      else if (strcmp(name,"TransientInput")==0) return TransientInputEnum;
