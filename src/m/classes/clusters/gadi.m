@@ -191,8 +191,8 @@ classdef gadi
 				fprintf(fid,'module load %s\n',cluster.moduleload{i});
 			end
 
-			fprintf(fid,'export ISSM_DIR="%s/../"\n',cluster.codepath); %FIXME
-			fprintf(fid,'source $ISSM_DIR/etc/environment.sh\n');       %FIXME
+			%fprintf(fid,'export ISSM_DIR="%s/../"\n',cluster.codepath); %FIXME
+			%fprintf(fid,'source $ISSM_DIR/etc/environment.sh\n');       %FIXME
 
 			fprintf(fid,'\n# Switch to run directory (if not using -l wd):\n');
 			fprintf(fid,'cd %s/%s\n\n',cluster.executionpath,dirname);
