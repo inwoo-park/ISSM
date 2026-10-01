@@ -139,9 +139,9 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.isPeff','numel',[1],'values',[0 1]);
 				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2 3]);
 
-				md = checkfield(md,'fieldname','damage.equiv_stress_alpha','numel',[1],'<=',1,'>=',0)
-				md = checkfield(md,'fieldname','damage.equiv_stress_beta', 'numel',[1],'<=',1,'>=',0)
-				md = checkfield(md,'fieldname','damage.equiv_stress_mu',   'numel',[1],'<=',1,'>=',0)
+				md = checkfield(md,'fieldname','damage.equiv_stress_alpha','numel',[1],'<=',1,'>=',0);
+				md = checkfield(md,'fieldname','damage.equiv_stress_beta', 'numel',[1],'<=',1,'>=',0);
+				md = checkfield(md,'fieldname','damage.equiv_stress_mu',   'numel',[1],'<=',1,'>=',0);
 
 				md = checkfield(md,'fieldname','damage.requested_outputs','stringrow',1);
 			elseif (self.law~=0)
