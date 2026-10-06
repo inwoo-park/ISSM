@@ -30,6 +30,23 @@
 #define NUMVERTICES1D 2
 //#define MICI          0 //1 = DeConto & Pollard, 2 = Anna Crawford DOMINOS
 
+/*Return Cartesian coordinates for the SLC geometry path.  mesh3dsurface
+ *keeps its existing x/y/z treatment; mesh2d uses its separately marshalled
+ *lat/long coordinates so projected x/y never enter spherical calculations.*/
+static void GetSLCVertexCoordinates(IssmDouble xyz_list[NUMVERTICES][3],Vertex** vertices,IssmDouble planetradius){
+	if(vertices[0]->domaintype!=Domain2DhorizontalEnum){
+		::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
+		return;
+	}
+	for(int i=0;i<NUMVERTICES;i++){
+		IssmDouble lat=vertices[i]->GetLatitude()*M_PI/180.;
+		IssmDouble lon=vertices[i]->GetLongitude()*M_PI/180.;
+		xyz_list[i][0]=planetradius*cos(lat)*cos(lon);
+		xyz_list[i][1]=planetradius*cos(lat)*sin(lon);
+		xyz_list[i][2]=planetradius*sin(lat);
+	}
+}
+
 /*Constructors/destructor/copy*/
 Tria::Tria(int tria_id,int tria_sid,int tria_lid,IoModel* iomodel,int nummodels)/*{{{*/
 	:ElementHook(nummodels,tria_id,NUMVERTICES,iomodel){
@@ -1801,7 +1818,12 @@ void       Tria::ElementCoordinates(Vector<IssmDouble>* vxe,Vector<IssmDouble>* 
 
 	/*Look for x,y,z coordinates:*/
 	IssmDouble xyz_list[NUMVERTICES][3];
-	::GetVerticesCoordinates(&xyz_list[0][0],this->vertices,NUMVERTICES);
+	IssmDouble planetradius=0.;
+	if(spherical){
+		this->parameters->FindParam(&planetradius,SolidearthPlanetRadiusEnum);
+		GetSLCVertexCoordinates(xyz_list,this->vertices,planetradius);
+	}
+	else ::GetVerticesCoordinates(&xyz_list[0][0],this->vertices,NUMVERTICES);
 
 	/*Find centroid:*/
 	IssmDouble xe=(xyz_list[0][0]+xyz_list[1][0]+xyz_list[2][0])/3.0;
@@ -1819,7 +1841,16 @@ void       Tria::ElementCoordinates(Vector<IssmDouble>* vxe,Vector<IssmDouble>* 
 		/*in addition, put in in the inputs:*/
 		this->inputs->SetDoubleInput(AreaEnum,this->lid,area);
 	}
-	else _error_("spherical coordinates not supported yet!");
+	else{
+		IssmDouble radius=sqrt(xe*xe+ye*ye+ze*ze);
+		IssmDouble area=this->GetAreaSpherical();
+		vxe->SetValue(this->sid,xe,INS_VAL);
+		vye->SetValue(this->sid,ye,INS_VAL);
+		vze->SetValue(this->sid,ze,INS_VAL);
+		vareae->SetValue(this->sid,area,INS_VAL);
+		this->inputs->SetDoubleInput(AreaEnum, this->lid, area);
+		_assert_(radius>0.);
+	}
 	return;
 }
 /*}}}*/
@@ -2386,7 +2417,7 @@ void       Tria:: GetBarycenterFromLevelset(IssmDouble* platbar, IssmDouble* plo
 	IssmDouble barycenter[3]={0};
 	IssmDouble centroid[3]={0};
 
-	::GetVerticesCoordinates(&xyz0[0][0],vertices,NUMVERTICES); // initial triangle
+	GetSLCVertexCoordinates(xyz0,vertices,planetradius); // initial triangle
 
 	i0=point1;
 	i1=(point1+1)%3;
@@ -2563,7 +2594,7 @@ void       Tria::GetNodalWeightsAndAreaAndCentroidsFromLeveset(IssmDouble* loadw
 		return;
 	}
 
-	::GetVerticesCoordinates(&xyz0[0][0],vertices,NUMVERTICES); // initial triangle
+	GetSLCVertexCoordinates(xyz0,vertices,planetradius); // initial triangle
 
 	//Let our element be triangle ABC with:
 	i0=point1; //A
@@ -2854,37 +2885,38 @@ void       Tria::GetNodalWeightsAndAreaAndCentroidsFromLeveset(IssmDouble* loadw
 
 } /*}}}*/
 IssmDouble Tria::GetIcefrontArea(){/*{{{*/
-
-	IssmDouble  bed[NUMVERTICES];
-	IssmDouble	Haverage,frontarea;
-	IssmDouble  x1,y1,x2,y2,distance;
-	IssmDouble lsf[NUMVERTICES], Haux[NUMVERTICES], surfaces[NUMVERTICES], bases[NUMVERTICES];
-	int* indices=NULL;
+	/*returns the submerged calving-front area of one triangle: front width × mean water depth*/
 
 	/*Return if no ice front present*/
 	if(!IsZeroLevelset(MaskIceLevelsetEnum)) return 0;
-	//if(!this->IsIcefront()) return 0.;
 
-	/*Retrieve all inputs and parameters*/
+	/*Only continue if element is entirely below sea level*/
+	IssmDouble  bed[NUMVERTICES];
 	Element::GetInputListOnVertices(&bed[0],BedEnum);
+	for(int i=0;i<NUMVERTICES;i++) if(bed[i]>=0.) return 0.;
+
+	/*Intermediaries*/
+	IssmDouble  x1,y1,x2,y2,distance;
+	IssmDouble  lsf[NUMVERTICES], Haux[NUMVERTICES], surfaces[NUMVERTICES], bases[NUMVERTICES];
+
+	/*Fetch geometry inputs*/
 	Element::GetInputListOnVertices(&surfaces[0],SurfaceEnum);
 	Element::GetInputListOnVertices(&bases[0],BaseEnum);
 	Element::GetInputListOnVertices(&lsf[0],MaskIceLevelsetEnum);
 
-	/*Only continue if all 3 vertices are below sea level*/
-	for(int i=0;i<NUMVERTICES;i++) if(bed[i]>=0.) return 0.;
-
-	/*2. Find coordinates of where levelset crosses 0*/
+	/*2. Find coordinates of where levelset crosses 0:
+	 *   indices partitioned as [ice…, no-ice…]
+	 *   and s[0..1] are the parametric positions of the two edge crossings.*/
+	int*        indices=NULL;
 	int         numiceverts;
 	IssmDouble  s[2],x[2],y[2];
 	this->GetLevelsetIntersection(&indices, &numiceverts, &s[0],MaskIceLevelsetEnum,0.);
-	_assert_(numiceverts);
-	if(numiceverts>2){
-		Input* ls_input = this->GetInput(MaskIceLevelsetEnum);
-		ls_input->Echo();
-	}
+	_assert_(numiceverts>0);
+	_assert_(numiceverts<=NUMVERTICES);
 
-	/*3 Write coordinates*/
+	/*3 Write coordinates
+	 *  Build the two front endpoints: interpolate along the ice→no-ice edges,
+	 *  or (if all three count as "ice") take the vertices where lsf == 0.*/
 	IssmDouble  xyz_list[NUMVERTICES][3];
 	::GetVerticesCoordinates(&xyz_list[0][0],this->vertices,NUMVERTICES);
 	int counter = 0;
@@ -2921,41 +2953,48 @@ IssmDouble Tria::GetIcefrontArea(){/*{{{*/
 	distance=sqrt(pow((x1-x2),2)+pow((y1-y2),2));
 	if(distance<1e-3) return 0.;
 
-	IssmDouble H[4];
+	IssmDouble H1, H2;
+	IssmDouble Haverage = 0.;
 	for(int iv=0;iv<NUMVERTICES;iv++) Haux[iv]=-bed[indices[iv]]; //sort bed in ice/noice
-	xDelete<int>(indices);
 
 	switch(numiceverts){
-		case 1: // average over triangle
-			H[0]=Haux[0];
-			H[1]=Haux[0]+s[0]*(Haux[1]-Haux[0]);
-			H[2]=Haux[0]+s[1]*(Haux[2]-Haux[0]);
-			Haverage=(H[1]+H[2])/2;
+		case 1: /*only 1 vertex has ice (vertex #0)*/
+			H1 = Haux[0]+s[0]*(Haux[1]-Haux[0]); /*Intersection along [0 1]*/
+			H2 = Haux[0]+s[1]*(Haux[2]-Haux[0]); /*Intersection along [0 2]*/
+			Haverage=(H1+H2)/2;
 			break;
-		case 2: // average over quadrangle
-			H[0]=Haux[0];
-			H[1]=Haux[1];
-			H[2]=Haux[0]+s[0]*(Haux[2]-Haux[0]);
-			H[3]=Haux[1]+s[1]*(Haux[2]-Haux[1]);
-			Haverage=(H[2]+H[3])/2;
+		case 2: /*two vertices have ice (#0 and #1)*/
+			H1 = Haux[0]+s[0]*(Haux[2]-Haux[0]); /*Intersection along [0 2]*/
+			H2 = Haux[1]+s[1]*(Haux[2]-Haux[1]); /*Intersection along [1 2]*/
+			Haverage=(H1+H2)/2;
 			break;
-		case 3:
-			if(counter==1) distance = 0; //front has 0 width on this element because levelset is 0 at a single vertex
-			else if(counter==2){ //two vertices with levelset=0: averaging ice front depth over both
-				Haverage = 0;
+		case 3: /*ice front is along 1 entire edge (rare case!)*/
+			if(counter==1){
+				/* front has 0 width on this element because levelset is 0 at a single vertex*/
+				distance = 0; 
+			}
+			else if(counter==2){
+				/*two vertices with levelset=0: averaging ice front depth over both*/
+				int check = 0;
 				for(int i=0;i<NUMVERTICES;i++){
-					if(lsf[indices[i]]==0.) Haverage -= Haux[indices[i]]/2;
-					if(Haverage<Haux[indices[i]]/2-1e-3) break; //done with the two vertices
+					if(lsf[indices[i]]==0.){
+						Haverage += Haux[i]/2;
+						check++;
+					}
 				}
+				_assert_(check==2);
 			}
 			break;
 		default:
 			_error_("Number of ice covered vertices wrong in Tria::GetIceFrontArea(void)");
 			break;
 	}
-	frontarea=distance*Haverage;
 
+	IssmDouble frontarea=distance*Haverage;
 	_assert_(frontarea>0);
+
+	/*Clean up and return*/
+	xDelete<int>(indices);
 	return frontarea;
 }
 /*}}}*/
@@ -3426,7 +3465,7 @@ void       Tria::GetLevelsetIntersection(int** pindices, int* pnumiceverts, Issm
 				fraction[i]=1.;
 			break;
 		default:
-			_error_("Wrong number of ice vertices in Tria::GetLevelsetIntersection!");
+			_error_("Wrong number of ice vertices!");
 			break;
 	}
 
@@ -3999,7 +4038,7 @@ IssmDouble Tria::IceVolume(bool scaled){/*{{{*/
 	int domaintype;
 	parameters->FindParam(&domaintype,DomainTypeEnum);
 
-	/*Relict code
+	/*Relic code
 	if(false && IsIcefront()){
 		//Assumption: linear ice thickness profile on element.
 		//Hence ice thickness at intersection of levelset function with triangle edge is linear interpolation of ice thickness at vertices.
@@ -5917,7 +5956,7 @@ IssmDouble Tria::TotalGroundedBmb(bool scaled){/*{{{*/
 	return Total_Gbmb;
 }
 /*}}}*/
-IssmDouble Tria::TotalHydrologyBasalFlux(bool scaled){/*{{{*/
+IssmDouble Tria::TotalHydrologyGroundinglineDischarge(bool scaled){/*{{{*/
 
 	/*Make sure there is a grounding line here*/
 	if(!IsIceInElement()) return 0;
@@ -7056,7 +7095,7 @@ void       Tria::SealevelchangeGeometryInitial(IssmDouble* xxe, IssmDouble* yye,
 	}
 	/*}}}*/
 	/*Compute lat long of all vertices in the element:{{{*/
-	::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
+	GetSLCVertexCoordinates(xyz_list,vertices,planetradius);
 	for(int i=0;i<NUMVERTICES;i++){
 		latitude[i]= asin(xyz_list[i][2]/planetradius);
 		if((xyz_list[i][2]/planetradius)==1.0)latitude[i]=M_PI/2;
@@ -7318,7 +7357,7 @@ void       Tria::SealevelchangeGeometrySubElementKernel(SealevelGeometry* slgeom
 
 	/*}}}*/
 	/*Compute lat long of all vertices in the element:{{{*/
-	::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
+	GetSLCVertexCoordinates(xyz_list,vertices,planetradius);
 	for(int i=0;i<NUMVERTICES;i++){
 		latitude[i]= asin(xyz_list[i][2]/planetradius);
 		longitude[i]= atan2(xyz_list[i][1],xyz_list[i][0]);
@@ -7460,7 +7499,7 @@ void       Tria::SealevelchangeGeometryCentroidLoads(SealevelGeometry* slgeom, I
 	this->parameters->FindParam(&planetradius,SolidearthPlanetRadiusEnum);
 
 	/*get vertex information:*/
-	::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
+	GetSLCVertexCoordinates(xyz_list,vertices,planetradius);
 
 	/*answer mask questions:*/
 	isiceonly=this->IsIceOnlyInElement();
@@ -7892,12 +7931,14 @@ void       Tria::SealevelchangeGeometrySubElementLoads(SealevelGeometry* slgeom,
 	IssmDouble loadareaocean;
 	IssmDouble loadweightsocean[3]; //to keep memory of these loads, no need to recompute for bottom pressure.
 	IssmDouble xyz_list[NUMVERTICES][3];
+	IssmDouble planetradius;
 	IssmDouble latbar=slgeom->late[this->lid];
 	IssmDouble longbar=slgeom->longe[this->lid];
 	IssmDouble constant;
 
 	/*get vertex and area information:*/
-	::GetVerticesCoordinates(&xyz_list[0][0],vertices,NUMVERTICES);
+	this->parameters->FindParam(&planetradius,SolidearthPlanetRadiusEnum);
+	GetSLCVertexCoordinates(xyz_list,vertices,planetradius);
 	area=areae[this->sid];
 
 	if(this->parameters->IsInRequestedOutput(SealevelchangeRequestedOutputsEnum,SealevelBarystaticIceLatbarEnum)) this->AddInput(SealevelBarystaticIceLatbarEnum,&latbar,P0Enum); 

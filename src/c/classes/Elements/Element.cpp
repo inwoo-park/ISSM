@@ -2554,6 +2554,16 @@ bool       Element::IsFloating(){/*{{{*/
 		return false;
 	}
 }/*}}}*/
+bool 	   Element::IsAnyLake(){/*{{{*/
+	/*At least ONE node is a lake (partially lake returns true)*/
+	Input* input=this->GetInput(HydrologyLakeMaskEnum); _assert_(input);
+	if(input->GetInputMax() >= 1.){
+		return true;
+	}
+	else{
+		return false;
+	}
+}/*}}}*/
 bool       Element::IsGrounded(){/*{{{*/
 	/*At least ONE node is grounded (partially grounded returns true)*/
 
@@ -6907,7 +6917,7 @@ IssmDouble Element::TotalGroundedBmb(IssmDouble* mask, bool scaled){/*{{{*/
 	return this->TotalGroundedBmb(scaled);
 }
 /*}}}*/
-IssmDouble Element::TotalHydrologyBasalFlux(IssmDouble* mask, bool scaled){/*{{{*/
+IssmDouble Element::TotalHydrologyGroundinglineDischarge(IssmDouble* mask, bool scaled){/*{{{*/
 
 	/*Retrieve values of the mask defining the element: */
 	for(int i=0;i<this->GetNumberOfVertices();i++){
@@ -6917,7 +6927,7 @@ IssmDouble Element::TotalHydrologyBasalFlux(IssmDouble* mask, bool scaled){/*{{{
 	}
 
 	/*Return: */
-	return this->TotalHydrologyBasalFlux(scaled);
+	return this->TotalHydrologyGroundinglineDischarge(scaled);
 }
 /*}}}*/
 IssmDouble Element::TotalSmb(IssmDouble* mask, bool scaled){/*{{{*/

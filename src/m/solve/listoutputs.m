@@ -217,6 +217,7 @@
 %HydrologyDissipation
 %HydrologyDrainageRate
 %HydrologyEnglacialInput
+%HydrologyEnglacialVoidRatio
 %HydrologyFrictionHeat
 %HydrologyGapHeight
 %HydrologyGapHeightX
@@ -225,6 +226,18 @@
 %HydrologyGapHeightYY
 %HydrologyHead
 %HydrologyHeadOld
+%HydrologyLakeChannelQr
+%HydrologyLakeChannelQrOld
+%HydrologyLakeOutletLength
+%HydrologyLakeHeight
+%HydrologyLakeHeightOld
+%HydrologyLakeMask
+%HydrologyLakeOutletQr
+%HydrologyLakeOutletQrOld
+%HydrologyLakeQin
+%HydrologyLakeArea
+%HydrologyLakeAreaOld
+%HydrologyMaxLakeArea
 %HydrologyMeltRate
 %HydrologyMoulinInput
 %HydrologyNeumannflux
@@ -259,6 +272,7 @@
 %InversionVelObs
 %InversionVxObs
 %InversionVyObs
+%LambdaS
 %LevelsetfunctionSlopeX
 %LevelsetfunctionSlopeY
 %LevelsetObservation
@@ -722,7 +736,7 @@
 %TotalFloatingBmbScaled
 %TotalGroundedBmb
 %TotalGroundedBmbScaled
-%TotalHydrologyBasalFlux
+%TotalHydrologyGroundinglineDischarge
 %TotalSmb
 %TotalSmbMelt
 %TotalSmbRefreeze
