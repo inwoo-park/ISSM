@@ -88,9 +88,21 @@ if md.mesh.dimension() == 3
 	md.mesh.numberofvertices2d=int64(md.mesh.numberofvertices2d);
 	md.mesh.numberofelements2d=int64(md.mesh.numberofelements2d);
 elseif md.mesh.dimension() == 2
-	md.mesh.edges=int64(md.mesh.edges);
-	md.mesh.segments=int64(md.mesh.segments);
-	md.mesh.segmentmarkers=int64(md.mesh.segmentmarkers);
+	try
+		md.mesh.edges=int64(md.mesh.edges);
+	catch
+		warning('Warning: nothing to be done with md.mesh.edges');
+	end
+	try
+		md.mesh.segments=int64(md.mesh.segments);
+	catch
+		warning('Warning: nothing to be done with md.mesh.segments');
+	end
+	try
+		md.mesh.segmentmarkers=int64(md.mesh.segmentmarkers);
+	catch
+		warning('Warning: nothing to be done with md.mesh.segmentmarkers');
+	end
 end
 
 if verbose; disp('Model successfully loaded from NetCDF4.'); end
@@ -109,14 +121,15 @@ function md  = instantiate_subclass(md, gname, gid, verbose) % {{{
 
 	% Only act for fields whose type can vary
 	switch gname
-		case 'inversion'
+		case 'inversion' % {{{
 			switch ct
 				case 'm1qn3inversion', md.inversion = m1qn3inversion();
 				case 'taoinversion',   md.inversion = taoinversion();
 				case 'inversion',      md.inversion = inversion();
 				otherwise, warning(['inversion class ''' ct ''' not supported yet']);
 			end
-		case 'smb'
+			% }}}
+		case 'smb' % {{{
 			switch ct
 				case 'SMBforcing',             md.smb = SMBforcing();
 				case 'SMBpdd',                 md.smb = SMBpdd();
@@ -133,7 +146,8 @@ function md  = instantiate_subclass(md, gname, gid, verbose) % {{{
 				case 'SMBdebrisEvatt',         md.smb = SMBdebrisEvatt();
 				otherwise, warning(['SMB class ''' ct ''' not supported yet']);
 			end
-		case 'friction'
+			% }}}
+		case 'friction' % {{{
 			switch ct
 				case 'friction',              md.friction = friction();
 				case 'frictioncoulomb',       md.friction = frictioncoulomb();
@@ -151,7 +165,8 @@ function md  = instantiate_subclass(md, gname, gid, verbose) % {{{
 				case 'frictionweertmantemp',  md.friction = frictionweertmantemp();
 				otherwise, warning(['friction class ''' ct ''' not supported yet']);
 			end
-		case 'hydrology'
+			% }}}
+		case 'hydrology' % {{{
 			switch ct
 				case 'hydrologyshreve',   md.hydrology = hydrologyshreve();
 				case 'hydrologydc',       md.hydrology = hydrologydc();
@@ -163,12 +178,44 @@ function md  = instantiate_subclass(md, gname, gid, verbose) % {{{
 				case 'hydrologyarmapw',    md.hydrology = hydrologyarmapw();
 				otherwise, warning(['hydrology class ''' ct ''' not supported yet']);
 			end
-		case 'mesh'
+			% }}}
+		case 'basalforcings' % {{{
+      	switch ct
+				case 'basalforcings', md.basalforcings = basalforcings;
+				case 'basalforcingsarma', md.basalforcings = basalforcingsarma;
+				case 'basalforcingspico', md.basalforcings = basalforcingspico;
+				case 'linearbasalforcings', md.basalforcings = linearbasalforcings;
+				case 'linearbasalforcingsarma', md.basalforcings = linearbasalforcingsarma;
+				case 'plumebasalforcings', md.basalforcings = plumebasalforcings;
+				case 'mismipbasalforcings', md.basalforcings = mismipbasalforcings;
+				case 'basalforcingsismip6', md.basalforcings = basalforcingsismip6;
+				case 'basalforcingsismip7', md.basalforcings = basalforcingsismip7;
+				otherwise, warning(['basalforcings class ''' ct ''' not supported yet']);
+			end
+			% }}}
+		case 'calving' % {{{
+      	switch ct
+				case 'calving', md.calving = calving;
+				case 'calvingmip', md.calving = calvingmip;
+				case 'calvingcrevassedepth', md.calving = calvingcrevassedepth;
+				case 'calvingdev2', md.calving = calvingdev2;
+				case 'calvinglevermann', md.calving = calvinglevermann;
+				case 'calvingminthickness', md.calving = calvingminthickness;
+				case 'calvingparameterization', md.calving = calvingparameterization;
+				case 'calvingpollard', md.calving = calvingpollard;
+				case 'calvingvonmises', md.calving = calvingvonmises;
+				case 'calvingvonmisesAD', md.calving = calvingvonmisesAD;
+				case 'calvingstochastic', md.calving = calvingstochastic;
+				otherwise, warning(['calving class ''' ct ''' not supported yet']);
+			end
+			% }}}
+		case 'mesh' % {{{
 			switch ct
 				case 'mesh3dprisms', md.mesh = mesh3dprisms();
 				case 'mesh2d',       md.mesh = mesh2d();
 				otherwise, warning(['mesh class ''' ct ''' not supported yet']);
 			end
+			% }}}
 	end
 	if verbose && ~isempty(ct)
 		fprintf(' (class: %s)\n', ct);

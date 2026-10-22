@@ -1,26 +1,18 @@
-function issmscpin(host, login, port, path, filelist, bracketstyle, transfermethod)
+function issmscpin(host, login, port, path, filelist, transfermethod)
 %ISSMSCPIN - Get filelist from host
 %
 %   Usage:
-%      issmscpin(host,login,port,path,filelist,bracketstyle,transfermethod)
+%      issmscpin(host,login,port,path,filelist,transfermethod)
 %
-%      bracketstyle:    1 - \{\}    (escaped; default)
-%                       2 - {}      (not escaped)
-%                       Only used by the scp method: rsync sends the file list
-%                       over the protocol and never relies on the remote shell.
-%
-%      transfermethod: 'auto'  - use rsync, fall back to scp if the remote host
-%                                does not have rsync installed (default)
-%                      'rsync' - use rsync only
-%                      'scp'   - use scp only
-
-%does machine require escaped brackets?
-if nargin<6 || isempty(bracketstyle)
-	bracketstyle = 1;
-end
+%      transfermethod: 'auto'         - use rsync, fall back to scp if the remote host
+%                                       does not have rsync installed (default)
+%                      'rsync'        - use rsync only
+%                      'scp'          - use scp only, with escaped brackets \{\}
+%                      'scp-noescape' - use scp only, with unescaped brackets {}
+%                                       (for hosts whose shell must not see backslashes)
 
 %how do we move the files over?
-if nargin<7 || isempty(transfermethod)
+if nargin<6 || isempty(transfermethod)
 	transfermethod = 'auto';
 end
 
@@ -34,7 +26,7 @@ if strcmpi(hostname,host)
 		if(~status) warning(['Could not copy ' path '/' filelist{i} ]); end
 	end
 else
-	usescp = strcmpi(transfermethod,'scp');
+	usescp = strcmpi(transfermethod,'scp') | strcmpi(transfermethod,'scp-noescape');
 	if ~usescp & ~strcmpi(transfermethod,'rsync') & ~strcmpi(transfermethod,'auto')
 		error(['unknown transfermethod ''' transfermethod '''']);
 	end
@@ -60,7 +52,7 @@ else
 	end
 
 	if usescp
-		[status,cmdout]=scpin(host,login,port,path,filelist,bracketstyle);
+		[status,cmdout]=scpin(host,login,port,path,filelist,strcmpi(transfermethod,'scp-noescape'));
 	end
 
 	%check that the transfer worked
@@ -92,30 +84,28 @@ function tf=haversync() % {{{
 	tf = found;
 end % }}}
 function [status,cmdout]=rsyncin(host,login,port,path,filelist) % {{{
-%RSYNCIN - pull filelist with rsync, handing the list over the protocol
-
-	%--files-from takes the file names from a local file, so the remote shell
-	%never sees (and never has to expand) a list. Names are relative to path.
-	listfile = [tempname '.lst'];
-	fid = fopen(listfile,'w');
-	if fid==-1
-		error(['could not create temporary file ' listfile]);
-	end
-	for i=1:numel(filelist)
-		fprintf(fid,'%s\n',filelist{i});
-	end
-	fclose(fid);
+%RSYNCIN - pull filelist with rsync, one remote source per file
+%
+%   All sources share the same host, so rsync uses a single connection.
+%   Each source is quoted individually, so no list expansion is needed.
 
 	if port
-		cmd = ['rsync -a --files-from=''' listfile ''' -e ''ssh -p ' num2str(port) ''' ' login '@localhost:''' path '/'' ./'];
+		remote = [login '@localhost:'];
+		sshopt = [' -e ''ssh -p ' num2str(port) ''''];
 	else
-		cmd = ['rsync -a --files-from=''' listfile ''' ' login '@' host ':''' path '/'' ./'];
+		remote = [login '@' host ':'];
+		sshopt = '';
 	end
-	[status,cmdout]=system(cmd);
 
-	delete(listfile);
+	sources = '';
+	for i=1:numel(filelist)
+		sources = [sources ' ' remote '''' path '/' filelist{i} ''''];
+	end
+
+	cmd = ['rsync --progress -a' sshopt sources ' ./'];
+	[status,cmdout]=system(cmd,'-echo');
 end % }}}
-function [status,cmdout]=scpin(host,login,port,path,filelist,bracketstyle) % {{{
+function [status,cmdout]=scpin(host,login,port,path,filelist,noescape) % {{{
 %SCPIN - pull filelist with scp, relying on the remote shell to expand \{\}
 
 	if numel(filelist)==1
@@ -127,25 +117,25 @@ function [status,cmdout]=scpin(host,login,port,path,filelist,bracketstyle) % {{{
 		end
 		fileliststr=[fileliststr filelist{end} '\}'];
 
-		%remove \ if bracketstyle is 2
-		if bracketstyle==2
+		%remove \ if noescape is set
+		if noescape
 			fileliststr = [fileliststr(2:end-2) '}'];
 		end
 	end
 
 	cmdout='';
 	if port
-		[status]=system(['scp -P ' num2str(port) ' ' login '@localhost:' path '/' fileliststr ' ./']);
+		[status]=system(['scp -P ' num2str(port) ' ' login '@localhost:' path '/' fileliststr ' ./'],'-echo');
 		if status ~= 0
 			%List expansion is a bashism. Try again with '-OT'.
-			[status,cmdout]=system(['scp -OT -P ' num2str(port) ' ' login '@localhost:' path '/' fileliststr ' ./']);
+			[status,cmdout]=system(['scp -OT -P ' num2str(port) ' ' login '@localhost:' path '/' fileliststr ' ./'],'-echo');
 		end
 	else
-		[status]=system(['scp ' login '@' host ':' path '/' fileliststr ' ./']);
+		[status]=system(['scp ' login '@' host ':' path '/' fileliststr ' ./'],'-echo');
 		if status ~= 0
 			%List expansion is a bashism. Try again with '-OT'.
 			disp('issmscp info: standard scp command did not work, trying again with -OT flag');
-			[status,cmdout]=system(['scp -OT ' login '@' host ':' path '/' fileliststr ' ./']);
+			[status,cmdout]=system(['scp -OT ' login '@' host ':' path '/' fileliststr ' ./'],'-echo');
 		end
 	end
 end % }}}

@@ -1,7 +1,7 @@
 import os
+import shlex
 import shutil
 import subprocess
-import tempfile
 import warnings
 from MatlabFuncs import *
 
@@ -35,29 +35,25 @@ def runcmd(subproc_cmd):  # {{{
 
 
 def rsyncin(host, login, port, path, filelist):  # {{{
-    """Pull filelist with rsync, handing the list over the protocol.
+    """Pull filelist with rsync, one remote source per file.
 
-    --files-from takes the file names from a local file, so the remote shell
-    never sees (and never has to expand) a list. Names are relative to path.
+    All sources share the same host, so rsync uses a single connection. Each
+    source is quoted individually, so no list expansion is needed.
     """
 
-    fid, listfile = tempfile.mkstemp(suffix='.lst')
-    with os.fdopen(fid, 'w') as f:
-        for file in filelist:
-            f.write('{}\n'.format(file))
+    if port:
+        remote = '{}@localhost:'.format(login)
+        sshopt = ' -e {}'.format(shlex.quote('ssh -p {}'.format(port)))
+    else:
+        remote = '{}@{}:'.format(login, host)
+        sshopt = ''
 
-    try:
-        if port:
-            subproc_cmd = "rsync -a --files-from='{}' -e 'ssh -p {}' {}@localhost:'{}/' '{}'".format(listfile, port, login, path, os.getcwd())
-        else:
-            subproc_cmd = "rsync -a --files-from='{}' {}@{}:'{}/' '{}'".format(listfile, login, host, path, os.getcwd())
-        return runcmd(subproc_cmd)
-    finally:
-        os.remove(listfile)
+    sources = ' '.join([remote + shlex.quote(path + '/' + file) for file in filelist])
+    return runcmd('rsync -a{} {} {}'.format(sshopt, sources, shlex.quote(os.getcwd())))
 # }}}
 
 
-def scpin(host, login, port, path, filelist, bracketstyle):  # {{{
+def scpin(host, login, port, path, filelist, noescape):  # {{{
     """Pull filelist with scp, relying on the remote shell to expand \\{\\}
     """
 
@@ -68,8 +64,8 @@ def scpin(host, login, port, path, filelist, bracketstyle):  # {{{
         fileliststr += ','.join([file for file in filelist])
         fileliststr += r'\}'
 
-        # Remove backslashes if bracketstyle is 2
-        if bracketstyle == 2:
+        # Remove backslashes if noescape is set
+        if noescape:
             fileliststr = fileliststr[1:-2] + fileliststr[-1]
 
     if port:
@@ -87,21 +83,18 @@ def scpin(host, login, port, path, filelist, bracketstyle):  # {{{
 # }}}
 
 
-def issmscpin(host, login, port, path, filelist=1, bracketstyle=1, transfermethod='auto'):
+def issmscpin(host, login, port, path, filelist=1, transfermethod='auto'):
     """issmscpin get files from host
 
     Usage:
-        issmscpin(host, login, port, path, filelist, bracketstyle, transfermethod)
+        issmscpin(host, login, port, path, filelist, transfermethod)
 
-        bracketstyle:    1 - \\{\\}    (escaped; default)
-                         2 - {}      (not escaped)
-                         Only used by the scp method: rsync sends the file list
-                         over the protocol and never relies on the remote shell.
-
-        transfermethod: 'auto'  - use rsync, fall back to scp if the remote host
-                                  does not have rsync installed (default)
-                        'rsync' - use rsync only
-                        'scp'   - use scp only
+        transfermethod: 'auto'         - use rsync, fall back to scp if the remote host
+                                         does not have rsync installed (default)
+                        'rsync'        - use rsync only
+                        'scp'          - use scp only, with escaped brackets \\{\\}
+                        'scp-noescape' - use scp only, with unescaped brackets {}
+                                         (for hosts whose shell must not see backslashes)
     """
 
     # Get hostname
@@ -117,7 +110,7 @@ def issmscpin(host, login, port, path, filelist=1, bracketstyle=1, transfermetho
                 pass
         return
 
-    usescp = strcmpi(transfermethod, 'scp')
+    usescp = transfermethod.lower() in ('scp', 'scp-noescape')
     if not usescp and not strcmpi(transfermethod, 'rsync') and not strcmpi(transfermethod, 'auto'):
         raise ValueError('unknown transfermethod \'{}\''.format(transfermethod))
 
@@ -138,7 +131,7 @@ def issmscpin(host, login, port, path, filelist=1, bracketstyle=1, transfermetho
             usescp = True
 
     if usescp:
-        status, errs = scpin(host, login, port, path, filelist, bracketstyle)
+        status, errs = scpin(host, login, port, path, filelist, strcmpi(transfermethod, 'scp-noescape'))
 
     # Check that the transfer worked
     if status != 0:

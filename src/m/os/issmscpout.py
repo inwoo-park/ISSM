@@ -1,35 +1,28 @@
 import os
+import shlex
 import subprocess
-import tempfile
 import warnings
 from MatlabFuncs import *
 from issmscpin import haversync, runcmd
 
 
 def rsyncout(host, login, port, path, packages):  # {{{
-    """Push packages with rsync, handing the list over the protocol.
-
-    --files-from takes the file names from a local file, so the remote shell
-    never sees (and never has to expand) a list. Names are relative to './'.
+    """Push packages with rsync, passing every package as a source.
     """
 
-    fid, listfile = tempfile.mkstemp(suffix='.lst')
-    with os.fdopen(fid, 'w') as f:
-        for package in packages:
-            f.write('{}\n'.format(package))
+    if port:
+        remote = '{}@localhost:'.format(login)
+        sshopt = ' -e {}'.format(shlex.quote('ssh -p {}'.format(port)))
+    else:
+        remote = '{}@{}:'.format(login, host)
+        sshopt = ''
 
-    try:
-        if port:
-            subproc_cmd = "rsync -a --files-from='{}' -e 'ssh -p {}' ./ {}@localhost:'{}'".format(listfile, port, login, path)
-        else:
-            subproc_cmd = "rsync -a --files-from='{}' ./ {}@{}:'{}'".format(listfile, login, host, path)
-        return runcmd(subproc_cmd)
-    finally:
-        os.remove(listfile)
+    sources = ' '.join([shlex.quote(package) for package in packages])
+    return runcmd('rsync -a{} {} {}'.format(sshopt, sources, remote + shlex.quote(path)))
 # }}}
 
 
-def scpout(host, login, port, path, packages, bracketstyle):  # {{{
+def scpout(host, login, port, path, packages, noescape):  # {{{
     """Push packages with scp, relying on the local shell to expand \\{\\}
     """
 
@@ -40,8 +33,8 @@ def scpout(host, login, port, path, packages, bracketstyle):  # {{{
         fileliststr += ','.join([package for package in packages])
         fileliststr += r'\}'
 
-        # Remove backslashes if bracketstyle is 2
-        if bracketstyle == 2:
+        # Remove backslashes if noescape is set
+        if noescape:
             fileliststr = fileliststr[1:-2] + fileliststr[-1]
 
     if port:
@@ -59,21 +52,18 @@ def scpout(host, login, port, path, packages, bracketstyle):  # {{{
 # }}}
 
 
-def issmscpout(host, path, login, port, packages, bracketstyle=1, transfermethod='auto'):
+def issmscpout(host, path, login, port, packages, transfermethod='auto'):
     """issmscpout send files to host
 
     Usage:
-        issmscpout(host, path, login, port, packages, bracketstyle, transfermethod)
+        issmscpout(host, path, login, port, packages, transfermethod)
 
-        bracketstyle:    1 - \\{\\}    (escaped; default)
-                         2 - {}      (not escaped)
-                         Only used by the scp method: rsync sends the file list
-                         over the protocol and never relies on the remote shell.
-
-        transfermethod: 'auto'  - use rsync, fall back to scp if the remote host
-                                  does not have rsync installed (default)
-                        'rsync' - use rsync only
-                        'scp'   - use scp only
+        transfermethod: 'auto'         - use rsync, fall back to scp if the remote host
+                                         does not have rsync installed (default)
+                        'rsync'        - use rsync only
+                        'scp'          - use scp only, with escaped brackets \\{\\}
+                        'scp-noescape' - use scp only, with unescaped brackets {}
+                                         (for hosts whose shell must not see backslashes)
     """
 
     # Get hostname
@@ -91,7 +81,7 @@ def issmscpout(host, path, login, port, packages, bracketstyle=1, transfermethod
         return 0
 
     # General case: this is not a local machine
-    usescp = strcmpi(transfermethod, 'scp')
+    usescp = transfermethod.lower() in ('scp', 'scp-noescape')
     if not usescp and not strcmpi(transfermethod, 'rsync') and not strcmpi(transfermethod, 'auto'):
         raise ValueError('issmscpout error message: unknown transfermethod \'{}\''.format(transfermethod))
 
@@ -112,7 +102,7 @@ def issmscpout(host, path, login, port, packages, bracketstyle=1, transfermethod
             usescp = True
 
     if usescp:
-        status, errs = scpout(host, login, port, path, packages, bracketstyle)
+        status, errs = scpout(host, login, port, path, packages, strcmpi(transfermethod, 'scp-noescape'))
 
     # Check that the transfer worked
     if status != 0:
