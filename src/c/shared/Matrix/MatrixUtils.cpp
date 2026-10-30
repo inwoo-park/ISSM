@@ -481,17 +481,13 @@ void Matrix3x3Solve(IssmDouble* X,IssmDouble* A,IssmDouble* B){/*{{{*/
 
 }/*}}}*/
 #ifdef _HAVE_PETSC_
-void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plambda3, IssmDouble* pvx, IssmDouble* pvy, IssmDouble* pvz, IssmDouble a11, IssmDouble a12, IssmDouble a13, IssmDouble a21, IssmDouble a22, IssmDouble a23, IssmDouble a31, IssmDouble a32, IssmDouble a33){/*{{{*/
+void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plambda3, IssmDouble *pv1, IssmDouble *pv2, IssmDouble *pv3, IssmDouble a11, IssmDouble a12, IssmDouble a13, IssmDouble a21, IssmDouble a22, IssmDouble a23, IssmDouble a31, IssmDouble a32, IssmDouble a33){/*{{{*/
 	/*@brief Compute eigen values of 3x3 matrix using LAPACK. The eigen values are sorted in decreasing order.
 	*
 	* @param[out] plambda1, plambda2, plambda3: eigen values
-	* @param[out] pvx, pvy, pvz: eigen vector
+	* @param[out] pv1, pv2, pv3: eigen vector
 	* @param[in] a11, a12, a13, a21, a22, a23, a31, a32, a33: matrix entries
 	*/
-
-	#ifndef _HAVE_PETSC_
-		_error_("Error: To compute Matrix3x3Eigen, you need to have PETSC isntalled.");
-	#endif
 
 	/* Compute Eigen value through LAPACK */
 
@@ -516,7 +512,7 @@ void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plam
 	double vr[1];
 	
 	/* Presume optimal workspace query */
-	LAPACKgeev_("N","N",&n, A,
+	LAPACKgeev_("V","N",&n, A,
 		&n, wr, wi,
 		vl, &ldvl,
 		vr, &ldvr,
@@ -525,22 +521,77 @@ void Matrix3x3Eigen(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plam
 	/* Go solve eigen value */
 	lwork = (int)workopt;
 	double* work = xNew<double>(lwork);
-	LAPACKgeev_("N","N",&n, A,
+	LAPACKgeev_("V","N",&n, A,
 		&n, eigen_real, eigen_img,
 		vl, &ldvl,
 		vr, &ldvr,
 		work, &lwork, &info
 	);
+	if (info != 0){
+		_error_("Error: Matrix3x3EigenSymmetric dot not work. Check error message info = " << info );
+	}
+
 	xDelete<double>(work);
 
-	/* Symmetric condition */
-	// LAPACKsyev_("V", "U", &n, A, &n, eigvalue,work,&lwork,&info);
+	/* Assign eigen value */
+	/* eigvalue from LAPACK is acending order */
+	*plambda1 = eigen_real[2];
+	*plambda2 = eigen_real[1];
+	*plambda3 = eigen_real[0];
+
+	/* Assign eigen vectors*/
+	/* Assign eigen vectors*/
+	for (int i=0;i<n;i++){
+		pv1[i] = A[i+2*3];
+		pv2[i] = A[i+1*3];
+		pv3[i] = A[i+0*3];
+	}
+}/*}}}*/
+void Matrix3x3EigenSymmetricValue(IssmDouble* plambda1, IssmDouble* plambda2, IssmDouble* plambda3, IssmDouble *pv1, IssmDouble *pv2, IssmDouble *pv3, IssmDouble a11, IssmDouble a12, IssmDouble a13, IssmDouble a22, IssmDouble a23, IssmDouble a33){/*{{{*/
+	/*@brief Compute eigen values of 3x3 matrix using LAPACK. The eigen values are sorted in decreasing order.
+	*
+	* @param[out] plambda1, plambda2, plambda3: eigen values
+	* @param[out] pv1, pv2, pv3: eigen vector
+	* @param[in] a11, a12, a13, a22, a23, a33: matrix entries
+	*/
+
+	/* Compute Eigen value through LAPACK */
+
+	/* Initialize variables*/
+	int n = 3; /* Size of matrix*/
+	PetscScalar A[9] = {a11, a12, a13, a12, a22, a23, a13, a23, a33};
+	double eigen_real[3]; /*Real part of eigen value*/
+
+	/* working space */
+	double work[20];
+	int lwork = 20;
+	int info;
+
+	/* Go solve eigen value */
+	LAPACKsyev_("V","U",
+				&n,
+				A,
+				&n,
+				eigen_real,
+				work,
+				&lwork,
+				&info);
+	if (info != 0){
+		_error_("Error: Matrix3x3EigenSymmetric dot not work. Check error message info = " << info );
+	}
 
 	/* Assign eigen value */
-	/* eigvalue is increasing order */
-	*plambda1 = eigen_real[0];
+	/* eigvalue from LAPACK is acending order */
+	*plambda1 = eigen_real[2];
 	*plambda2 = eigen_real[1];
-	*plambda3 = eigen_real[2];
+	*plambda3 = eigen_real[0];
+
+	/* Assign eigen vectors*/
+	for (int i=0;i<n;i++){
+		pv1[i] = A[i+2*3];
+		pv2[i] = A[i+1*3];
+		pv3[i] = A[i+0*3];
+	}
 }/*}}}*/
 #endif
 void Matrix4x4Determinant(IssmDouble* Adet,IssmDouble* A){/*{{{*/
