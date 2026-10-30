@@ -1229,7 +1229,8 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	/* Intermediaries */
 	IssmDouble tau_xx, tau_xy, tau_xz, tau_yy, tau_yz, tau_zz; /* Deviatoric stress tensor components [Pa] */
 	IssmDouble sigma_xx, sigma_xy, sigma_xz, sigma_yy, sigma_yz, sigma_zz; /* Cauchy stress tensor components [Pa] */
-	IssmDouble s1, s2, s3; /* principal effective stress [Pa] */
+	IssmDouble s1, s2, s3; /* principal effective Cauchy stress [Pa] */
+	IssmDouble t1, t2, t3; /* principal effective devitaoric stress [Pa] */
 	IssmDouble stmp;
 	IssmDouble D; /* Damage value [unit: 1]*/
 	IssmDouble z; /* elevation [m] */
@@ -1328,10 +1329,16 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		tau_xx_input->GetInputValue(&tau_xx,gauss);
 		tau_xy_input->GetInputValue(&tau_xy,gauss);
 		tau_yy_input->GetInputValue(&tau_yy,gauss);
+		tau_xx = tau_xx/(1-D);
+		tau_xy = tau_xy/(1-D);
+		tau_yy = tau_yy/(1-D);
 		if(dim==3){
 			tau_xz_input->GetInputValue(&tau_xz,gauss);
 			tau_yz_input->GetInputValue(&tau_yz,gauss);
 			tau_zz_input->GetInputValue(&tau_zz,gauss);
+			tau_xz = tau_xz/(1-D);
+			tau_yz = tau_yz/(1-D);
+			tau_zz = tau_zz/(1-D);
 		}
 		
 		/* Compute pressure in Cauchy stress tensor*/
@@ -1358,29 +1365,30 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 					}
 				}
 				/* Eq. 15 in Huth et al. (2021) / SSA approximation with hydrostatic assumption (Greve and Blatter, 2009) */
-				P = Pi - tau_xx - tau_yy - Pw;
+				P = Pi - (tau_xx + tau_yy) - Pw;
 			}
 		}else if(isFS){
 			pressure_input->GetInputValue(&P,gauss);
 		}
 
 		/* Compute effective Cauchy stress tensor baed on deviatoric stress */
-		sigma_xx = tau_xx/(1-D) - P;
-		sigma_xy = tau_xy/(1-D);
-		sigma_yy = tau_yy/(1-D) - P;
+		sigma_xx = tau_xx - P;
+		sigma_xy = tau_xy;
+		sigma_yy = tau_yy - P;
 		if(dim==3){
-			sigma_xz = tau_xz/(1-D);
-			sigma_yz = tau_yz/(1-D);
-			if(isSSA) sigma_zz = (-tau_xx - tau_yy)/(1-D) - P;
-			else if(isHO) sigma_zz = (-tau_xx - tau_yy)/(1-D) - P;
-			else if(isFS) sigma_zz = tau_zz/(1-D) - P;
+			sigma_xz = tau_xz;
+			sigma_yz = tau_yz;
+			if(isSSA) sigma_zz = (-tau_xx - tau_yy) - P;
+			else if(isHO) sigma_zz = (-tau_xx - tau_yy) - P;
+			else if(isFS) sigma_zz = tau_zz - P;
 			else _error_("Error: Not supported.");
 		}
 
 		/*Calculate stress criterion*/
 		if(dim==2){
+			_error_("Error: not supported?!");
 			/* Compute principal effective stresses */
-			s3 = -P;
+			s3 = -(tau_xx + tau_yy) - P;
 			Matrix2x2Eigen(&s1,&s2,NULL,NULL,sigma_xx,sigma_xy,sigma_yy);
 
 			if(s2>s1){stmp=s2; s2=s1; s1=stmp;}
@@ -1401,11 +1409,25 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 			if(isSSA){ /* Hydrostatic assumption : neglect sigma_zx, sigma_zy */
 				Matrix2x2Eigen(&s1,&s2,NULL,NULL,sigma_xx,sigma_xy,sigma_yy);
 				s3 = sigma_zz;
+				//Matrix3x3Eigen(&s1,&s2,&s3,NULL,NULL,NULL,
+				//	sigma_xx,sigma_xy,sigma_xz,
+				//	sigma_xy,sigma_yy,sigma_yz,
+				//	0.0, 0.0, sigma_zz);
+				Matrix2x2Eigen(&t1,&t2,NULL,NULL,tau_xx,tau_xy,tau_yy);
+				t3 = tau_zz;
+				//Matrix3x3Eigen(&t1,&t2,&t3,NULL,NULL,NULL,
+				//	tau_xx,tau_xy,0.0,
+				//	tau_xy,tau_yy,0.0,
+				//	0.0, 0.0, tau_zz);
 			}else if(isHO){
 				Matrix3x3Eigen(&s1,&s2,&s3,NULL,NULL,NULL,
 					sigma_xx,sigma_xy,sigma_xz,
 					sigma_xy,sigma_yy,sigma_yz,
 					0.0, 0.0, sigma_zz);
+				Matrix3x3Eigen(&t1,&t2,&t3,NULL,NULL,NULL,
+					tau_xx,tau_xy,tau_xz,
+					tau_xy,tau_yy,tau_yz,
+					0.0, 0.0, tau_zz);
 			}else if(isFS){
 				_error_("Not implemented for FS equation.");
 			}else{
@@ -1417,13 +1439,21 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 			if(s1<s3) swap(s1,s3);
 			if(s2<s3) swap(s2,s3);
 			_assert_( (s1>=s2) & (s2 >= s3) );
+
+			if(t1<t2) swap(t1,t2);
+			if(t1<t3) swap(t1,t3);
+			if(t2<t3) swap(t2,t3);
+			_assert_( (t1>=t2) & (t2 >= t3) );
 		
 			if(isequivstress==0){ /* von Mises */
-				sigma_equiv[i]=sqrt(((s1-s2)*(s1-s2)+(s2-s3)*(s2-s3)+(s3-s1)*(s3-s1))/2.);
+				//sigma_equiv[i]=sqrt(((s1-s2)*(s1-s2)+(s2-s3)*(s2-s3)+(s3-s1)*(s3-s1))/2.);
+				sigma_equiv[i]=sqrt(3/2*(t1*t1 + t2*t2 + t3*t3));
 			}else if(isequivstress==1){ /* max principal stress */
-				sigma_equiv[i]=s1;
-			}else if(isequivstress==2){ /* Hayhurst stress invariant */
-				sigma_equiv[i]=alpha*s1 + beta*sqrt(((s1-s2)*(s1-s2)+(s2-s3)*(s2-s3)+(s3-s1)*(s3-s1))/2.) + (1-alpha-beta)*(s1 + s2 + s3);
+				/* Eq. 16 in Keller and Hutter (2014) */
+				sigma_equiv[i]=max(t1,0.0) - P;
+			}else if(isequivstress==2){ /* Hayhurst criterion */
+				/* Eq. 16 in Keller and Hutter (2014) */
+				sigma_equiv[i]=alpha*(max(t1,0.0) - P) + beta*sqrt(3/2*(t1*t1 + t2*t2 + t3*t3)) + (1-alpha-beta)*(s1 + s2 + s3);
 			}else if(isequivstress==3){ /* Coulomb criteron */
 				sigma_equiv[i]=(s1-s3)/2 + mu*(s1+s3)/2;
 			}
