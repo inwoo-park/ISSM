@@ -1306,9 +1306,9 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 	Input* sealevel_input = element->GetInput(SealevelEnum); _assert_(sealevel_input);
 
 	Input* damage_input = NULL;
-	if(domaintype==Domain2DhorizontalEnum) damage_input = element->GetInput(DamageDbarEnum); _assert_(damage_input);
-	else if(domaintype==Domain2DverticalEnum) damage_input = element->GetInput(DamageDEnum); _assert_(damage_input);
-	else  damage_input = element->GetInput(DamageDEnum); _assert_(damage_input);
+	if(domaintype==Domain2DhorizontalEnum){ damage_input = element->GetInput(DamageDbarEnum); _assert_(damage_input); }
+	else if(domaintype==Domain2DverticalEnum){ damage_input = element->GetInput(DamageDEnum); _assert_(damage_input); }
+	else{ damage_input = element->GetInput(DamageDEnum); _assert_(damage_input); }
 
 	Gauss* gauss=element->NewGauss();
 	for (int i=0;i<numnodes;i++){
