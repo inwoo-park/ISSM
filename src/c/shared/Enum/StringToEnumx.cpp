@@ -182,7 +182,7 @@ int  StringToEnumx(const char* name,bool notfounderror){
 	      else if (strcmp(name,"DamageHealing")==0) return DamageHealingEnum;
 	      else if (strcmp(name,"DamageIsDamageExponent")==0) return DamageIsDamageExponentEnum;
 	      else if (strcmp(name,"DamageIsPeff")==0) return DamageIsPeffEnum;
-	      else if (strcmp(name,"DamageIsPressureSSA")==0) return DamageIsPressureSSAEnum;
+	      else if (strcmp(name,"DamageIsEffectiveStress")==0) return DamageIsEffectiveStressEnum;
 	      else if (strcmp(name,"DamageKappa")==0) return DamageKappaEnum;
 	      else if (strcmp(name,"DamageLaw")==0) return DamageLawEnum;
 	      else if (strcmp(name,"DamageMaxDamage")==0) return DamageMaxDamageEnum;
@@ -933,12 +933,12 @@ int  StringToEnumx(const char* name,bool notfounderror){
 	      else if (strcmp(name,"DamageDbarOld")==0) return DamageDbarOldEnum;
 	      else if (strcmp(name,"DamageF")==0) return DamageFEnum;
 	      else if (strcmp(name,"DamageEffectiveStressEquivalent")==0) return DamageEffectiveStressEquivalentEnum;
-	      else if (strcmp(name,"DamageEffectiveStressInvariant1")==0) return DamageEffectiveStressInvariant1Enum;
-	      else if (strcmp(name,"DamageEffectiveStressInvariant2")==0) return DamageEffectiveStressInvariant2Enum;
-	      else if (strcmp(name,"DamageEffectiveStressInvariant3")==0) return DamageEffectiveStressInvariant3Enum;
 	      else if (strcmp(name,"DamageEffectiveStressPrincipalValue1")==0) return DamageEffectiveStressPrincipalValue1Enum;
 	      else if (strcmp(name,"DamageEffectiveStressPrincipalValue2")==0) return DamageEffectiveStressPrincipalValue2Enum;
 	      else if (strcmp(name,"DamageEffectiveStressPrincipalValue3")==0) return DamageEffectiveStressPrincipalValue3Enum;
+	      else if (strcmp(name,"DamageEffectiveDeviatoricStressPrincipalValue1")==0) return DamageEffectiveDeviatoricStressPrincipalValue1Enum;
+	      else if (strcmp(name,"DamageEffectiveDeviatoricStressPrincipalValue2")==0) return DamageEffectiveDeviatoricStressPrincipalValue2Enum;
+	      else if (strcmp(name,"DamageEffectiveDeviatoricStressPrincipalValue3")==0) return DamageEffectiveDeviatoricStressPrincipalValue3Enum;
 	      else if (strcmp(name,"DebrisThickness")==0) return DebrisThicknessEnum;
 	      else if (strcmp(name,"DegreeOfChannelization")==0) return DegreeOfChannelizationEnum;
 	      else if (strcmp(name,"DepthBelowSurface")==0) return DepthBelowSurfaceEnum;

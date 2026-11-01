@@ -166,7 +166,7 @@
 	DamageHealingEnum
 	DamageIsDamageExponentEnum
 	DamageIsPeffEnum
-	DamageIsPressureSSAEnum
+	DamageIsEffectiveStressEnum
 	DamageKappaEnum
 	DamageLawEnum
 	DamageMaxDamageEnum
@@ -899,12 +899,12 @@
 	DamageDbarOldEnum
 	DamageFEnum
 	DamageEffectiveStressEquivalentEnum
-	DamageEffectiveStressInvariant1Enum
-	DamageEffectiveStressInvariant2Enum
-	DamageEffectiveStressInvariant3Enum
 	DamageEffectiveStressPrincipalValue1Enum
 	DamageEffectiveStressPrincipalValue2Enum
 	DamageEffectiveStressPrincipalValue3Enum
+	DamageEffectiveDeviatoricStressPrincipalValue1Enum
+	DamageEffectiveDeviatoricStressPrincipalValue2Enum
+	DamageEffectiveDeviatoricStressPrincipalValue3Enum
 	DebrisThicknessEnum
 	DegreeOfChannelizationEnum
 	DepthBelowSurfaceEnum
@@ -4076,7 +4076,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageHealingEnum) return "DamageHealing" end
 	if(enum==DamageIsDamageExponentEnum) return "DamageIsDamageExponent" end
 	if(enum==DamageIsPeffEnum) return "DamageIsPeff" end
-	if(enum==DamageIsPressureSSAEnum) return "DamageIsPressureSSA" end
+	if(enum==DamageIsEffectiveStressEnum) return "DamageIsEffectiveStress" end
 	if(enum==DamageKappaEnum) return "DamageKappa" end
 	if(enum==DamageLawEnum) return "DamageLaw" end
 	if(enum==DamageMaxDamageEnum) return "DamageMaxDamage" end
@@ -4809,12 +4809,12 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageDbarOldEnum) return "DamageDbarOld" end
 	if(enum==DamageFEnum) return "DamageF" end
 	if(enum==DamageEffectiveStressEquivalentEnum) return "DamageEffectiveStressEquivalent" end
-	if(enum==DamageEffectiveStressInvariant1Enum) return "DamageEffectiveStressInvariant1" end
-	if(enum==DamageEffectiveStressInvariant2Enum) return "DamageEffectiveStressInvariant2" end
-	if(enum==DamageEffectiveStressInvariant3Enum) return "DamageEffectiveStressInvariant3" end
 	if(enum==DamageEffectiveStressPrincipalValue1Enum) return "DamageEffectiveStressPrincipalValue1" end
 	if(enum==DamageEffectiveStressPrincipalValue2Enum) return "DamageEffectiveStressPrincipalValue2" end
 	if(enum==DamageEffectiveStressPrincipalValue3Enum) return "DamageEffectiveStressPrincipalValue3" end
+	if(enum==DamageEffectiveDeviatoricStressPrincipalValue1Enum) return "DamageEffectiveDeviatoricStressPrincipalValue1" end
+	if(enum==DamageEffectiveDeviatoricStressPrincipalValue2Enum) return "DamageEffectiveDeviatoricStressPrincipalValue2" end
+	if(enum==DamageEffectiveDeviatoricStressPrincipalValue3Enum) return "DamageEffectiveDeviatoricStressPrincipalValue3" end
 	if(enum==DebrisThicknessEnum) return "DebrisThickness" end
 	if(enum==DegreeOfChannelizationEnum) return "DegreeOfChannelization" end
 	if(enum==DepthBelowSurfaceEnum) return "DepthBelowSurface" end
@@ -7986,7 +7986,7 @@ function StringToEnum(name::String)
 	if(name=="DamageHealing") return DamageHealingEnum  end
 	if(name=="DamageIsDamageExponent") return DamageIsDamageExponentEnum  end
 	if(name=="DamageIsPeff") return DamageIsPeffEnum  end
-	if(name=="DamageIsPressureSSA") return DamageIsPressureSSAEnum  end
+	if(name=="DamageIsEffectiveStress") return DamageIsEffectiveStressEnum  end
 	if(name=="DamageKappa") return DamageKappaEnum  end
 	if(name=="DamageLaw") return DamageLawEnum  end
 	if(name=="DamageMaxDamage") return DamageMaxDamageEnum  end
@@ -8719,12 +8719,12 @@ function StringToEnum(name::String)
 	if(name=="DamageDbarOld") return DamageDbarOldEnum  end
 	if(name=="DamageF") return DamageFEnum  end
 	if(name=="DamageEffectiveStressEquivalent") return DamageEffectiveStressEquivalentEnum  end
-	if(name=="DamageEffectiveStressInvariant1") return DamageEffectiveStressInvariant1Enum  end
-	if(name=="DamageEffectiveStressInvariant2") return DamageEffectiveStressInvariant2Enum  end
-	if(name=="DamageEffectiveStressInvariant3") return DamageEffectiveStressInvariant3Enum  end
 	if(name=="DamageEffectiveStressPrincipalValue1") return DamageEffectiveStressPrincipalValue1Enum  end
 	if(name=="DamageEffectiveStressPrincipalValue2") return DamageEffectiveStressPrincipalValue2Enum  end
 	if(name=="DamageEffectiveStressPrincipalValue3") return DamageEffectiveStressPrincipalValue3Enum  end
+	if(name=="DamageEffectiveDeviatoricStressPrincipalValue1") return DamageEffectiveDeviatoricStressPrincipalValue1Enum  end
+	if(name=="DamageEffectiveDeviatoricStressPrincipalValue2") return DamageEffectiveDeviatoricStressPrincipalValue2Enum  end
+	if(name=="DamageEffectiveDeviatoricStressPrincipalValue3") return DamageEffectiveDeviatoricStressPrincipalValue3Enum  end
 	if(name=="DebrisThickness") return DebrisThicknessEnum  end
 	if(name=="DegreeOfChannelization") return DegreeOfChannelizationEnum  end
 	if(name=="DepthBelowSurface") return DepthBelowSurfaceEnum  end

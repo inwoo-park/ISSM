@@ -32,7 +32,9 @@ void damage_core(FemModel* femmodel){
 
 	DamageEvolutionAnalysis* analysis = new DamageEvolutionAnalysis();
 
-	if(VerboseSolution()) _printf0_("   update stress equivalent criterion\n");
+	if(VerboseSolution()) _printf0_("   update effective stress\n");
+	analysis->ComputeEffectiveStress(femmodel);
+	if(VerboseSolution()) _printf0_("   update stress equivalent\n");
 	analysis->ComputeStressEquivalent(femmodel);
 
 	if(VerboseSolution()) _printf0_("   computing damage\n");

@@ -37,8 +37,8 @@ class damage(object):
         self.c4 = float('NaN')
         self.healing = float('NaN')
         self.isdamage_exponent = 0
-        self.ispressure_ssa    = 0
         self.isPeff            = 0
+        self.iseffective_stress= 0
         self.equiv_stress = float('NaN')
         self.requested_outputs = []
 
@@ -87,7 +87,6 @@ class damage(object):
                 s += '{}\n'.format(fielddisplay(self, 'c2', 'damage parameter 2 '))
                 s += '{}\n'.format(fielddisplay(self, 'c3', 'damage parameter 3 '))
                 s += '{}\n'.format(fielddisplay(self,'isdamage_exponent','damage exponent parameter (k_sigma). 0: constant, 1: Pralong (2005), 2: Duddu et al. (2020)'))
-                s += '{}\n'.format(fielddisplay(self,'ispressure_ssa','pressure for SSA2D. 0: surface, 1: mid, 2: bottom'))
             elif self.law==5:
                 s += '{}\n'.format(fielddisplay(self, 'c1', 'damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)'))
 
@@ -108,6 +107,7 @@ class damage(object):
 
             s += '\n'
             s += '{}'.format(fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)'))
+			s += '{}'.format(fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)'))
             s += '{}'.format(fielddisplay(self,'requested_outputs','additional outputs requested'))
 
         return s
@@ -153,8 +153,11 @@ class damage(object):
         # 1: Pralong 2005
         # 2: Duddu 2020
         self.isdamage_exponent=0
-        self.ispressure_ssa=0
         self.isPeff=1
+
+        # 0: pralong 2005: \tilde{sigma} = (tau - P)/(1-D)
+        # 1: keller 2014 : \tilde{sigma} = tau/(1-D) - P
+        self.iseffective_stress = 1
 
         # Criterion of Hayhurst (Pralong 2005)
         self.equiv_stress_alpha=0.21
@@ -202,8 +205,8 @@ class damage(object):
             md = checkfield(md, 'fieldname', 'damage.c3', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.c4', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.isdamage_exponent', 'numel', [1], 'values',[0, 1, 2])
-            md = checkfield(md, 'fieldname', 'damage.ispressure_ssa', 'numel', [1], 'values', [0, 1, 2])
             md = checkfield(md, 'fieldname', 'damage.isPeff', 'numel', [1], 'values', [0, 1])
+            md = checkfield(md, 'fieldname', 'damage.iseffective_stress', 'numel', [1], 'values', [0, 1])
             md = checkfield(md, 'fieldname', 'damage.equiv_stress', 'numel', [1], 'values', [0, 1, 2, 3])
 
             md = checkfield(md, 'fieldname', 'damage.equiv_stress_alpha','numel',[1],'<=',1,'>=',0)
@@ -241,8 +244,8 @@ class damage(object):
             WriteData(fid, prefix, 'object', self, 'fieldname', 'equiv_stress_beta', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'equiv_stress_mu', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'isdamage_exponent', 'format', 'Integer')
-            WriteData(fid, prefix, 'object', self, 'fieldname', 'ispressure_ssa', 'format', 'Integer')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'isPeff', 'format', 'Boolean')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'iseffective_stress', 'format', 'Integer')
 
         #process requested outputs
         outputs = self.requested_outputs

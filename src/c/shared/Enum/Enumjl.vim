@@ -170,7 +170,7 @@ syn keyword juliaConstC DamageEvolutionRequestedOutputsEnum
 syn keyword juliaConstC DamageHealingEnum
 syn keyword juliaConstC DamageIsDamageExponentEnum
 syn keyword juliaConstC DamageIsPeffEnum
-syn keyword juliaConstC DamageIsPressureSSAEnum
+syn keyword juliaConstC DamageIsEffectiveStressEnum
 syn keyword juliaConstC DamageKappaEnum
 syn keyword juliaConstC DamageLawEnum
 syn keyword juliaConstC DamageMaxDamageEnum
@@ -903,12 +903,12 @@ syn keyword juliaConstC DamageDbarEnum
 syn keyword juliaConstC DamageDbarOldEnum
 syn keyword juliaConstC DamageFEnum
 syn keyword juliaConstC DamageEffectiveStressEquivalentEnum
-syn keyword juliaConstC DamageEffectiveStressInvariant1Enum
-syn keyword juliaConstC DamageEffectiveStressInvariant2Enum
-syn keyword juliaConstC DamageEffectiveStressInvariant3Enum
 syn keyword juliaConstC DamageEffectiveStressPrincipalValue1Enum
 syn keyword juliaConstC DamageEffectiveStressPrincipalValue2Enum
 syn keyword juliaConstC DamageEffectiveStressPrincipalValue3Enum
+syn keyword juliaConstC DamageEffectiveDeviatoricStressPrincipalValue1Enum
+syn keyword juliaConstC DamageEffectiveDeviatoricStressPrincipalValue2Enum
+syn keyword juliaConstC DamageEffectiveDeviatoricStressPrincipalValue3Enum
 syn keyword juliaConstC DebrisThicknessEnum
 syn keyword juliaConstC DegreeOfChannelizationEnum
 syn keyword juliaConstC DepthBelowSurfaceEnum

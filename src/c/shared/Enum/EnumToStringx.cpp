@@ -179,7 +179,7 @@ const char* EnumToStringx(int en){
 		case DamageHealingEnum : return "DamageHealing";
 		case DamageIsDamageExponentEnum : return "DamageIsDamageExponent";
 		case DamageIsPeffEnum : return "DamageIsPeff";
-		case DamageIsPressureSSAEnum : return "DamageIsPressureSSA";
+		case DamageIsEffectiveStressEnum : return "DamageIsEffectiveStress";
 		case DamageKappaEnum : return "DamageKappa";
 		case DamageLawEnum : return "DamageLaw";
 		case DamageMaxDamageEnum : return "DamageMaxDamage";
@@ -912,12 +912,12 @@ const char* EnumToStringx(int en){
 		case DamageDbarOldEnum : return "DamageDbarOld";
 		case DamageFEnum : return "DamageF";
 		case DamageEffectiveStressEquivalentEnum : return "DamageEffectiveStressEquivalent";
-		case DamageEffectiveStressInvariant1Enum : return "DamageEffectiveStressInvariant1";
-		case DamageEffectiveStressInvariant2Enum : return "DamageEffectiveStressInvariant2";
-		case DamageEffectiveStressInvariant3Enum : return "DamageEffectiveStressInvariant3";
 		case DamageEffectiveStressPrincipalValue1Enum : return "DamageEffectiveStressPrincipalValue1";
 		case DamageEffectiveStressPrincipalValue2Enum : return "DamageEffectiveStressPrincipalValue2";
 		case DamageEffectiveStressPrincipalValue3Enum : return "DamageEffectiveStressPrincipalValue3";
+		case DamageEffectiveDeviatoricStressPrincipalValue1Enum : return "DamageEffectiveDeviatoricStressPrincipalValue1";
+		case DamageEffectiveDeviatoricStressPrincipalValue2Enum : return "DamageEffectiveDeviatoricStressPrincipalValue2";
+		case DamageEffectiveDeviatoricStressPrincipalValue3Enum : return "DamageEffectiveDeviatoricStressPrincipalValue3";
 		case DebrisThicknessEnum : return "DebrisThickness";
 		case DegreeOfChannelizationEnum : return "DegreeOfChannelization";
 		case DepthBelowSurfaceEnum : return "DepthBelowSurface";

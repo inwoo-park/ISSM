@@ -27,9 +27,9 @@ classdef damage
 		c4                  = 0;
 		healing             = 0;
 		isdamage_exponent   = 0;
-		ispressure_ssa      = 0;
 		isPeff              = 0;
 		equiv_stress		  = 0;
+		iseffective_stress  = 0;
 		requested_outputs   = {};
 
 		equiv_stress_alpha  = 0; % For hayhurst
@@ -69,7 +69,7 @@ classdef damage
 			self.max_damage=1-1e-5; %if damage reaches 1, solve becomes singular, as viscosity becomes nil
 		
 			%Type of stabilization used
-			self.stabilization=4;
+			self.stabilization=1; % 1: artificial diffusion
 			
 			%Maximum number of iterations
 			self.maxiter=100;
@@ -95,8 +95,11 @@ classdef damage
 			% 1: Pralong 2005
 			% 2: Duddu 2020
 			self.isdamage_exponent=0;
-			self.ispressure_ssa=0;
 			self.isPeff=1;
+
+			% 0: pralong 2005: \tilde{sigma} = (tau - P)/(1-D)
+			% 1: keller 2014 : \tilde{sigma} = tau/(1-D) - P
+			self.iseffective_stress = 1;
 
 			% Criterion of Hayhurst (Pralong 2005)
 			self.equiv_stress_alpha=0.21;
@@ -135,8 +138,8 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.c3','>=',0);
 				md = checkfield(md,'fieldname','damage.c4','>=',0);
 				md = checkfield(md,'fieldname','damage.isdamage_exponent','numel',[1],'values',[0 1 2]);
-				md = checkfield(md,'fieldname','damage.ispressure_ssa','numel',[1],'values',[0 1 2]);
 				md = checkfield(md,'fieldname','damage.isPeff','numel',[1],'values',[0 1]);
+				md = checkfield(md,'fieldname','damage.iseffective_stress','numel',[1],'values',[0 1]);
 				md = checkfield(md,'fieldname','damage.equiv_stress','numel',[1],'values',[0 1 2 3]);
 
 				md = checkfield(md,'fieldname','damage.equiv_stress_alpha','numel',[1],'<=',1,'>=',0);
@@ -192,7 +195,6 @@ classdef damage
 					fielddisplay(self,'c2','damage parameter 2');
 					fielddisplay(self,'c3','damage parameter 3');
 					fielddisplay(self,'isdamage_exponent','damage exponent parameter (k_sigma). 0: constant, 1: Pralong (2005), 2: Duddu et al. (2020)');
-					fielddisplay(self,'ispressure_ssa','pressure for SSA2D. 0: surface, 1: mid, 2: bottom');
 				elseif slef.law == 5
 					fielddisplay(self,'c1','damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)');
 				end
@@ -213,6 +215,7 @@ classdef damage
 				end
 				fprintf('\n');
 				fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)');
+				fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)');
 				fielddisplay(self,'requested_outputs','additional outputs requested');
 			end
 
@@ -242,8 +245,8 @@ classdef damage
 				WriteData(fid,prefix,'object',self,'fieldname','equiv_stress_beta','format','Double');
 				WriteData(fid,prefix,'object',self,'fieldname','equiv_stress_mu','format','Double');
 				WriteData(fid,prefix,'object',self,'fieldname','isdamage_exponent','format','Integer');
-				WriteData(fid,prefix,'object',self,'fieldname','ispressure_ssa','format','Integer');
 				WriteData(fid,prefix,'object',self,'fieldname','isPeff','format','Boolean');
+				WriteData(fid,prefix,'object',self,'fieldname','iseffective_stress','format','Integer');
 			end
 
 			%process requested outputs
