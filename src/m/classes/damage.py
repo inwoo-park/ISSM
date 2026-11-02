@@ -107,7 +107,7 @@ class damage(object):
 
             s += '\n'
             s += '{}'.format(fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)'))
-			s += '{}'.format(fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)'))
+            s += '{}'.format(fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)'))
             s += '{}'.format(fielddisplay(self,'requested_outputs','additional outputs requested'))
 
         return s
