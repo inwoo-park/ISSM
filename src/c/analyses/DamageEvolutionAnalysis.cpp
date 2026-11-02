@@ -562,7 +562,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 			k_sigma = k1 * ( sqrt(max(s_inv1,0.0)) - healing * sqrt(max(-s_inv1,0.0)) );
 		}else if(isdamage_exponent==2){
 			/*FIXME: Hard coding. Parameters from Duddu et al. (2013): doi:10.1007/s00466-012-0778-7 */
-			IssmDouble k1=-2.63
+			IssmDouble k1=-2.63;
 			IssmDouble k2=7.24*1e-6; // unit: Pa-1
 			IssmDouble k3=12.36;
 			IssmDouble k4=-3.83; // unit: Pa-1 
@@ -1357,7 +1357,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 		}
 		
 		/* Compute pressure in Cauchy stress tensor*/
-		if (isSSA | isHO){
+		if (isSSA | isHO){ /* {{{ */
 			pressure_input->GetInputValue(&Pi,gauss);
 			if(dim==2){
 				_error_("Error: not supported.");
@@ -1376,12 +1376,13 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 				if (iseffective_stress == 0) P = Pi - (tau_xx + tau_yy) - Pw;
 				else if (iseffective_stress == 1) P = Pi - (tau_xx + tau_yy)/(1-D) - Pw;
 			}
-		}else if(isFS){
+		}/* }}} */
+		else if(isFS){ /* {{{ */
 			pressure_input->GetInputValue(&P,gauss);
-		}
+		}/* }}} */
 
 		/* Compute effective Cauchy stress tensor based on deviatoric stress */
-		if (iseffective_stress == 0) /* Pralong 2005 */
+		if (iseffective_stress == 0){ /* Pralong 2005 */
 			sigma_xx = (tau_xx-P)/(1-D);
 			sigma_xy = (tau_xy)/(1-D);
 			sigma_yy = (tau_yy-P)/(1-D);
@@ -1392,7 +1393,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 				else if(isFS) sigma_zz = (tau_zz-P)/(1-D);
 				else _error_("Error: Not supported.");
 			}
-		else if (iseffective_stress == 1){ /* Keller 2014 */
+		}else if (iseffective_stress == 1){ /* Keller 2014 */
 			sigma_xx = tau_xx/(1-D) - P;
 			sigma_xy = tau_xy/(1-D);
 			sigma_yy = tau_yy/(1-D) - P;
@@ -1409,7 +1410,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 		if(dim==2){/* {{{ */
 			_error_("not supported yet");
 		}/* }}} */
-		else if(dim==3)/* {{{ */
+		else if(dim==3){/* {{{ */
 			if(isSSA){ /* Hydrostatic assumption : neglect sigma_zx, sigma_zy */
 				/* directly compute stress tensor */
 				Matrix2x2Eigen(&s1,&s2,NULL,NULL,2*tau_xx+tau_yy-Pi+Pw, tau_xy, tau_xx+2*tau_yy-Pi+Pw);
