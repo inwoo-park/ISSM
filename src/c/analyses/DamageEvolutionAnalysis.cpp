@@ -1620,7 +1620,7 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 		}else if(isequivstress==2){ /* Hayhurst criterion */
 			if(iseffective_stress == 0){
 				sigma_equiv[i]=alpha*s1 + beta*sqrt(3/2*(t1*t1 + t2*t2 + t3*t3)) + (1-alpha-beta)*(s1 + s2 + s3);
-			}else if(isequivstress == 1){
+			}else if(iseffective_stress== 1){
 				/* Eq. 16 in Keller and Hutter (2014) */
 				sigma_equiv[i]=alpha*(t1 - P) + beta*sqrt(3/2*(t1*t1 + t2*t2 + t3*t3)) + (1-alpha-beta)*(s1 + s2 + s3);
 			}
