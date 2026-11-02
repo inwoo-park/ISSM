@@ -611,6 +611,9 @@
 %StressTensoryy
 %StressTensoryz
 %StressTensorzz
+%StressTensorPrincipalValue1
+%StressTensorPrincipalValue2
+%StressTensorPrincipalValue3
 %SubglacialdischargeARMANoise
 %SubglacialdischargeValuesAutoregression
 %SubglacialdischargeValuesMovingaverage
