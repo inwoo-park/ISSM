@@ -1412,6 +1412,9 @@ syn keyword cConstant StressTensorxzEnum
 syn keyword cConstant StressTensoryyEnum
 syn keyword cConstant StressTensoryzEnum
 syn keyword cConstant StressTensorzzEnum
+syn keyword cConstant StressTensorPrincipalValue1Enum
+syn keyword cConstant StressTensorPrincipalValue2Enum
+syn keyword cConstant StressTensorPrincipalValue3Enum
 syn keyword cConstant SubglacialdischargeARMANoiseEnum
 syn keyword cConstant SubglacialdischargeValuesAutoregressionEnum
 syn keyword cConstant SubglacialdischargeValuesMovingaverageEnum

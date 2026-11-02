@@ -528,9 +528,14 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	}
 
 	Input* stress_equivalent_input = element->GetInput(DamageEffectiveStressEquivalentEnum); _assert_(stress_equivalent_input);
-	Input* sigma1_input = element->GetInput(DamageEffectiveStressPrincipalValue1Enum); _assert_(sigma1_input);
-	Input* sigma2_input = element->GetInput(DamageEffectiveStressPrincipalValue2Enum); _assert_(sigma2_input);
-	Input* sigma3_input = element->GetInput(DamageEffectiveStressPrincipalValue3Enum); _assert_(sigma3_input);
+	/* stress */
+	Input* sigma1_input = element->GetInput(StressTensorPrincipalValue1Enum); _assert_(sigma1_input);
+	Input* sigma2_input = element->GetInput(StressTensorPrincipalValue2Enum); _assert_(sigma2_input);
+	Input* sigma3_input = element->GetInput(StressTensorPrincipalValue3Enum); _assert_(sigma3_input);
+	/* Effective stress */
+	Input* effective_sigma1_input = element->GetInput(DamageEffectiveStressPrincipalValue1Enum); _assert_(effective_sigma1_input);
+	Input* effective_sigma2_input = element->GetInput(DamageEffectiveStressPrincipalValue2Enum); _assert_(effective_sigma2_input);
+	Input* effective_sigma3_input = element->GetInput(DamageEffectiveStressPrincipalValue3Enum); _assert_(effective_sigma3_input);
 
 	/*Calculate damage evolution source term: */
 	Gauss* gauss=element->NewGauss();
@@ -542,9 +547,9 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 
 		/* Call effective stress criterion from "DamageStressEquivalentEnum" */
 		stress_equivalent_input->GetInputValue(&Chi,gauss);
-		sigma1_input->GetInputValue(&s1,gauss);
-		sigma2_input->GetInputValue(&s2,gauss);
-		sigma3_input->GetInputValue(&s3,gauss);
+		effective_sigma1_input->GetInputValue(&s1,gauss);
+		effective_sigma2_input->GetInputValue(&s2,gauss);
+		effective_sigma3_input->GetInputValue(&s3,gauss);
 		s_inv1 = s1 + s2 + s3;
 
 		/*Calculate k_simga value*/
@@ -556,9 +561,25 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 
 			k_sigma = k1 * ( sqrt(max(s_inv1,0.0)) - healing * sqrt(max(-s_inv1,0.0)) );
 		}else if(isdamage_exponent==2){
+			/*FIXME: Hard coding. Parameters from Duddu et al. (2013): doi:10.1007/s00466-012-0778-7 */
+			IssmDouble k1=-2.63
+			IssmDouble k2=7.24*1e-6; // unit: Pa-1
+			IssmDouble k3=12.36;
+			IssmDouble k4=-3.83; // unit: Pa-1 
+
+			sigma1_input->GetInputValue(&s1,gauss);
+			sigma2_input->GetInputValue(&s2,gauss);
+			sigma3_input->GetInputValue(&s3,gauss);
+			s_inv1 = s1+s2+s3;
+
+			/* Eq 18 in Duddu 2013 */
+			if (s_inv1 >= 0) k_sigma = k1 + k2*abs(s_inv1); // tension
+			else if(s_inv1 <0) k_sigma = -(k3 + k3*abs(s_inv1)); // compression
+			else _error_("Error: out of bounds");
+		}else if(isdamage_exponent==3){
 			/*FIXME: Hard coding. Parameters from Duddu et al. (2020)*/
 			IssmDouble k1=-2.63; // unit: -
-			IssmDouble k2=7.24*1e-6; // unit:  Pa-1
+			IssmDouble k2=7.24*1e-6; // unit: Pa-1
 
 			k_sigma = k1 + k2*s_inv1;
 		}else{
@@ -1240,12 +1261,15 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 	IssmDouble mu; /* parameter for Coulomb */
 
 	/*    Principal stress for each vertex */
-	IssmDouble *sigma_1 = NULL;
-	IssmDouble *sigma_2 = NULL;
-	IssmDouble *sigma_3 = NULL;
-	IssmDouble *tau_1 = NULL;
-	IssmDouble *tau_2 = NULL;
-	IssmDouble *tau_3 = NULL;
+	IssmDouble *sigma1 = NULL;
+	IssmDouble *sigma2 = NULL;
+	IssmDouble *sigma3 = NULL;
+	IssmDouble *effective_sigma1 = NULL;
+	IssmDouble *effective_sigma2 = NULL;
+	IssmDouble *effective_sigma3 = NULL;
+	IssmDouble *effective_tau1 = NULL;
+	IssmDouble *effective_tau2 = NULL;
+	IssmDouble *effective_tau3 = NULL;
 	IssmDouble *xyz_list = NULL;
 	
 	/*    ice flow equation */
@@ -1263,13 +1287,17 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 	/*Fetch number of vertices and allocate output*/
 	int numnodes = element->GetNumberOfNodes();
 
-	sigma_1  = xNewZeroInit<IssmDouble>(numnodes);
-	sigma_2  = xNewZeroInit<IssmDouble>(numnodes);
-	sigma_3  = xNewZeroInit<IssmDouble>(numnodes);
+	sigma1  = xNewZeroInit<IssmDouble>(numnodes);
+	sigma2  = xNewZeroInit<IssmDouble>(numnodes);
+	sigma3  = xNewZeroInit<IssmDouble>(numnodes);
 
-	tau_1  = xNewZeroInit<IssmDouble>(numnodes);
-	tau_2  = xNewZeroInit<IssmDouble>(numnodes);
-	tau_3  = xNewZeroInit<IssmDouble>(numnodes);
+	effective_sigma1  = xNewZeroInit<IssmDouble>(numnodes);
+	effective_sigma2  = xNewZeroInit<IssmDouble>(numnodes);
+	effective_sigma3  = xNewZeroInit<IssmDouble>(numnodes);
+
+	effective_tau1  = xNewZeroInit<IssmDouble>(numnodes);
+	effective_tau2  = xNewZeroInit<IssmDouble>(numnodes);
+	effective_tau3  = xNewZeroInit<IssmDouble>(numnodes);
 
 	/* Retrieve constants */
 	element->FindParam(&rho_w,MaterialsRhoSeawaterEnum);
@@ -1344,7 +1372,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 						Pw = rho_w*g*(sealevel-z);
 					}
 				}
-				/* Eq. 15 in Huth et al. (2021) / SSA approximation with hydrostatic assumption (Greve and Blatter, 2009) */
+				/* Eq. 15 in Huth et al. (2021) / SSA and HO assume the hydrostatic assumption (Greve and Blatter, 2009) */
 				if (iseffective_stress == 0) P = Pi - (tau_xx + tau_yy) - Pw;
 				else if (iseffective_stress == 1) P = Pi - (tau_xx + tau_yy)/(1-D) - Pw;
 			}
@@ -1361,7 +1389,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 				sigma_xz = tau_xz/(1-D);
 				sigma_yz = tau_yz/(1-D);
 				if(isSSA | isHO) sigma_zz = (-tau_xx - tau_yy - P)/(1-D);
-				else if(isFS) sigma_zz = (tau_zz-P)/(1-D) - P;
+				else if(isFS) sigma_zz = (tau_zz-P)/(1-D);
 				else _error_("Error: Not supported.");
 			}
 		else if (iseffective_stress == 1){ /* Keller 2014 */
@@ -1376,6 +1404,41 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 				else _error_("Error: Not supported.");
 			}
 		}
+
+		/* Compute principal stress values without damage */
+		if(dim==2){/* {{{ */
+			_error_("not supported yet");
+		}/* }}} */
+		else if(dim==3)/* {{{ */
+			if(isSSA){ /* Hydrostatic assumption : neglect sigma_zx, sigma_zy */
+				/* directly compute stress tensor */
+				Matrix2x2Eigen(&s1,&s2,NULL,NULL,2*tau_xx+tau_yy-Pi+Pw, tau_xy, tau_xx+2*tau_yy-Pi+Pw);
+				s3 = -Pi+Pw;
+			}else if(isHO){
+				Matrix3x3Eigen(&s1,&s2,&s3,NULL,NULL,NULL,
+					2*tau_xx+tau_yy-Pi+Pw, tau_xy               , tau_xz,
+					tau_xy               , tau_xx+2*tau_yy-Pi+Pw, tau_yz,
+					0.0                  , 0.0                  , -Pi+Pw);
+			}else if(isFS){
+				Matrix3x3Eigen(&s1,&s2,&s3,NULL,NULL,NULL,
+					tau_xx-P, tau_xy  , tau_xz,
+					tau_xy  , tau_yy-P, tau_yz,
+					tau_xz  , tau_yz  , tau_zz-P);
+			}else{
+				_error_("not implemented yet");
+			}
+
+			/* Ordering large value (descending order) ... s1 > s2 > s3 */
+			if(s1<s2) swap(s1,s2);
+			if(s1<s3) swap(s1,s3);
+			if(s2<s3) swap(s2,s3);
+			_assert_( (s1>=s2) & (s2 >= s3) );
+		}/* }}} */
+
+		/* Now, assign principal stresses */
+		sigma1[i] = s1;
+		sigma2[i] = s2;
+		sigma3[i] = s3;
 		
 		/* Compute effective deviatoric stress */
 		tau_xx = tau_xx/(1-D);
@@ -1387,7 +1450,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 			tau_zz = tau_zz/(1-D);
 		}
 
-		/* Compute principal stress value */
+		/* Compute effective principal stress values */
 		if(dim==2){ /* {{{ */
 			_error_("Error: not supported?!");
 			/* Compute principal effective stresses */
@@ -1440,32 +1503,40 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 
 		} /* }}} */
 		
-		/* Now assign invariant values from principal stresses */
-		sigma_1[i] = s1;
-		sigma_2[i] = s2;
-		sigma_3[i] = s3;
+		/* Now, assign effective principal stresses */
+		effective_sigma1[i] = s1;
+		effective_sigma2[i] = s2;
+		effective_sigma3[i] = s3;
 
-		tau_1[i] = t1;
-		tau_2[i] = t2;
-		tau_3[i] = t3;
+		effective_tau1[i] = t1;
+		effective_tau2[i] = t2;
+		effective_tau3[i] = t3;
 	}
 
 	/* Assign values */
-	element->AddInput(DamageEffectiveStressPrincipalValue1Enum,sigma_1,P1DGEnum);
-	element->AddInput(DamageEffectiveStressPrincipalValue2Enum,sigma_2,P1DGEnum);
-	element->AddInput(DamageEffectiveStressPrincipalValue3Enum,sigma_3,P1DGEnum);
+	element->AddInput(StressTensorPrincipalValue1Enum,sigma1,P1DGEnum);
+	element->AddInput(StressTensorPrincipalValue2Enum,sigma2,P1DGEnum);
+	element->AddInput(StressTensorPrincipalValue3Enum,sigma3,P1DGEnum);
 
-	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue1Enum,tau_1,P1DGEnum);
-	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue2Enum,tau_2,P1DGEnum);
-	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue3Enum,tau_3,P1DGEnum);
+	element->AddInput(DamageEffectiveStressPrincipalValue1Enum,effective_sigma1,P1DGEnum);
+	element->AddInput(DamageEffectiveStressPrincipalValue2Enum,effective_sigma2,P1DGEnum);
+	element->AddInput(DamageEffectiveStressPrincipalValue3Enum,effective_sigma3,P1DGEnum);
+
+	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue1Enum,effective_tau1,P1DGEnum);
+	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue2Enum,effective_tau2,P1DGEnum);
+	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue3Enum,effective_tau3,P1DGEnum);
 
 	/* Clear memory */
-	xDelete<IssmDouble>(sigma_1);
-	xDelete<IssmDouble>(sigma_2);
-	xDelete<IssmDouble>(sigma_3);
-	xDelete<IssmDouble>(tau_1);
-	xDelete<IssmDouble>(tau_2);
-	xDelete<IssmDouble>(tau_3);
+	xDelete<IssmDouble>(sigma1);
+	xDelete<IssmDouble>(sigma2);
+	xDelete<IssmDouble>(sigma3);
+
+	xDelete<IssmDouble>(effective_sigma1);
+	xDelete<IssmDouble>(effective_sigma2);
+	xDelete<IssmDouble>(effective_sigma3);
+	xDelete<IssmDouble>(effective_tau1);
+	xDelete<IssmDouble>(effective_tau2);
+	xDelete<IssmDouble>(effective_tau3);
 	xDelete<IssmDouble>(xyz_list);
 	delete gauss;
 }/*}}}*/

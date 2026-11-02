@@ -1405,6 +1405,9 @@ syn keyword juliaConstC StressTensorxzEnum
 syn keyword juliaConstC StressTensoryyEnum
 syn keyword juliaConstC StressTensoryzEnum
 syn keyword juliaConstC StressTensorzzEnum
+syn keyword juliaConstC StressTensorPrincipalValue1Enum
+syn keyword juliaConstC StressTensorPrincipalValue2Enum
+syn keyword juliaConstC StressTensorPrincipalValue3Enum
 syn keyword juliaConstC SubglacialdischargeARMANoiseEnum
 syn keyword juliaConstC SubglacialdischargeValuesAutoregressionEnum
 syn keyword juliaConstC SubglacialdischargeValuesMovingaverageEnum

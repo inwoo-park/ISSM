@@ -1401,6 +1401,9 @@
 	StressTensoryyEnum
 	StressTensoryzEnum
 	StressTensorzzEnum
+	StressTensorPrincipalValue1Enum
+	StressTensorPrincipalValue2Enum
+	StressTensorPrincipalValue3Enum
 	SubglacialdischargeARMANoiseEnum
 	SubglacialdischargeValuesAutoregressionEnum
 	SubglacialdischargeValuesMovingaverageEnum
@@ -5311,6 +5314,9 @@ function EnumToString(enum::IssmEnum)
 	if(enum==StressTensoryyEnum) return "StressTensoryy" end
 	if(enum==StressTensoryzEnum) return "StressTensoryz" end
 	if(enum==StressTensorzzEnum) return "StressTensorzz" end
+	if(enum==StressTensorPrincipalValue1Enum) return "StressTensorPrincipalValue1" end
+	if(enum==StressTensorPrincipalValue2Enum) return "StressTensorPrincipalValue2" end
+	if(enum==StressTensorPrincipalValue3Enum) return "StressTensorPrincipalValue3" end
 	if(enum==SubglacialdischargeARMANoiseEnum) return "SubglacialdischargeARMANoise" end
 	if(enum==SubglacialdischargeValuesAutoregressionEnum) return "SubglacialdischargeValuesAutoregression" end
 	if(enum==SubglacialdischargeValuesMovingaverageEnum) return "SubglacialdischargeValuesMovingaverage" end
@@ -9221,6 +9227,9 @@ function StringToEnum(name::String)
 	if(name=="StressTensoryy") return StressTensoryyEnum  end
 	if(name=="StressTensoryz") return StressTensoryzEnum  end
 	if(name=="StressTensorzz") return StressTensorzzEnum  end
+	if(name=="StressTensorPrincipalValue1") return StressTensorPrincipalValue1Enum  end
+	if(name=="StressTensorPrincipalValue2") return StressTensorPrincipalValue2Enum  end
+	if(name=="StressTensorPrincipalValue3") return StressTensorPrincipalValue3Enum  end
 	if(name=="SubglacialdischargeARMANoise") return SubglacialdischargeARMANoiseEnum  end
 	if(name=="SubglacialdischargeValuesAutoregression") return SubglacialdischargeValuesAutoregressionEnum  end
 	if(name=="SubglacialdischargeValuesMovingaverage") return SubglacialdischargeValuesMovingaverageEnum  end

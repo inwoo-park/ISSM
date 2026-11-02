@@ -1414,6 +1414,9 @@ const char* EnumToStringx(int en){
 		case StressTensoryyEnum : return "StressTensoryy";
 		case StressTensoryzEnum : return "StressTensoryz";
 		case StressTensorzzEnum : return "StressTensorzz";
+		case StressTensorPrincipalValue1Enum : return "StressTensorPrincipalValue1";
+		case StressTensorPrincipalValue2Enum : return "StressTensorPrincipalValue2";
+		case StressTensorPrincipalValue3Enum : return "StressTensorPrincipalValue3";
 		case SubglacialdischargeARMANoiseEnum : return "SubglacialdischargeARMANoise";
 		case SubglacialdischargeValuesAutoregressionEnum : return "SubglacialdischargeValuesAutoregression";
 		case SubglacialdischargeValuesMovingaverageEnum : return "SubglacialdischargeValuesMovingaverage";
