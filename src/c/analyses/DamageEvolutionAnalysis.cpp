@@ -545,13 +545,6 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 		/* Get first invariant of stress tensor */
 		damage_input->GetInputValue(&damage,gauss);
 
-		/* Call effective stress criterion from "DamageStressEquivalentEnum" */
-		stress_equivalent_input->GetInputValue(&Chi,gauss);
-		effective_sigma1_input->GetInputValue(&s1,gauss);
-		effective_sigma2_input->GetInputValue(&s2,gauss);
-		effective_sigma3_input->GetInputValue(&s3,gauss);
-		s_inv1 = s1 + s2 + s3;
-
 		/*Calculate k_simga value*/
 		if(isdamage_exponent==0){
 			k_sigma = c3;
@@ -559,9 +552,16 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 			/* Eq 23. Pralong et al. (2005) */
 			IssmDouble k1=3.75e-3; // [Pa-1] Table 3 in Pralong et al. (2005)
 
+			stress_equivalent_input->GetInputValue(&Chi,gauss);
+			effective_sigma1_input->GetInputValue(&s1,gauss);
+			effective_sigma2_input->GetInputValue(&s2,gauss);
+			effective_sigma3_input->GetInputValue(&s3,gauss);
+			s_inv1 = s1 + s2 + s3;
+
 			k_sigma = k1 * ( sqrt(max(s_inv1,0.0)) - healing * sqrt(max(-s_inv1,0.0)) );
 		}else if(isdamage_exponent==2){
 			/*FIXME: Hard coding. Parameters from Duddu et al. (2013): doi:10.1007/s00466-012-0778-7 */
+			_error_("Error: not supporte expornent in damage (k_sigma)");
 			IssmDouble k1=-2.63;
 			IssmDouble k2=7.24*1e-6; // unit: Pa-1
 			IssmDouble k3=12.36;
@@ -580,6 +580,11 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 			/*FIXME: Hard coding. Parameters from Duddu et al. (2020)*/
 			IssmDouble k1=-2.63; // unit: -
 			IssmDouble k2=7.24*1e-6; // unit: Pa-1
+
+			sigma1_input->GetInputValue(&s1,gauss);
+			sigma2_input->GetInputValue(&s2,gauss);
+			sigma3_input->GetInputValue(&s3,gauss);
+			s_inv1 = s1+s2+s3;
 
 			k_sigma = k1 + k2*s_inv1;
 		}else{
