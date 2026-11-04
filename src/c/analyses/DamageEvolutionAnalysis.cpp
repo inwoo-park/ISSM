@@ -542,8 +542,9 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	for (int i=0;i<numnodes;i++){
 		gauss->GaussNode(element->GetElementType(),i);
 
-		/* Get first invariant of stress tensor */
+		/*Get all variables*/
 		damage_input->GetInputValue(&damage,gauss);
+		stress_equivalent_input->GetInputValue(&Chi,gauss);
 
 		/*Calculate k_simga value*/
 		if(isdamage_exponent==0){
@@ -552,7 +553,6 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 			/* Eq 23. Pralong et al. (2005) */
 			IssmDouble k1=3.75e-3; // [Pa-1] Table 3 in Pralong et al. (2005)
 
-			stress_equivalent_input->GetInputValue(&Chi,gauss);
 			effective_sigma1_input->GetInputValue(&s1,gauss);
 			effective_sigma2_input->GetInputValue(&s2,gauss);
 			effective_sigma3_input->GetInputValue(&s3,gauss);
@@ -1394,6 +1394,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 			if(dim==3){
 				sigma_xz = tau_xz/(1-D);
 				sigma_yz = tau_yz/(1-D);
+				//if(isSSA | isHO) sigma_zz = (tau_zz-P)/(1-D);
 				if(isSSA | isHO) sigma_zz = (-tau_xx - tau_yy - P)/(1-D);
 				else if(isFS) sigma_zz = (tau_zz-P)/(1-D);
 				else _error_("Error: Not supported.");
@@ -1405,6 +1406,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 			if(dim==3){
 				sigma_xz = tau_xz/(1-D);
 				sigma_yz = tau_yz/(1-D);
+				//if(isSSA | isHO) sigma_zz = tau_zz/(1-D) - P;
 				if(isSSA | isHO) sigma_zz = (-tau_xx - tau_yy)/(1-D) - P;
 				else if(isFS) sigma_zz = tau_zz/(1-D) - P;
 				else _error_("Error: Not supported.");
