@@ -77,16 +77,18 @@ class damage(object):
                 s += "%s\n" % fielddisplay(self, "c4", "damage parameter 4 ")
             elif self.law == 4:
                 s += '\n'
-                s += '   Damage source term in Pralong et al. (2005)'
-                s += '   f_D = c1 * max((sigma_cr - sigma_th),0)^c2 (1-D)^{k_sigma}'
-                s += '   exponent in damage term, k_sigma'
-                s += '   0 : c3'
-                s += '   1 : k1 * (sqrt(max(s_inv1,0)) - healing * sqrt(max(-s_inv1,0)))'
-                s += '   2 : k1 + k2 * s_inv1'
+                s += '\n   Damage source term in Pralong et al. (2005)'
+                s += '\n   f_D = c1 * max((sigma_cr - sigma_th),0)^c2 (1-D)^{k_sigma}'
+                s += '\n   exponent in damage term, k_sigma'
+                s += '\n   0 : c3'
+                s += '\n   1 : k1 * (sqrt(max(s_inv1,0)) - healing * sqrt(max(-s_inv1,0)))'
+                s += '\n   2 : k1 + k2 * s_inv1 (if s_inv1 >=0, tension), k2 + k3 * s_inv1 (if s_inv1 < 0, compression)'
+                s += '\n   3 : k1 + k2 * s_inv1'
+                s += '\n'
                 s += '{}\n'.format(fielddisplay(self, 'c1', 'damage parameter 1 '))
                 s += '{}\n'.format(fielddisplay(self, 'c2', 'damage parameter 2 '))
                 s += '{}\n'.format(fielddisplay(self, 'c3', 'damage parameter 3 '))
-                s += '{}\n'.format(fielddisplay(self,'isdamage_exponent','damage exponent parameter (k_sigma). 0: constant, 1: Pralong (2005), 2: Duddu et al. (2020)'))
+                s += '{}\n'.format(fielddisplay(self,'isdamage_exponent','damage exponent parameter (k_sigma). 0: constant, 1: Pralong (2005), 2: (deprecated) Duddu et al. (2012) 3: Duddu et al. (2020)'))
             elif self.law==5:
                 s += '{}\n'.format(fielddisplay(self, 'c1', 'damage parameter 1 ( F = c1 * max( stress_equiv - stress_threshold, 0)'))
 
@@ -95,20 +97,21 @@ class damage(object):
 
             if self.equiv_stress==2:
                 s += '\n   Hayhurst criterion'
-                s += '      sigma_equiv = alpha*sigma_1 + beta*sigma_{VM} + (1-alpha-beta)*(sigma_1+sigma_2+sigma_3)'
-                s += '      sigma_i : principal stress value'
-                s += '{}'.format(fielddisplay(self,'equiv_stress_alpha','alpha parameter for Hayhurst criterion (default: 0.21)'))
-                s += '{}'.format(fielddisplay(self,'equiv_stress_beta','beta parameter for Hayhurst criterion (default: 0.63)'))
+                s += '\n      sigma_equiv = alpha*sigma_1 + beta*sigma_{VM} + (1-alpha-beta)*(sigma_1+sigma_2+sigma_3)'
+                s += '\n      sigma_i : principal stress value'
+                s += '\n'
+                s += '{}\n'.format(fielddisplay(self,'equiv_stress_alpha','alpha parameter for Hayhurst criterion (default: 0.21)'))
+                s += '{}\n'.format(fielddisplay(self,'equiv_stress_beta','beta parameter for Hayhurst criterion (default: 0.63)'))
             elif self.equiv_stress==3:
                 s += '\n   Coulomb criterion'
                 s += '      sigma_equiv = (sigma_1 - sigma_3)/2 + mu (sigma_1 + sigma_3)/2'
                 s += '      sigma_i : principal stress value'
-                s += '{}'.format(fielddisplay(self,'equiv_stress_mu','mu parameter for Coulomb criterion (default: 0.1)'))
+                s += '{}\n'.format(fielddisplay(self,'equiv_stress_mu','mu parameter for Coulomb criterion (default: 0.1)'))
 
             s += '\n'
-            s += '{}'.format(fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)'))
-            s += '{}'.format(fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)'))
-            s += '{}'.format(fielddisplay(self,'requested_outputs','additional outputs requested'))
+            s += '{}\n'.format(fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)'))
+            s += '{}\n'.format(fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)'))
+            s += '{}\n'.format(fielddisplay(self,'requested_outputs','additional outputs requested'))
 
         return s
     # }}}
@@ -204,7 +207,8 @@ class damage(object):
             md = checkfield(md, 'fieldname', 'damage.c2', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.c3', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.c4', '>=', 0)
-            md = checkfield(md, 'fieldname', 'damage.isdamage_exponent', 'numel', [1], 'values',[0, 1, 2])
+            # FIXME: isdamage_exponent = 2 not supported yet. Fix it later
+            md = checkfield(md, 'fieldname', 'damage.isdamage_exponent', 'numel', [1], 'values',[0, 1, 3])
             md = checkfield(md, 'fieldname', 'damage.isPeff', 'numel', [1], 'values', [0, 1])
             md = checkfield(md, 'fieldname', 'damage.iseffective_stress', 'numel', [1], 'values', [0, 1])
             md = checkfield(md, 'fieldname', 'damage.equiv_stress', 'numel', [1], 'values', [0, 1, 2, 3])
