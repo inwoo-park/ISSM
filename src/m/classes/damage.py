@@ -60,8 +60,8 @@ class damage(object):
         s = '   Damage:\n'
         s += "{}\n".format(fielddisplay(self, "isdamage", "is damage mechanics being used? [0 (default) or 1]"))
         if self.isdamage:
-            s += "{}\n" .format(fielddisplay(self, "D", "damage tensor (scalar for now)"))
-            s += "{}\n" .format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong']"))
+            s += "{}\n".format(fielddisplay(self, "D", "damage tensor (scalar for now)"))
+            s += "{}\n".format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong']"))
             s += '{}\n'.format(fielddisplay(self, "spcdamage", "damage constraints (NaN means no constraint)"))
             s += "{}\n".format(fielddisplay(self, "max_damage", "maximum possible damage (0 <=max_damage < 1)"))
             s += "{}\n".format(fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches D_max. (default: 1-1e-6; Duddu et al., 2013)'))
@@ -232,6 +232,7 @@ class damage(object):
     def marshall(self, prefix, md, fid):  # {{{
         WriteData(fid, prefix, 'object', self, 'fieldname', 'isdamage', 'format', 'Boolean')
         if self.isdamage:
+            WriteData(fid, prefix, 'name', 'md.damage.model', 'data', 1, 'format', 'Integer')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'law', 'format', 'Integer')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'D', 'format', 'DoubleMat', 'mattype', 1)
             WriteData(fid, prefix, 'object', self, 'fieldname', 'spcdamage', 'format', 'DoubleMat', 'mattype', 1, 'timeserieslength', md.mesh.numberofvertices + 1, 'yts', md.constants.yts)

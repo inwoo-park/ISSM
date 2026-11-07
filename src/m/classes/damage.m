@@ -28,7 +28,7 @@ classdef damage
 		healing             = 0;
 		isdamage_exponent   = 0;
 		isPeff              = 0;
-		equiv_stress		= 0;
+		equiv_stress		  = 0;
 		iseffective_stress  = 0;
 		critical_damage     = 0;
 		requested_outputs   = {};
@@ -231,6 +231,7 @@ classdef damage
 		
 			WriteData(fid,prefix,'object',self,'fieldname','isdamage','format','Boolean');
 			if self.isdamage
+				WriteData(fid,prefix,'name','md.damage.model','data',1,'format','Integer');
 				WriteData(fid,prefix,'object',self,'fieldname','law','format','Integer');
 				WriteData(fid,prefix,'object',self,'fieldname','D','format','DoubleMat','mattype',1);
 				WriteData(fid,prefix,'object',self,'fieldname','spcdamage','format','DoubleMat','mattype',1,'timeserieslength',md.mesh.numberofvertices+1,'yts',md.constants.yts);
