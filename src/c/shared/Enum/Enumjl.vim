@@ -175,6 +175,7 @@ syn keyword juliaConstC DamageIsEffectiveStressEnum
 syn keyword juliaConstC DamageKappaEnum
 syn keyword juliaConstC DamageLawEnum
 syn keyword juliaConstC DamageMaxDamageEnum
+syn keyword juliaConstC DamageModelEnum
 syn keyword juliaConstC DamageStabilizationEnum
 syn keyword juliaConstC DamageStressThresholdEnum
 syn keyword juliaConstC DamageStressUBoundEnum
@@ -3559,6 +3560,7 @@ syn keyword juliaConstC CuffeyEnum
 syn keyword juliaConstC CuffeyTemperateEnum
 syn keyword juliaConstC DamageEvolutionAnalysisEnum
 syn keyword juliaConstC DamageEvolutionSolutionEnum
+syn keyword juliaConstC DamageEvolutionEnum
 syn keyword juliaConstC DataSetEnum
 syn keyword juliaConstC DataSetParamEnum
 syn keyword juliaConstC DatasetInputEnum

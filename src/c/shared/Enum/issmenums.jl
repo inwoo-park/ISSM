@@ -171,6 +171,7 @@
 	DamageKappaEnum
 	DamageLawEnum
 	DamageMaxDamageEnum
+	DamageModelEnum
 	DamageStabilizationEnum
 	DamageStressThresholdEnum
 	DamageStressUBoundEnum
@@ -3555,6 +3556,7 @@
 	CuffeyTemperateEnum
 	DamageEvolutionAnalysisEnum
 	DamageEvolutionSolutionEnum
+	DamageEvolutionEnum
 	DataSetEnum
 	DataSetParamEnum
 	DatasetInputEnum
@@ -4085,6 +4087,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageKappaEnum) return "DamageKappa" end
 	if(enum==DamageLawEnum) return "DamageLaw" end
 	if(enum==DamageMaxDamageEnum) return "DamageMaxDamage" end
+	if(enum==DamageModelEnum) return "DamageModel" end
 	if(enum==DamageStabilizationEnum) return "DamageStabilization" end
 	if(enum==DamageStressThresholdEnum) return "DamageStressThreshold" end
 	if(enum==DamageStressUBoundEnum) return "DamageStressUBound" end
@@ -7469,6 +7472,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==CuffeyTemperateEnum) return "CuffeyTemperate" end
 	if(enum==DamageEvolutionAnalysisEnum) return "DamageEvolutionAnalysis" end
 	if(enum==DamageEvolutionSolutionEnum) return "DamageEvolutionSolution" end
+	if(enum==DamageEvolutionEnum) return "DamageEvolution" end
 	if(enum==DataSetEnum) return "DataSet" end
 	if(enum==DataSetParamEnum) return "DataSetParam" end
 	if(enum==DatasetInputEnum) return "DatasetInput" end
@@ -7999,6 +8003,7 @@ function StringToEnum(name::String)
 	if(name=="DamageKappa") return DamageKappaEnum  end
 	if(name=="DamageLaw") return DamageLawEnum  end
 	if(name=="DamageMaxDamage") return DamageMaxDamageEnum  end
+	if(name=="DamageModel") return DamageModelEnum  end
 	if(name=="DamageStabilization") return DamageStabilizationEnum  end
 	if(name=="DamageStressThreshold") return DamageStressThresholdEnum  end
 	if(name=="DamageStressUBound") return DamageStressUBoundEnum  end
@@ -11383,6 +11388,7 @@ function StringToEnum(name::String)
 	if(name=="CuffeyTemperate") return CuffeyTemperateEnum  end
 	if(name=="DamageEvolutionAnalysis") return DamageEvolutionAnalysisEnum  end
 	if(name=="DamageEvolutionSolution") return DamageEvolutionSolutionEnum  end
+	if(name=="DamageEvolution") return DamageEvolutionEnum  end
 	if(name=="DataSet") return DataSetEnum  end
 	if(name=="DataSetParam") return DataSetParamEnum  end
 	if(name=="DatasetInput") return DatasetInputEnum  end

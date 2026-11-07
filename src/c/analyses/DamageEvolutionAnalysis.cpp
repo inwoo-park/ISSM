@@ -7,6 +7,11 @@
 /*Model processing*/
 void DamageEvolutionAnalysis::CreateConstraints(Constraints* constraints,IoModel* iomodel){/*{{{*/
 
+	/*retrieve some parameters*/
+	int damage_model;
+	iomodel->FindConstant(&damage_model,"md.damage.model");
+	if(damage_model != DamageEvolutionEnum) return;
+
 	int finiteelement;
 	iomodel->FindConstant(&finiteelement,"md.damage.elementinterp");
 
@@ -94,10 +99,16 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
 
 	/*Intermediaries*/
-	int         numoutputs;
-	char**      requestedoutputs = NULL;
+	int     damage_model;
+	int     numoutputs;
+	char**  requestedoutputs = NULL;
+	iomodel->FindConstant(&damage_model,"md.damage.model");
+
+	/*Now, do we really want DamageEvolution?*/
+	if(damage_model!=DamageEvolutionEnum) return;
 
 	/*retrieve some parameters: */
+	parameters->AddObject(new IntParam(DamageModelEnum,damage_model));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.law",DamageLawEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.stabilization",DamageStabilizationEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.max_damage",DamageMaxDamageEnum));

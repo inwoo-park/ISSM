@@ -184,6 +184,7 @@ const char* EnumToStringx(int en){
 		case DamageKappaEnum : return "DamageKappa";
 		case DamageLawEnum : return "DamageLaw";
 		case DamageMaxDamageEnum : return "DamageMaxDamage";
+		case DamageModelEnum : return "DamageModel";
 		case DamageStabilizationEnum : return "DamageStabilization";
 		case DamageStressThresholdEnum : return "DamageStressThreshold";
 		case DamageStressUBoundEnum : return "DamageStressUBound";
@@ -3568,6 +3569,7 @@ const char* EnumToStringx(int en){
 		case CuffeyTemperateEnum : return "CuffeyTemperate";
 		case DamageEvolutionAnalysisEnum : return "DamageEvolutionAnalysis";
 		case DamageEvolutionSolutionEnum : return "DamageEvolutionSolution";
+		case DamageEvolutionEnum : return "DamageEvolution";
 		case DataSetEnum : return "DataSet";
 		case DataSetParamEnum : return "DataSetParam";
 		case DatasetInputEnum : return "DatasetInput";

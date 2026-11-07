@@ -182,6 +182,7 @@ syn keyword cConstant DamageIsEffectiveStressEnum
 syn keyword cConstant DamageKappaEnum
 syn keyword cConstant DamageLawEnum
 syn keyword cConstant DamageMaxDamageEnum
+syn keyword cConstant DamageModelEnum
 syn keyword cConstant DamageStabilizationEnum
 syn keyword cConstant DamageStressThresholdEnum
 syn keyword cConstant DamageStressUBoundEnum
@@ -3566,6 +3567,7 @@ syn keyword cConstant CuffeyEnum
 syn keyword cConstant CuffeyTemperateEnum
 syn keyword cConstant DamageEvolutionAnalysisEnum
 syn keyword cConstant DamageEvolutionSolutionEnum
+syn keyword cConstant DamageEvolutionEnum
 syn keyword cConstant DataSetEnum
 syn keyword cConstant DataSetParamEnum
 syn keyword cConstant DatasetInputEnum

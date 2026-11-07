@@ -15,6 +15,7 @@ void damage_core(FemModel* femmodel){
 	femmodel->profiler->Start(DAMAGECORE);
 
 	/*intermediary*/
+	int    damage_model;
 	bool   save_results;
 	bool   dakota_analysis     = false;
 	int    domaintype;
@@ -23,6 +24,7 @@ void damage_core(FemModel* femmodel){
 	char   **requested_outputs = NULL;
 
 	//first recover parameters common to all solutions
+	femmodel->parameters->FindParam(&damage_model,DamageModelEnum);
 	femmodel->parameters->FindParam(&save_results,SaveResultsEnum);
 	femmodel->parameters->FindParam(&solution_type,SolutionTypeEnum);
 	femmodel->parameters->FindParam(&domaintype,DomainTypeEnum);
@@ -30,34 +32,39 @@ void damage_core(FemModel* femmodel){
 	if(numoutputs) femmodel->parameters->FindParam(&requested_outputs,&numoutputs,DamageEvolutionRequestedOutputsEnum);
 	femmodel->parameters->FindParam(&stabilization,DamageStabilizationEnum);
 
-	DamageEvolutionAnalysis* analysis = new DamageEvolutionAnalysis();
+	/*Using default damage model*/
+	if (damage_model==DamageEvolutionEnum){
+		DamageEvolutionAnalysis* analysis = new DamageEvolutionAnalysis();
 
-	if(VerboseSolution()) _printf0_("   update effective stress\n");
-	analysis->ComputeEffectiveStress(femmodel);
-	if(VerboseSolution()) _printf0_("   update stress equivalent\n");
-	analysis->ComputeStressEquivalent(femmodel);
+		if(VerboseSolution()) _printf0_("   update effective stress\n");
+		analysis->ComputeEffectiveStress(femmodel);
+		if(VerboseSolution()) _printf0_("   update stress equivalent\n");
+		analysis->ComputeStressEquivalent(femmodel);
 
-	if(VerboseSolution()) _printf0_("   computing damage\n");
-	Damagex(femmodel); /* optionally calculate damage analytically first */
-	femmodel->SetCurrentConfiguration(DamageEvolutionAnalysisEnum);
-	if(stabilization==4){
-		solutionsequence_fct(femmodel);
+		if(VerboseSolution()) _printf0_("   computing damage\n");
+		Damagex(femmodel); /* optionally calculate damage analytically first */
+		femmodel->SetCurrentConfiguration(DamageEvolutionAnalysisEnum);
+		if(stabilization==4){
+			solutionsequence_fct(femmodel);
+		}
+		else{
+			solutionsequence_linear(femmodel);
+		}
+		delete analysis;
+
+		if(domaintype==Domain2DhorizontalEnum){
+			// duplicate DamageDbar to DamageD
+			InputDuplicatex(femmodel,DamageDbarEnum,DamageDEnum);	
+		}
+		else if((domaintype==Domain3DEnum) | (domaintype==Domain2DverticalEnum)){
+			/* Depth average for DamageDbar in 3D domain */
+			femmodel->parameters->SetParam(DamageDEnum,InputToDepthaverageInEnum);
+			femmodel->parameters->SetParam(DamageDbarEnum,InputToDepthaverageOutEnum);
+			depthaverage_core(femmodel);
+		}
 	}
 	else{
-		solutionsequence_linear(femmodel);
-	}
-	delete analysis;
-
-	//if(VerboseSolution()) _printf0_("    starting depth averaging\n");
-	if(domaintype==Domain2DhorizontalEnum){
-		// duplicate DamageDbar to DamageD
-		InputDuplicatex(femmodel,DamageDbarEnum,DamageDEnum);	
-	}
-	else if((domaintype==Domain3DEnum) | (domaintype==Domain2DverticalEnum)){
-		/* Depth average for DamageDbar in 3D domain */
-		femmodel->parameters->SetParam(DamageDEnum,InputToDepthaverageInEnum);
-		femmodel->parameters->SetParam(DamageDbarEnum,InputToDepthaverageOutEnum);
-		depthaverage_core(femmodel);
+		_error_("Damage model "<< EnumToStringx(damage_model) <<" not supported yet");
 	}
 
 	if(save_results){

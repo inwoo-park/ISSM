@@ -311,6 +311,12 @@ int IoCodeToEnumCalving(int enum_in){/*{{{*/
 		default: _error_("Marshalled Calving law code \""<<enum_in<<"\" not supported yet");
 	}
 }/*}}}*/
+int IoCodeToEnumDamage(int enum_in){/*{{{*/
+	switch(enum_in){
+		case 1: return DamageEvolutionEnum;
+		default: _error_("Marshalled damage code \""<<enum_in<<"\" not supported yet");
+	}
+}/*}}}*/
 int IoCodeToEnumFrontalforcings(int enum_in){/*{{{*/
 	switch(enum_in){
 		case 1: return FrontalForcingsDefaultEnum;

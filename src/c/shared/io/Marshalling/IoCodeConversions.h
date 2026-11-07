@@ -6,6 +6,7 @@ void FieldAndEnumFromCode(int* out_enum,char** pfield,const char* string_in);
 int IoCodeToEnumSMB(int enum_in);
 int IoCodeToEnumBasal(int enum_in);
 int IoCodeToEnumCalving(int enum_in);
+int IoCodeToEnumDamage(int enum_in);
 int IoCodeToEnumFrontalforcings(int enum_in);
 int IoCodeToEnumHydrology(int enum_in);
 int IoCodeToEnumMaterials(int enum_in);
