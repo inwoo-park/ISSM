@@ -21,6 +21,7 @@ class damage(object):
         self.law = float('NaN')
         self.spcdamage = float('NaN')
         self.max_damage = float('NaN')
+        self.critical_damage = float('NaN')
 
         #numerical
         self.stabilization = float('NaN')
@@ -63,6 +64,7 @@ class damage(object):
             s += "{}\n" .format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong']"))
             s += '{}\n'.format(fielddisplay(self, "spcdamage", "damage constraints (NaN means no constraint)"))
             s += "{}\n".format(fielddisplay(self, "max_damage", "maximum possible damage (0 <=max_damage < 1)"))
+            s += "{}\n".format(fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches D_max. (default: 1-1e-6; Duddu et al., 2013)'))
             s += "{}\n".format(fielddisplay(self, "stabilization", "0: no stabilization, 1: artificial diffusion, 2: SUPG (not working), 4: flux corrected transport"))
             s += "{}\n".format(fielddisplay(self, "maxiter", "maximum number of non linear iterations"))
             s += "%s\n" % fielddisplay(self, "elementinterp", "interpolation scheme for finite elements [''P1'', ''P2'']")
@@ -128,6 +130,7 @@ class damage(object):
         self.D = 0
         self.law = 0
         self.max_damage = 1 - 1e-5  #if damage reaches 1, solve becomes singular, as viscosity becomes nil
+        self.critical_damage = 1-1e-6 # If damage value > damage_critical, make D value as Dmax.
 
         #Type of stabilization used
         self.stabilization = 4
@@ -196,6 +199,7 @@ class damage(object):
             md = checkfield(md, 'fieldname', 'damage.D', '>=', 0, '<=', self.max_damage, 'size', [md.mesh.numberofvertices])
             md = checkfield(md, 'fieldname', 'damage.spcdamage', 'Inf', 1, 'timeseries', 1)
             md = checkfield(md, 'fieldname', 'damage.max_damage', '<', 1, '>=', 0)
+            md = checkfield(md, 'fieldname', 'damage.critical_damage', '<', 1, '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.stabilization', 'numel', [1], 'values', [0, 1, 2, 4])
             md = checkfield(md, 'fieldname', 'damage.maxiter', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.elementinterp', 'values', ['P1', 'P2'])
@@ -232,6 +236,7 @@ class damage(object):
             WriteData(fid, prefix, 'object', self, 'fieldname', 'D', 'format', 'DoubleMat', 'mattype', 1)
             WriteData(fid, prefix, 'object', self, 'fieldname', 'spcdamage', 'format', 'DoubleMat', 'mattype', 1, 'timeserieslength', md.mesh.numberofvertices + 1, 'yts', md.constants.yts)
             WriteData(fid, prefix, 'object', self, 'fieldname', 'max_damage', 'format', 'Double')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'critical_damage', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'stabilization', 'format', 'Integer')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'maxiter', 'format', 'Integer')
             WriteData(fid, prefix, 'name', 'md.damage.elementinterp', 'data', self.elementinterp, 'format', 'String')

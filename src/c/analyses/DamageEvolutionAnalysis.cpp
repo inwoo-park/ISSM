@@ -101,6 +101,7 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.law",DamageLawEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.stabilization",DamageStabilizationEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.max_damage",DamageMaxDamageEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.critical_damage",DamageCriticalDamageEnum));
 
 	/*Requested outputs*/
 	//NOTE: this section is duplicted at "modules/ModelProcessorx/CreateParameters.cpp".
@@ -1039,6 +1040,7 @@ void           DamageEvolutionAnalysis::InputUpdateFromSolution(IssmDouble* solu
 
 	/*Get user-supplied max_damage: */
 	IssmDouble max_damage = element->FindParam(DamageMaxDamageEnum);
+	IssmDouble critical_damage = element->FindParam(DamageCriticalDamageEnum);
 
 	/*Use the dof list to index into the solution vector: */
 	for(int i=0;i<numnodes;i++){
@@ -1049,6 +1051,9 @@ void           DamageEvolutionAnalysis::InputUpdateFromSolution(IssmDouble* solu
 		/*Enforce D < max_damage and D > 0 */
 		if(newdamage[i]>max_damage) newdamage[i]=max_damage;
 		else if(newdamage[i]<0.)    newdamage[i]=0.;
+
+		/*Enforce max_damage if D > critical_damage is satisfied (Huth 2021, doi:10.1029/2020MS002292) */
+		if(newdamage[i]>critical_damage) newdamage[i]=max_damage;
 	}
 
 	/*Get all inputs and parameters*/

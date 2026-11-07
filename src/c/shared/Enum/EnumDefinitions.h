@@ -161,6 +161,7 @@ enum definitions{
 	DamageC2Enum,
 	DamageC3Enum,
 	DamageC4Enum,
+	DamageCriticalDamageEnum,
 	DamageEnum,
 	DamageEquivStressEnum,
 	DamageEquivStressAlphaEnum,

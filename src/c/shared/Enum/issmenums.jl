@@ -156,6 +156,7 @@
 	DamageC2Enum
 	DamageC3Enum
 	DamageC4Enum
+	DamageCriticalDamageEnum
 	DamageEnum
 	DamageEquivStressEnum
 	DamageEquivStressAlphaEnum
@@ -4069,6 +4070,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageC2Enum) return "DamageC2" end
 	if(enum==DamageC3Enum) return "DamageC3" end
 	if(enum==DamageC4Enum) return "DamageC4" end
+	if(enum==DamageCriticalDamageEnum) return "DamageCriticalDamage" end
 	if(enum==DamageEnum) return "Damage" end
 	if(enum==DamageEquivStressEnum) return "DamageEquivStress" end
 	if(enum==DamageEquivStressAlphaEnum) return "DamageEquivStressAlpha" end
@@ -7982,6 +7984,7 @@ function StringToEnum(name::String)
 	if(name=="DamageC2") return DamageC2Enum  end
 	if(name=="DamageC3") return DamageC3Enum  end
 	if(name=="DamageC4") return DamageC4Enum  end
+	if(name=="DamageCriticalDamage") return DamageCriticalDamageEnum  end
 	if(name=="Damage") return DamageEnum  end
 	if(name=="DamageEquivStress") return DamageEquivStressEnum  end
 	if(name=="DamageEquivStressAlpha") return DamageEquivStressAlphaEnum  end

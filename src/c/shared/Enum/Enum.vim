@@ -167,6 +167,7 @@ syn keyword cConstant DamageC1Enum
 syn keyword cConstant DamageC2Enum
 syn keyword cConstant DamageC3Enum
 syn keyword cConstant DamageC4Enum
+syn keyword cConstant DamageCriticalDamageEnum
 syn keyword cConstant DamageEnum
 syn keyword cConstant DamageEquivStressEnum
 syn keyword cConstant DamageEquivStressAlphaEnum

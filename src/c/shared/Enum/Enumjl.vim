@@ -160,6 +160,7 @@ syn keyword juliaConstC DamageC1Enum
 syn keyword juliaConstC DamageC2Enum
 syn keyword juliaConstC DamageC3Enum
 syn keyword juliaConstC DamageC4Enum
+syn keyword juliaConstC DamageCriticalDamageEnum
 syn keyword juliaConstC DamageEnum
 syn keyword juliaConstC DamageEquivStressEnum
 syn keyword juliaConstC DamageEquivStressAlphaEnum

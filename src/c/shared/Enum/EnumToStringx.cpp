@@ -169,6 +169,7 @@ const char* EnumToStringx(int en){
 		case DamageC2Enum : return "DamageC2";
 		case DamageC3Enum : return "DamageC3";
 		case DamageC4Enum : return "DamageC4";
+		case DamageCriticalDamageEnum : return "DamageCriticalDamage";
 		case DamageEnum : return "Damage";
 		case DamageEquivStressEnum : return "DamageEquivStress";
 		case DamageEquivStressAlphaEnum : return "DamageEquivStressAlpha";
