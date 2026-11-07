@@ -46,15 +46,19 @@ void damage_core(FemModel* femmodel){
 	else{
 		solutionsequence_linear(femmodel);
 	}
+	delete analysis;
 
-	/*Depth average for DamageDbar in 3D domain*/
-	if(domaintype==Domain3DEnum){
+	//if(VerboseSolution()) _printf0_("    starting depth averaging\n");
+	if(domaintype==Domain2DhorizontalEnum){
+		// duplicate DamageDbar to DamageD
+		InputDuplicatex(femmodel,DamageDbarEnum,DamageDEnum);	
+	}
+	else if((domaintype==Domain3DEnum) | (domaintype==Domain2DverticalEnum)){
+		/* Depth average for DamageDbar in 3D domain */
 		femmodel->parameters->SetParam(DamageDEnum,InputToDepthaverageInEnum);
 		femmodel->parameters->SetParam(DamageDbarEnum,InputToDepthaverageOutEnum);
 		depthaverage_core(femmodel);
 	}
-
-	delete analysis;
 
 	if(save_results){
 		femmodel->RequestedOutputsx(&femmodel->results,requested_outputs,numoutputs);
