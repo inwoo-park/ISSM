@@ -79,6 +79,9 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	InputUpdateFromConstantx(inputs,elements,0.,VzMeshEnum);
 
 	iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDEnum);
+	if (iomodel->domaintype==Domain3DEnum){
+		iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDbarEnum,0.0);
+	}
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ice_levelset",MaskIceLevelsetEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ocean_levelset",MaskOceanLevelsetEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.thickness",ThicknessEnum);
@@ -100,10 +103,11 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.max_damage",DamageMaxDamageEnum));
 
 	/*Requested outputs*/
-	iomodel->FindConstant(&requestedoutputs,&numoutputs,"md.damage.requested_outputs");
-	parameters->AddObject(new IntParam(DamageEvolutionNumRequestedOutputsEnum,numoutputs));
-	if(numoutputs)parameters->AddObject(new StringArrayParam(DamageEvolutionRequestedOutputsEnum,requestedoutputs,numoutputs));
-	iomodel->DeleteData(&requestedoutputs,numoutputs,"md.damage.requested_outputs");
+	//NOTE: this section is duplicted at "modules/ModelProcessorx/CreateParameters.cpp".
+	//iomodel->FindConstant(&requestedoutputs,&numoutputs,"md.damage.requested_outputs");
+	//parameters->AddObject(new IntParam(DamageEvolutionNumRequestedOutputsEnum,numoutputs));
+	//if(numoutputs)parameters->AddObject(new StringArrayParam(DamageEvolutionRequestedOutputsEnum,requestedoutputs,numoutputs));
+	//iomodel->DeleteData(&requestedoutputs,numoutputs,"md.damage.requested_outputs");
 
 	/*Retrieve law dependent parameters: */
 	int law;
