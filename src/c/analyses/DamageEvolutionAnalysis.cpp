@@ -538,8 +538,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	Input* damage_input = NULL;
 	if(domaintype==Domain2DhorizontalEnum){
 		damage_input = element->GetInput(DamageDbarEnum); 	_assert_(damage_input);
-	}
-	else{
+	}else if((domaintype==Domain2DverticalEnum) || (domaintype==Domain3DEnum)){
 		damage_input = element->GetInput(DamageDEnum);   _assert_(damage_input);
 	}
 
@@ -547,11 +546,16 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	/* stress */
 	Input* sigma1_input = element->GetInput(StressTensorPrincipalValue1Enum); _assert_(sigma1_input);
 	Input* sigma2_input = element->GetInput(StressTensorPrincipalValue2Enum); _assert_(sigma2_input);
-	Input* sigma3_input = element->GetInput(StressTensorPrincipalValue3Enum); _assert_(sigma3_input);
+	Input* sigma3_input = NULL;
 	/* Effective stress */
 	Input* effective_sigma1_input = element->GetInput(DamageEffectiveStressPrincipalValue1Enum); _assert_(effective_sigma1_input);
 	Input* effective_sigma2_input = element->GetInput(DamageEffectiveStressPrincipalValue2Enum); _assert_(effective_sigma2_input);
-	Input* effective_sigma3_input = element->GetInput(DamageEffectiveStressPrincipalValue3Enum); _assert_(effective_sigma3_input);
+	Input* effective_sigma3_input = NULL;
+
+	if(dim==3){
+		sigma3_input = element->GetInput(StressTensorPrincipalValue3Enum); _assert_(sigma3_input);
+		effective_sigma3_input = element->GetInput(DamageEffectiveStressPrincipalValue3Enum); _assert_(effective_sigma3_input);
+	}
 
 	/*Calculate damage evolution source term: */
 	Gauss* gauss=element->NewGauss();
@@ -561,6 +565,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 		/*Get all variables*/
 		damage_input->GetInputValue(&damage,gauss);
 		stress_equivalent_input->GetInputValue(&Chi,gauss);
+		s3=0.0;
 
 		/*Calculate k_simga value*/
 		if(isdamage_exponent==0){
@@ -571,7 +576,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 
 			effective_sigma1_input->GetInputValue(&s1,gauss);
 			effective_sigma2_input->GetInputValue(&s2,gauss);
-			effective_sigma3_input->GetInputValue(&s3,gauss);
+			if(dim==3) effective_sigma3_input->GetInputValue(&s3,gauss);
 			s_inv1 = s1 + s2 + s3;
 
 			k_sigma = k1 * ( sqrt(max(s_inv1,0.0)) - healing * sqrt(max(-s_inv1,0.0)) );
@@ -585,7 +590,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 
 			sigma1_input->GetInputValue(&s1,gauss);
 			sigma2_input->GetInputValue(&s2,gauss);
-			sigma3_input->GetInputValue(&s3,gauss);
+			if(dim==3) sigma3_input->GetInputValue(&s3,gauss);
 			s_inv1 = s1+s2+s3;
 
 			/* Eq 18 in Duddu 2013 */
@@ -599,7 +604,7 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 
 			sigma1_input->GetInputValue(&s1,gauss);
 			sigma2_input->GetInputValue(&s2,gauss);
-			sigma3_input->GetInputValue(&s3,gauss);
+			if(dim==3) sigma3_input->GetInputValue(&s3,gauss);
 			s_inv1 = s1+s2+s3;
 
 			k_sigma = k1 + k2*s_inv1;
@@ -1726,7 +1731,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress2dvertical(Element* element)
 		if (isSSA | isHO){ /* {{{ */
 			pressure_input->GetInputValue(&Pi,gauss);
 			z = xyz_list[i*3+1]; /* vertical node is assigned from md.mesh.y */
-			P = 0.0; /* pressure at surface*/
+			Pw = 0.0;
 			if (isPeff){
 				if (z>sealevel){
 					Pw=0.0;
@@ -1734,9 +1739,11 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress2dvertical(Element* element)
 					Pw=rho_w*g*(sealevel-z);	
 				}
 			}
+			if (iseffective_stress == 0){ P = Pi - tau_xx - Pw; }
+			else if (iseffective_stress == 1){ P = Pi - tau_xx/(1-D) - Pw; }
 		}/* }}} */
 		else if(isFS){ /* {{{ */
-			pressure_input->GetInputValue(&Pi,gauss);
+			pressure_input->GetInputValue(&P,gauss);
 			z = xyz_list[i*3+1]; /* vertical node is assigned from md.mesh.y */
 			Pw=0.0;
 			if (isPeff){
@@ -1746,8 +1753,8 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress2dvertical(Element* element)
 					Pw=rho_w*g*(sealevel-z);	
 				}
 			}
-			if (iseffective_stress == 0){ P = Pi - Pw; }
-			else if (iseffective_stress == 1){ P = Pi - Pw; }
+			if (iseffective_stress == 0){ P = P - Pw; }
+			else if (iseffective_stress == 1){ P = P - Pw; }
 		}/* }}} */
 
 		/* Compute effective Cauchy stress tensor based on deviatoric stress */
@@ -1763,10 +1770,8 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress2dvertical(Element* element)
 
 		/* Compute principal stress values without damage */
 		/* FIXME: Implement SSA and HO model. */
-		if(isSSA){
-			_error_("Not implemented");
-		}else if(isHO){
-			_error_("Not implemented");
+		if(isSSA || isHO){
+			Matrix2x2Eigen(&s1,&s2,NULL,NULL,2*tau_xx-Pi+Pw, tau_xz, tau_zz-Pi+tau_xx+Pw);
 		}else if(isFS){
 			Matrix2x2Eigen(&s1,&s2,NULL,NULL,tau_xx-Pi+Pw, tau_xz, tau_zz-Pi+Pw);
 		}
@@ -1784,7 +1789,6 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress2dvertical(Element* element)
 		Matrix2x2Eigen(&s1,&s2,NULL,NULL,sigma_xx,sigma_xz,sigma_zz);
 		Matrix2x2Eigen(&t1,&t2,NULL,NULL,tau_xx,tau_xz,tau_zz);
 
-		
 		/* Now, assign effective principal stresses */
 		effective_sigma1[i] = s1;
 		effective_sigma2[i] = s2;
