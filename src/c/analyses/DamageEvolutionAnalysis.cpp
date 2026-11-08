@@ -481,8 +481,8 @@ void           DamageEvolutionAnalysis::CreateDamageFInputPralong(Element* eleme
 				IssmDouble alpha=0.21;
 				IssmDouble beta=0.63;
 				Chi=alpha*s1 \
-					 + beta*sqrt(((s_xx-s_yy)*(s_xx-s_yy)+(s_yy-s_zz)*(s_yy-s_zz)+(s_zz-s_xx)*(s_zz-s_xx)+6.*(s_xy*s_xy+s_yz*s_yz+s_xz*s_xz))/2.);
-					 + (1-alpha-beta)*(s_xx + s_yy + s_zz);
+					 + beta*sqrt(((s_xx-s_yy)*(s_xx-s_yy)+(s_yy-s_zz)*(s_yy-s_zz)+(s_zz-s_xx)*(s_zz-s_xx)+6.*(s_xy*s_xy+s_yz*s_yz+s_xz*s_xz))/2.) \
+					 + (1.0-alpha-beta)*(s_xx + s_yy + s_zz);
 			}
 			Psi=Chi-stress_threshold;
 			//NegPsi=max(-Chi,0.); /* healing only for compressive stresses */
@@ -886,7 +886,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[1*dim+2]=h/(2.0*vel)*vy*vz;
 				D[2*dim+2]=h/(2.0*vel)*vz*vz;
 			}
-			else if(dim=2){
+			else if(dim==2){
 				vel=sqrt(vx*vx+vy*vy)+1.e-8;
 				D[0*dim+0]=h/(2.0*vel)*vx*vx;
 				D[1*dim+0]=h/(2.0*vel)*vy*vx;
@@ -1251,10 +1251,19 @@ void           DamageEvolutionAnalysis::MassMatrix(Matrix<IssmDouble>** pMff,Fem
 /*Others*/
 void DamageEvolutionAnalysis::ComputeEffectiveStress(FemModel* femmodel){/*{{{*/
 
+	int domaintype;
+	femmodel->parameters->FindParam(&domaintype,DomainTypeEnum);
+
 	/* Compute effective stress equivalent values at once */
 	for(Object* & object : femmodel->elements->objects){
 		Element* element = xDynamicCast<Element*>(object);
-		ComputeEffectiveStress(element);
+		if ((domaintype==Domain2DhorizontalEnum) && (domaintype==Domain3DEnum)){
+			ComputeEffectiveStress(element);
+		}else if(domaintype==Domain2DverticalEnum){
+			ComputeEffectiveStress2dvertical(element);
+		}else{
+			_error_("Given domaintype " << EnumToStringx(DomainTypeEnum) << " is not supported.");
+		}
 	}
 
 }/*}}}*/
@@ -1269,7 +1278,6 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 	/* Get problem dimension */
 	switch(domaintype){
 		case Domain2DhorizontalEnum: dim = 2; break;
-		case Domain2DverticalEnum:   dim = 2; break;
 		case Domain3DEnum:           dim = 3; break;
 		default: _error_("not implemented yet");
 	}
@@ -1606,6 +1614,203 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(Element* element){/*{{{*/
 	xDelete<IssmDouble>(effective_tau1);
 	xDelete<IssmDouble>(effective_tau2);
 	xDelete<IssmDouble>(effective_tau3);
+	xDelete<IssmDouble>(xyz_list);
+	delete gauss;
+}/*}}}*/
+void DamageEvolutionAnalysis::ComputeEffectiveStress2dvertical(Element* element){/*{{{*/
+	/* Compute the equivalent stress for determining the damage evolution and store values relavant to effective stress tensor: principal and invariants
+	*/
+	
+	/* Intermediaries */
+	int domaintype, dim;
+	element->FindParam(&domaintype,DomainTypeEnum);
+
+	/* Get problem dimension */
+	switch(domaintype){
+		case Domain2DverticalEnum:   dim = 2; break;
+		default: _error_("not implemented yet");
+	}
+	
+	/* Intermediaries */
+	IssmDouble tau_xx, tau_xz, tau_zz; /* Deviatoric stress tensor components [Pa] */
+	IssmDouble sigma_xx, sigma_xz, sigma_zz; /* Cauchy stress tensor components [Pa] */
+	IssmDouble s1, s2; /* principal effective Cauchy stress [Pa] */
+	IssmDouble t1, t2; /* principal effective devitaoric stress [Pa] */
+	IssmDouble stmp;
+	IssmDouble D; /* Damage value [unit: 1]*/
+	IssmDouble z; /* elevation [m] */
+
+	IssmDouble rho_w, g;
+	IssmDouble alpha, beta; /* parameter for Hayhurst */
+	IssmDouble mu; /* parameter for Coulomb */
+
+	/*    Principal stress for each vertex */
+	IssmDouble *sigma1 = NULL;
+	IssmDouble *sigma2 = NULL;
+	IssmDouble *effective_sigma1 = NULL;
+	IssmDouble *effective_sigma2 = NULL;
+	IssmDouble *effective_tau1 = NULL;
+	IssmDouble *effective_tau2 = NULL;
+	IssmDouble *xyz_list = NULL;
+	
+	/*    ice flow equation */
+	bool isSSA, isL1L2, isMOLHO, isHO, isFS;
+	
+	/* Pressure term
+	P  : pressure for stress tensor [Pa]
+	Pi : Overburden pressure [Pa] 
+	Pw : Water pressure [Pa]
+	*/
+	IssmDouble P, Pi, Pw, sealevel;
+	bool isPeff; /* if true, we compute the effective stress, else we compute the Cauchy stress */
+	int iseffective_stress; /* effective stress. 0: pralong2005, 1: keller 2014 */
+
+	/*Fetch number of vertices and allocate output*/
+	int numnodes = element->GetNumberOfNodes();
+
+	sigma1  = xNewZeroInit<IssmDouble>(numnodes);
+	sigma2  = xNewZeroInit<IssmDouble>(numnodes);
+
+	effective_sigma1  = xNewZeroInit<IssmDouble>(numnodes);
+	effective_sigma2  = xNewZeroInit<IssmDouble>(numnodes);
+
+	effective_tau1  = xNewZeroInit<IssmDouble>(numnodes);
+	effective_tau2  = xNewZeroInit<IssmDouble>(numnodes);
+
+	/* Retrieve constants */
+	element->FindParam(&rho_w,MaterialsRhoSeawaterEnum);
+	element->FindParam(&g,ConstantsGEnum);
+	element->FindParam(&isPeff,DamageIsPeffEnum);
+	element->FindParam(&iseffective_stress,DamageIsEffectiveStressEnum);
+
+	element->FindParam(&isSSA,FlowequationIsSSAEnum);
+	element->FindParam(&isL1L2,FlowequationIsL1L2Enum);
+	element->FindParam(&isMOLHO,FlowequationIsMOLHOEnum);
+	element->FindParam(&isHO,FlowequationIsHOEnum);
+	element->FindParam(&isFS,FlowequationIsFSEnum);
+
+	/* Retrieve all input and parameters */
+	element->GetVerticesCoordinates(&xyz_list);
+
+	/* Precompute deviatoric stress tensor*/
+	element->ComputeDeviatoricStressTensor();
+
+	/* Retrieve what we need: */
+	/* NOTE: in 2-D vertical plane model, xz component is saved in xy */
+	Input* tau_xx_input  = element->GetInput(DeviatoricStressxxEnum); _assert_(tau_xx_input);
+	Input* tau_xz_input  = element->GetInput(DeviatoricStressxyEnum); _assert_(tau_xz_input);
+	Input* tau_zz_input  = element->GetInput(DeviatoricStressyyEnum); _assert_(tau_zz_input);
+
+	/* NOTE: pressure in model would be overburden pressure for SSA and HO */
+	Input* pressure_input = element->GetInput(PressureEnum); _assert_(pressure_input);
+	Input* sealevel_input = element->GetInput(SealevelEnum); _assert_(sealevel_input);
+
+	Input* damage_input = NULL;
+	if(domaintype==Domain2DverticalEnum){ damage_input = element->GetInput(DamageDEnum); _assert_(damage_input); }
+	else{ _error_("not implemented yet"); }
+
+	Gauss* gauss=element->NewGauss();
+	for (int i=0;i<numnodes;i++){
+		gauss->GaussNode(element->GetElementType(),i);
+
+		/* Get variables */
+		damage_input->GetInputValue(&D,gauss);
+		sealevel_input->GetInputValue(&sealevel,gauss);
+
+		/* Get deviatoric stress */
+		tau_xx_input->GetInputValue(&tau_xx,gauss);
+		tau_xz_input->GetInputValue(&tau_xz,gauss);
+		tau_zz_input->GetInputValue(&tau_zz,gauss);
+		
+		/* Compute pressure in Cauchy stress tensor*/
+		if (isSSA | isHO){ /* {{{ */
+			pressure_input->GetInputValue(&Pi,gauss);
+			z = xyz_list[i*3+1]; /* vertical node is assigned from md.mesh.y */
+			P = 0.0; /* pressure at surface*/
+			if (isPeff){
+				if (z>sealevel){
+					Pw=0.0;
+				}else if(z <= sealevel){
+					Pw=rho_w*g*(sealevel-z);	
+				}
+			}
+		}/* }}} */
+		else if(isFS){ /* {{{ */
+			pressure_input->GetInputValue(&Pi,gauss);
+			z = xyz_list[i*3+1]; /* vertical node is assigned from md.mesh.y */
+			Pw=0.0;
+			if (isPeff){
+				if (z>sealevel){
+					Pw=0.0;
+				}else if(z <= sealevel){
+					Pw=rho_w*g*(sealevel-z);	
+				}
+			}
+			if (iseffective_stress == 0){ P = Pi - Pw; }
+			else if (iseffective_stress == 1){ P = Pi - Pw; }
+		}/* }}} */
+
+		/* Compute effective Cauchy stress tensor based on deviatoric stress */
+		if (iseffective_stress == 0){ /* Pralong 2005 */
+			sigma_xx = (tau_xx-P)/(1-D);
+			sigma_xz = (tau_xz)/(1-D);
+			sigma_zz = (tau_zz-P)/(1-D);
+		}else if (iseffective_stress == 1){ /* Keller 2014 */
+			sigma_xx = tau_xx/(1-D) - P;
+			sigma_xz = tau_xz/(1-D);
+			sigma_zz = tau_zz/(1-D) - P;
+		}
+
+		/* Compute principal stress values without damage */
+		/* FIXME: Implement SSA and HO model. */
+		if(isSSA){
+			_error_("Not implemented");
+		}else if(isHO){
+			_error_("Not implemented");
+		}else if(isFS){
+			Matrix2x2Eigen(&s1,&s2,NULL,NULL,tau_xx-Pi+Pw, tau_xz, tau_zz-Pi+Pw);
+		}
+
+		/* Now, assign principal stresses */
+		sigma1[i] = s1;
+		sigma2[i] = s2;
+		
+		/* Compute effective deviatoric stress */
+		tau_xx = tau_xx/(1-D);
+		tau_xz = tau_xz/(1-D);
+		tau_zz = tau_zz/(1-D);
+
+		/* Compute effective principal Cauchy/deviatoric stress values */
+		Matrix2x2Eigen(&s1,&s2,NULL,NULL,sigma_xx,sigma_xz,sigma_zz);
+		Matrix2x2Eigen(&t1,&t2,NULL,NULL,tau_xx,tau_xz,tau_zz);
+
+		
+		/* Now, assign effective principal stresses */
+		effective_sigma1[i] = s1;
+		effective_sigma2[i] = s2;
+
+		effective_tau1[i] = t1;
+		effective_tau2[i] = t2;
+	}
+
+	/* Assign values */
+	element->AddInput(StressTensorPrincipalValue1Enum,sigma1,P1DGEnum);
+	element->AddInput(StressTensorPrincipalValue2Enum,sigma2,P1DGEnum);
+
+	element->AddInput(DamageEffectiveStressPrincipalValue1Enum,effective_sigma1,P1DGEnum);
+	element->AddInput(DamageEffectiveStressPrincipalValue2Enum,effective_sigma2,P1DGEnum);
+
+	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue1Enum,effective_tau1,P1DGEnum);
+	element->AddInput(DamageEffectiveDeviatoricStressPrincipalValue2Enum,effective_tau2,P1DGEnum);
+
+	/* Clear memory */
+	xDelete<IssmDouble>(sigma1);
+	xDelete<IssmDouble>(sigma2);
+
+	xDelete<IssmDouble>(effective_sigma1);
+	xDelete<IssmDouble>(effective_sigma2);
+	xDelete<IssmDouble>(effective_tau1);
+	xDelete<IssmDouble>(effective_tau2);
 	xDelete<IssmDouble>(xyz_list);
 	delete gauss;
 }/*}}}*/

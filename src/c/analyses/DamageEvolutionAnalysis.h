@@ -47,6 +47,7 @@ class DamageEvolutionAnalysis: public Analysis{
 		/*Others*/
 		void           ComputeEffectiveStress(FemModel* femmodel);
 		void           ComputeEffectiveStress(Element* element);
+		void           ComputeEffectiveStress2dvertical(Element* element);
 		void           ComputeStressEquivalent(FemModel* femmodel);
 		void           ComputeStressEquivalent(Element* element);
 };
