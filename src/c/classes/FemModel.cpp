@@ -860,6 +860,7 @@ void FemModel::SolutionAnalysesList(int** panalyses,int* pnumanalyses,IoModel* i
 
 		case DamageEvolutionSolutionEnum:
 			analyses_temp[numanalyses++]=DamageEvolutionAnalysisEnum;
+			analyses_temp[numanalyses++]=DepthAverageAnalysisEnum;
 			break;
 
 		case TransientSolutionEnum:{
