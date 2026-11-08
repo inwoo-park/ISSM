@@ -682,6 +682,7 @@ void  IoModel::FetchConstants(void){/*{{{*/
 					if(strcmp(record_name,"md.calving.law")==0) integer = IoCodeToEnumCalving(integer);
 					if(strcmp(record_name,"md.frontalforcings.parameterization")==0) integer = IoCodeToEnumFrontalforcings(integer);
 					if(strcmp(record_name,"md.hydrology.model")==0) integer = IoCodeToEnumHydrology(integer);
+					if(strcmp(record_name,"md.damage.model")==0) integer = IoCodeToEnumDamage(integer);
 					if(strcmp(record_name,"md.materials.type")==0) integer = IoCodeToEnumMaterials(integer);
 					if(strcmp(record_name,"md.materials.nature")==0) integer = IoCodeToEnumNature(integer);
 					if(strcmp(record_name,"md.timestepping.type")==0) integer = IoCodeToEnumTimestepping(integer);
