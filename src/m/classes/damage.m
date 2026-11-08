@@ -174,8 +174,7 @@ classdef damage
 				fielddisplay(self,'D','damage tensor (scalar)');
 				fielddisplay(self,'spcdamage','damage constraints (NaN means no constraint)');
 				fielddisplay(self,'max_damage','maximum possible damage (0<=max_damage<1)');
-				fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D -> D_max. (default: 1-1e-6)');
-                fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches D_max. (default: 1-1e-6; Duddu et al., 2013)');
+				fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches D_max. (default: 1-1e-6; Duddu et al., 2013)');
 				
 				fielddisplay(self,'stabilization','0: no stabilization, 1: artificial diffusion, 2: SUPG (not working), 4: flux corrected transport');
 				fielddisplay(self,'maxiter','maximum number of non linear iterations');
