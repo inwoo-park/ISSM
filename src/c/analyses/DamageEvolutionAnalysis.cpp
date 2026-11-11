@@ -1262,7 +1262,7 @@ void DamageEvolutionAnalysis::ComputeEffectiveStress(FemModel* femmodel){/*{{{*/
 	/* Compute effective stress equivalent values at once */
 	for(Object* & object : femmodel->elements->objects){
 		Element* element = xDynamicCast<Element*>(object);
-		if ((domaintype==Domain2DhorizontalEnum) && (domaintype==Domain3DEnum)){
+		if ((domaintype==Domain2DhorizontalEnum) || (domaintype==Domain3DEnum)){
 			ComputeEffectiveStress(element);
 		}else if(domaintype==Domain2DverticalEnum){
 			ComputeEffectiveStress2dvertical(element);
