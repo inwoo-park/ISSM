@@ -3577,6 +3577,7 @@ syn keyword juliaConstC Domain3DsurfaceEnum
 syn keyword juliaConstC DoubleArrayInputEnum
 syn keyword juliaConstC ArrayInputEnum
 syn keyword juliaConstC IntArrayInputEnum
+syn keyword juliaConstC Int16ArrayInputEnum
 syn keyword juliaConstC DoubleExternalResultEnum
 syn keyword juliaConstC DoubleMatArrayParamEnum
 syn keyword juliaConstC DoubleMatExternalResultEnum
@@ -3819,6 +3820,7 @@ syn keyword juliaConstC SMBpddGCMEnum
 syn keyword juliaConstC SMBpddFastEnum
 syn keyword juliaConstC SMBsemicEnum
 syn keyword juliaConstC SMBmariaEnum
+syn keyword juliaConstC SMBunetEnum
 syn keyword juliaConstC SSAApproximationEnum
 syn keyword juliaConstC SSAFSApproximationEnum
 syn keyword juliaConstC SSAHOApproximationEnum
