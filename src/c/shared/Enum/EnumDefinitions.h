@@ -804,6 +804,8 @@ enum definitions{
 	AreaeEnum,
 	WorldCommEnum,
 	FrictionEmulatorEnum,
+	FrictionNNWeightsEnum,
+	FrictionNNNormalizationEnum,
 	SmbEmulatorEnum,
 	StressbalanceEmulatorEnum,
 	/*}}}*/
