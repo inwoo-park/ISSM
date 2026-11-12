@@ -35,11 +35,15 @@ void damage_core(FemModel* femmodel){
 	/*Using default damage model*/
 	if (damage_model==DamageEvolutionEnum){
 		DamageEvolutionAnalysis* analysis = new DamageEvolutionAnalysis();
+		int damagelaw;
+		femmodel->parameters->FindParam(&damagelaw,DamageLawEnum);
 
-		if(VerboseSolution()) _printf0_("   update effective stress\n");
-		analysis->ComputeEffectiveStress(femmodel);
-		if(VerboseSolution()) _printf0_("   update stress equivalent\n");
-		analysis->ComputeStressEquivalent(femmodel);
+		if(damagelaw!=0){
+			if(VerboseSolution()) _printf0_("   update effective stress\n");
+			analysis->ComputeEffectiveStress(femmodel);
+			if(VerboseSolution()) _printf0_("   update stress equivalent\n");
+			analysis->ComputeStressEquivalent(femmodel);
+		}
 
 		if(VerboseSolution()) _printf0_("   computing damage\n");
 		Damagex(femmodel); /* optionally calculate damage analytically first */
