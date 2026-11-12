@@ -129,7 +129,7 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.spcdamage','Inf',1,'timeseries',1);
 				md = checkfield(md,'fieldname','damage.max_damage','<',1,'>=',0);
 				md = checkfield(md,'fieldname','damage.critical_damage','<',1,'>=',0);
-				md = checkfield(md,'fieldname','damage.stabilization','numel',[1],'values',[0 1 2 4]);
+				md = checkfield(md,'fieldname','damage.stabilization','numel',[1],'values',[0 1 2 3 4]);
 				md = checkfield(md,'fieldname','damage.maxiter','>=',0);
 				md = checkfield(md,'fieldname','damage.elementinterp','values',{'P1','P2'});
 				md = checkfield(md,'fieldname','damage.stress_threshold','>=',0);
@@ -174,9 +174,9 @@ classdef damage
 				fielddisplay(self,'D','damage tensor (scalar)');
 				fielddisplay(self,'spcdamage','damage constraints (NaN means no constraint)');
 				fielddisplay(self,'max_damage','maximum possible damage (0<=max_damage<1)');
-				fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches D_max. (default: 1-1e-6; Duddu et al., 2013)');
+				fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches maximum damage. (default: 1-1e-6; Duddu et al., 2013)');
 				
-				fielddisplay(self,'stabilization','0: no stabilization, 1: artificial diffusion, 2: SUPG (not working), 4: flux corrected transport');
+				fielddisplay(self,'stabilization','0: no stabilization, 1: artificial diffusion, 2: streamline upwinding, 3. SUPG (not working), 4: flux corrected transport');
 				fielddisplay(self,'maxiter','maximum number of non linear iterations');
 				fielddisplay(self,'elementinterp','interpolation scheme for finite elements {''P1'',''P2''}');
 				fielddisplay(self,'stress_threshold','stress threshold for damage initiation (Pa)');
