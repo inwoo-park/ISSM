@@ -937,24 +937,50 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 		/*SUPG: */
 		else if(stabilization==3){ /* {{{ */
 			if (dim==3){
-				//vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
-				//vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
-				//vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
+				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
+				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
 
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
-				//h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-				/* NOTE: alternative characteristic length */
-				IssmDouble temp=0.0;
-				for(int i=0;i<numnodes;i++){
-					temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
-				}
-				h=2*vel/(temp+1e-14);
 
-				//xi=0.1;
-				//xi=0.5;
-				xi=1.0;
-				tau=h*xi/(2.*vel);
+				int idx=2;
+				switch(idx){
+					case 0:{
+						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
+
+						//xi=0.1;
+						//xi=0.9;
+						xi=1.0;
+						tau=h*xi/(2.*vel);
+						break;
+					}
+					case 1:{
+						IssmDouble temp=0.0;
+						for(int i=0;i<numnodes;i++){
+							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
+						}
+
+						//xi=0.1;
+						//xi=0.9;
+						xi=1.0;
+						h=2*vel/(temp+1e-14);
+						tau=h*xi/(2.*vel);
+						break;
+					}
+					case 2:{
+						IssmDouble temp=0.0;
+						for(int i=0;i<numnodes;i++){
+							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
+						}
+
+						tau=sqrt(1/(dt*dt) + (temp*temp));
+						break;
+					}
+					default:
+						_error_("error: not suported");
+				}
+
 			}
 		} /* }}} */
 
@@ -1033,19 +1059,19 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				}
 
 				/*Advection matrix - part 2, B*/
-				//factor = dt*gauss->weight*Jdet*tau;
-				//for(int i=0;i<numnodes;i++){
-				//	for(int j=0;j<numnodes;j++){
-				//		Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]+vz*dbasis[2*numnodes+i]);
-				//	}
-				//}
+				factor = dt*gauss->weight*Jdet*tau;
+				for(int i=0;i<numnodes;i++){
+					for(int j=0;j<numnodes;j++){
+						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]+vz*dbasis[2*numnodes+i]);
+					}
+				}
 				/*Advection matrix - part 3, B*/
-				//factor = dt*gauss->weight*Jdet*tau;
-				//for(int i=0;i<numnodes;i++){
-				//	for(int j=0;j<numnodes;j++){
-				//		Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(basis[i]*dvxdx+basis[i]*dvydy+basis[i]*dvzdz);
-				//	}
-				//}
+				factor = dt*gauss->weight*Jdet*tau;
+				for(int i=0;i<numnodes;i++){
+					for(int j=0;j<numnodes;j++){
+						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(basis[i]*dvxdx+basis[i]*dvydy+basis[i]*dvzdz);
+					}
+				}
 			}
 		} /* }}} */
 	}
@@ -1156,12 +1182,12 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 			}
 			else if(dim==3){
 				element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
-				//vx_input->GetInputAverage(&vx);
-				//vy_input->GetInputAverage(&vy);
-				//vz_input->GetInputAverage(&vz);
-				vx_input->GetInputValue(&vx,gauss);
-				vy_input->GetInputValue(&vy,gauss);
-				vz_input->GetInputValue(&vz,gauss);
+				vx_input->GetInputAverage(&vx);
+				vy_input->GetInputAverage(&vy);
+				vz_input->GetInputAverage(&vz);
+				//vx_input->GetInputValue(&vx,gauss);
+				//vy_input->GetInputValue(&vy,gauss);
+				//vz_input->GetInputValue(&vz,gauss);
 				vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
 				vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
 				vz_input->GetInputDerivativeValue(&dvz[0],xyz_list,gauss);
@@ -1171,18 +1197,43 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx+vy*vy+vz*vz)+1.e-06;
-				//h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-				/* NOTE: alternative characteristic length */
-				IssmDouble temp=0.0;
-				for(int i=0;i<numnodes;i++){
-					temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
-				}
-				h=2*vel/(temp+1e-14);
 
-				//xi=0.1;
-				//xi=0.5;
-				xi=1;
-				tau=xi*h/(2.*vel);
+				int idx=2;
+				switch(idx){
+					case 0:{
+						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
+
+						//xi=0.1;
+						//xi=0.9;
+						xi=1.0;
+						tau=h*xi/(2.*vel);
+						break;
+					}
+					case 1:{
+						IssmDouble temp=0.0;
+						for(int i=0;i<numnodes;i++){
+							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
+						}
+
+						//xi=0.1;
+						//xi=0.9;
+						xi=1.0;
+						h=2*vel/(temp+1e-14);
+						tau=h*xi/(2.*vel);
+						break;
+					}
+					case 2:{
+						IssmDouble temp=0.0;
+						for(int i=0;i<numnodes;i++){
+							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
+						}
+
+						tau=sqrt(1/(dt*dt) + (temp*temp));
+						break;
+					}
+					default:
+						_error_("error: not suported");
+				}
 
 				/*Force vector - part 2*/
 				factor = Jdet*gauss->weight*(damage+dt*f);
@@ -1190,9 +1241,9 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 					pe->values[i]+=factor*(tau*vx*dbasis[0*numnodes+i]+tau*vy*dbasis[1*numnodes+i]+tau*vz*dbasis[2*numnodes+i]);
 				}
 				/*Force vector - part 3*/
-				//for(int i=0;i<numnodes;i++){
-				//	pe->values[i]+=factor*(tau*basis[i]*dvxdx+tau*basis[i]*dvydy+tau*basis[i]*dvzdz);
-				//}
+				for(int i=0;i<numnodes;i++){
+					pe->values[i]+=factor*(tau*basis[i]*dvxdx+tau*basis[i]*dvydy+tau*basis[i]*dvzdz);
+				}
 			}
 			else{
 				_error_("not implemented yet.");
