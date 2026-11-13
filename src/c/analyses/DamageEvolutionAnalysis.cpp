@@ -895,9 +895,14 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 				h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-				D[0*dim+0]=h/(2.*vel)*fabs(vx*vx);  D[0*dim+1]=h/(2.*vel)*fabs(vx*vy); D[0*dim+2]=h/(2.*vel)*fabs(vx*vz);
-				D[1*dim+0]=h/(2.*vel)*fabs(vy*vx);  D[1*dim+1]=h/(2.*vel)*fabs(vy*vy); D[1*dim+2]=h/(2.*vel)*fabs(vy*vz);
-				D[2*dim+0]=h/(2.*vel)*fabs(vz*vx);  D[2*dim+1]=h/(2.*vel)*fabs(vz*vy); D[2*dim+2]=h/(2.*vel)*fabs(vz*vz);
+				factor=h/(2.*vel);
+
+				D[0*dim+0]=factor*fabs(vx*vx);  D[0*dim+1]=0;                  D[0*dim+2]=0;
+				D[1*dim+0]=0.0;                 D[1*dim+1]=factor*fabs(vy*vy); D[1*dim+2]=0;
+				D[2*dim+0]=0.0;                 D[2*dim+1]=0;                  D[2*dim+2]=factor*fabs(vz*vz);
+				//D[0*dim+0]=h/(2.*vel)*fabs(vx*vx);  D[0*dim+1]=h/(2.*vel)*fabs(vx*vy); D[0*dim+2]=h/(2.*vel)*fabs(vx*vz);
+				//D[1*dim+0]=h/(2.*vel)*fabs(vy*vx);  D[1*dim+1]=h/(2.*vel)*fabs(vy*vy); D[1*dim+2]=h/(2.*vel)*fabs(vy*vz);
+				//D[2*dim+0]=h/(2.*vel)*fabs(vz*vx);  D[2*dim+1]=h/(2.*vel)*fabs(vz*vy); D[2*dim+2]=h/(2.*vel)*fabs(vz*vz);
 			}
 		} /*}}}*/
 		/*Streamline upwinding: */
@@ -938,8 +943,17 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
-				h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-				xi =1.0;
+				//h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
+				/* NOTE: alternative characteristic length */
+				IssmDouble temp=0.0;
+				for(int i=0;i<numnodes;i++){
+					temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
+				}
+				h=2*vel/(temp+1e-14);
+
+				//xi=0.1;
+				//xi=0.5;
+				xi=1.0;
 				tau=h*xi/(2.*vel);
 			}
 		} /* }}} */
@@ -1019,19 +1033,19 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				}
 
 				/*Advection matrix - part 2, B*/
-				factor = dt*gauss->weight*Jdet*tau;
-				for(int i=0;i<numnodes;i++){
-					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]+vz*dbasis[2*numnodes+i]);
-					}
-				}
+				//factor = dt*gauss->weight*Jdet*tau;
+				//for(int i=0;i<numnodes;i++){
+				//	for(int j=0;j<numnodes;j++){
+				//		Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]+vz*dbasis[2*numnodes+i]);
+				//	}
+				//}
 				/*Advection matrix - part 3, B*/
-				factor = dt*gauss->weight*Jdet*tau;
-				for(int i=0;i<numnodes;i++){
-					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(basis[i]*dvxdx+basis[i]*dvydy+basis[i]*dvzdz);
-					}
-				}
+				//factor = dt*gauss->weight*Jdet*tau;
+				//for(int i=0;i<numnodes;i++){
+				//	for(int j=0;j<numnodes;j++){
+				//		Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(basis[i]*dvxdx+basis[i]*dvydy+basis[i]*dvzdz);
+				//	}
+				//}
 			}
 		} /* }}} */
 	}
@@ -1140,11 +1154,14 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 				_error_("not supported yet");
 				h = element->CharacteristicLength();
 			}
-			else{
+			else if(dim==3){
 				element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
-				vx_input->GetInputAverage(&vx);
-				vy_input->GetInputAverage(&vy);
-				vz_input->GetInputAverage(&vz);
+				//vx_input->GetInputAverage(&vx);
+				//vy_input->GetInputAverage(&vy);
+				//vz_input->GetInputAverage(&vz);
+				vx_input->GetInputValue(&vx,gauss);
+				vy_input->GetInputValue(&vy,gauss);
+				vz_input->GetInputValue(&vz,gauss);
 				vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
 				vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
 				vz_input->GetInputDerivativeValue(&dvz[0],xyz_list,gauss);
@@ -1153,9 +1170,17 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 				dvzdz=dvz[2];
 
 				element->ElementSizes(&hx,&hy,&hz);
-				vel=sqrt(vx*vx+vy*vy+vz*vz)+1.e-14;
-				h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
+				vel=sqrt(vx*vx+vy*vy+vz*vz)+1.e-06;
+				//h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
+				/* NOTE: alternative characteristic length */
+				IssmDouble temp=0.0;
+				for(int i=0;i<numnodes;i++){
+					temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
+				}
+				h=2*vel/(temp+1e-14);
 
+				//xi=0.1;
+				//xi=0.5;
 				xi=1;
 				tau=xi*h/(2.*vel);
 
@@ -1165,9 +1190,12 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 					pe->values[i]+=factor*(tau*vx*dbasis[0*numnodes+i]+tau*vy*dbasis[1*numnodes+i]+tau*vz*dbasis[2*numnodes+i]);
 				}
 				/*Force vector - part 3*/
-				for(int i=0;i<numnodes;i++){
-					pe->values[i]+=factor*(tau*basis[i]*dvxdx+tau*basis[i]*dvydy+tau*basis[i]*dvzdz);
-				}
+				//for(int i=0;i<numnodes;i++){
+				//	pe->values[i]+=factor*(tau*basis[i]*dvxdx+tau*basis[i]*dvydy+tau*basis[i]*dvzdz);
+				//}
+			}
+			else{
+				_error_("not implemented yet.");
 			}
 		} /*}}}*/
 	}
