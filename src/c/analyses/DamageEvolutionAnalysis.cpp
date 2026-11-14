@@ -962,6 +962,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 						break;
 					}
 					case 2:{
+						/* stabilization parameter: Tezduyar 2000, 10.1016/S0045-7825(00)00211-5 */
 						IssmDouble tau1=dt/2;
 						IssmDouble tau2=0.0;
 
@@ -1220,6 +1221,7 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 						break;
 					}
 					case 2:{
+						/* stabilization parameter: Tezduyar 2000, 10.1016/S0045-7825(00)00211-5 */
 						IssmDouble tau1=dt/2;
 						IssmDouble tau2=0.0;
 
