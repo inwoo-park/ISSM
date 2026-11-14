@@ -848,7 +848,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 		vx_input->GetInputDerivativeValue(&du[0],xyz_list,gauss); vxm_input->GetInputDerivativeValue(&dum[0],xyz_list,gauss);
 		vy_input->GetInputDerivativeValue(&dv[0],xyz_list,gauss); vym_input->GetInputDerivativeValue(&dvm[0],xyz_list,gauss);
 		if(dim==3){
-			vz_input->GetInputValue(&w,gauss); vz_input->GetInputValue(&wm,gauss); vz=w-wm;
+			vz_input->GetInputValue(&w,gauss); vzm_input->GetInputValue(&wm,gauss); vz=w-wm;
 			vz_input->GetInputDerivativeValue(&dw[0],xyz_list,gauss); vzm_input->GetInputDerivativeValue(&dwm[0],xyz_list,gauss);
 		}
 
@@ -940,7 +940,6 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
 				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
 				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
-
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 
@@ -948,9 +947,6 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				switch(idx){
 					case 0:{
 						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-
-						//xi=0.1;
-						//xi=0.9;
 						xi=1.0;
 						tau=h*xi/(2.*vel);
 						break;
@@ -960,21 +956,23 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
-
-						//xi=0.1;
-						//xi=0.9;
 						xi=1.0;
 						h=2*vel/(temp+1e-14);
 						tau=h*xi/(2.*vel);
 						break;
 					}
 					case 2:{
+						IssmDouble tau1=dt/2;
+						IssmDouble tau2=0.0;
+
 						IssmDouble temp=0.0;
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
+						h = 2/temp;
+						tau2=h/(2.0*vel);
 
-						tau=sqrt(1/(dt*dt) + (temp*temp));
+						tau=1/sqrt(1/(tau1*tau1) + 1/(tau2*tau2));
 						break;
 					}
 					default:
@@ -1094,9 +1092,13 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 	int      damagelaw;
 	IssmDouble  Jdet,dt;
 	IssmDouble  f,damage;
-	IssmDouble  vx,vy,vz,vel,dvxdx,dvydy,dvzdz,xi,h,hx,hy,hz,tau;
+	IssmDouble  xi,h,hx,hy,hz,tau;
+	IssmDouble  vel,vx,vy,vz,dvxdx,dvydy,dvzdz; 
+	IssmDouble  u,v,w,um,vm,wm;
+	IssmDouble  du[3],dv[3],dw[3],dum[3],dvm[3],dwm[3];
 	IssmDouble  dvx[3],dvy[3],dvz[3];
 	IssmDouble* xyz_list = NULL;
+
 	/*Get element*/
 	element->FindParam(&domaintype,DomainTypeEnum);
 	switch(domaintype){
@@ -1144,8 +1146,12 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 	Input* vx_input  = element->GetInput(VxEnum);	_assert_(vx_input);
 	Input* vy_input  = element->GetInput(VyEnum);	_assert_(vy_input);
 	Input* vz_input  = NULL;
-	if(domaintype==Domain3DEnum){
-		vz_input=element->GetInput(VyEnum);	_assert_(vy_input);
+	Input* vxm_input= element->GetInput(VxMeshEnum); _assert_(vxm_input);
+	Input* vym_input= element->GetInput(VyMeshEnum); _assert_(vym_input);
+	Input* vzm_input= NULL;
+	if(dim==3){
+		vz_input =element->GetInput(VzEnum);     _assert_(vz_input);
+		vzm_input=element->GetInput(VzMeshEnum); _assert_(vzm_input);
 	}
 
 	Input* damaged_input = NULL;
@@ -1182,18 +1188,15 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 			}
 			else if(dim==3){
 				element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
-				vx_input->GetInputAverage(&vx);
-				vy_input->GetInputAverage(&vy);
-				vz_input->GetInputAverage(&vz);
-				//vx_input->GetInputValue(&vx,gauss);
-				//vy_input->GetInputValue(&vy,gauss);
-				//vz_input->GetInputValue(&vz,gauss);
-				vx_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
-				vy_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
-				vz_input->GetInputDerivativeValue(&dvz[0],xyz_list,gauss);
-				dvxdx=dvx[0];
-				dvydy=dvy[1];
-				dvzdz=dvz[2];
+				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
+				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
+				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+				vx_input->GetInputDerivativeValue(&du[0],xyz_list,gauss); vxm_input->GetInputDerivativeValue(&dum[0],xyz_list,gauss);
+				vy_input->GetInputDerivativeValue(&dv[0],xyz_list,gauss); vym_input->GetInputDerivativeValue(&dvm[0],xyz_list,gauss);
+				vz_input->GetInputDerivativeValue(&dw[0],xyz_list,gauss); vzm_input->GetInputDerivativeValue(&dwm[0],xyz_list,gauss);
+				dvxdx=du[0]-dum[0];
+				dvydy=dv[1]-dvm[1];
+				dvzdz=dw[2]-dwm[2];
 
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx+vy*vy+vz*vz)+1.e-06;
@@ -1202,9 +1205,6 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 				switch(idx){
 					case 0:{
 						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-
-						//xi=0.1;
-						//xi=0.9;
 						xi=1.0;
 						tau=h*xi/(2.*vel);
 						break;
@@ -1214,21 +1214,23 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
-
-						//xi=0.1;
-						//xi=0.9;
 						xi=1.0;
 						h=2*vel/(temp+1e-14);
 						tau=h*xi/(2.*vel);
 						break;
 					}
 					case 2:{
+						IssmDouble tau1=dt/2;
+						IssmDouble tau2=0.0;
+
 						IssmDouble temp=0.0;
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
+						h = 2/temp;
+						tau2=h/(2.0*vel);
 
-						tau=sqrt(1/(dt*dt) + (temp*temp));
+						tau=1/sqrt(1/(tau1*tau1) + 1/(tau2*tau2));
 						break;
 					}
 					default:
