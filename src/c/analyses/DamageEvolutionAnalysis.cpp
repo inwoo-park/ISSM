@@ -925,7 +925,6 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 				h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-				//xi = 0.5;
 				xi = 1.0;
 				tau=h*xi/(2.*vel);
 
@@ -936,10 +935,13 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 		} /* }}} */
 		/*SUPG: */
 		else if(stabilization==3){ /* {{{ */
-			if (dim==3){
-				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
-				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
-				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+			if(dim==2){
+				_error_("not supported yet");
+			}
+			else if (dim==3){
+				//vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
+				//vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
+				//vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 
@@ -970,8 +972,10 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
-						h = 2/temp;
-						tau2=h/(2.0*vel);
+						//h = 2*vel/(temp+1e-14);
+						//tau2=h/(2.0*vel);
+						
+						tau2 = 1/(temp+1e-14);
 
 						tau=1/sqrt(1/(tau1*tau1) + 1/(tau2*tau2));
 						break;
@@ -979,7 +983,6 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 					default:
 						_error_("error: not suported");
 				}
-
 			}
 		} /* }}} */
 
@@ -1189,9 +1192,12 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 			}
 			else if(dim==3){
 				element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
-				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
-				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
-				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+				//vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
+				//vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
+				//vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+				vx_input->GetInputValue(&u,gauss); vxm_input->GetInputValue(&um,gauss); vx=u-um;
+				vy_input->GetInputValue(&v,gauss); vym_input->GetInputValue(&vm,gauss); vy=v-vm;
+				vz_input->GetInputValue(&w,gauss); vzm_input->GetInputValue(&wm,gauss); vz=w-wm;
 				vx_input->GetInputDerivativeValue(&du[0],xyz_list,gauss); vxm_input->GetInputDerivativeValue(&dum[0],xyz_list,gauss);
 				vy_input->GetInputDerivativeValue(&dv[0],xyz_list,gauss); vym_input->GetInputDerivativeValue(&dvm[0],xyz_list,gauss);
 				vz_input->GetInputDerivativeValue(&dw[0],xyz_list,gauss); vzm_input->GetInputDerivativeValue(&dwm[0],xyz_list,gauss);
@@ -1229,8 +1235,10 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
-						h = 2/temp;
-						tau2=h/(2.0*vel);
+						//h = 2*vel/(temp+1e-14);
+						//tau2=h/(2.0*vel);
+						
+						tau2 = 1/(temp+1e-14);
 
 						tau=1/sqrt(1/(tau1*tau1) + 1/(tau2*tau2));
 						break;
