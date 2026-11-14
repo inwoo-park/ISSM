@@ -794,7 +794,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 	int         stabilization;
 	IssmDouble  Jdet,dt,D_scalar,h,hx,hy,hz,factor,tau;
 	IssmDouble  xi;
-	IssmDouble  vel,vx,vy,vz,dvxdx,dvydy,dvzdz; //dvx[3],dvy[3],dvz[3];
+	IssmDouble  vel,vx,vy,vz,dvxdx,dvydy,dvzdz; 
 	IssmDouble  u,v,w,um,vm,wm;
 	IssmDouble  du[3],dv[3],dw[3],dum[3],dvm[3],dwm[3];
 	IssmDouble  K[3][3];
@@ -918,9 +918,9 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[1*dim+0]=h/(2.0*vel)*vy*vx; D[1*dim+1]=h/(2.0*vel)*vy*vy;
 			}
 			else if(dim==3){
-				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
-				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
-				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+				//vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
+				//vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
+				//vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
 				element->ElementSizes(&hx,&hy,&hz);
 
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
@@ -945,7 +945,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 
-				int idx=2;
+				int idx=1;
 				switch(idx){
 					case 0:{
 						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
@@ -954,6 +954,8 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 						break;
 					}
 					case 1:{
+						/* stabilization parameter: Tezduyar 2000, 10.1016/S0045-7825(00)00211-5 */
+						/* Only select advection-term */
 						IssmDouble temp=0.0;
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
@@ -1208,7 +1210,7 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 				element->ElementSizes(&hx,&hy,&hz);
 				vel=sqrt(vx*vx+vy*vy+vz*vz)+1.e-06;
 
-				int idx=2;
+				int idx=1;
 				switch(idx){
 					case 0:{
 						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
