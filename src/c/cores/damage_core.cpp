@@ -65,6 +65,9 @@ void damage_core(FemModel* femmodel){
 			femmodel->parameters->SetParam(DamageDEnum,InputToDepthaverageInEnum);
 			femmodel->parameters->SetParam(DamageDbarEnum,InputToDepthaverageOutEnum);
 			depthaverage_core(femmodel);
+			
+			femmodel->parameters->SetParam(DamageDbar,InputToExtrudeEnum);
+			extrudefrombase_core(femmodel);
 		}
 	}
 	else{
