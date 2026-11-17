@@ -564,6 +564,7 @@ enum definitions{
 	SolidearthSettingsRunFrequencyEnum,
 	SolidearthSettingsTimeAccEnum,
 	SolidearthSettingsHorizEnum,
+	SolidearthSettingsLowmemEnum,
 	SolidearthSettingsMaxiterEnum,
 	SolidearthSettingsGrdOceanEnum,
 	SolidearthSettingsOceanAreaScalingEnum,
