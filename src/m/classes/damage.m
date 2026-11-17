@@ -132,7 +132,12 @@ classdef damage
 					error('Error: Invalid class of md.materials (=%s). md.materials should be a subclass of "matdamageice".',class(md.materials));
 				end
 
-				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3,4,5,10]);
+				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3,4,10]);
+				if self.law == 1
+					if ~(isa(md.mesh,'mesh2dvertical') | isa(md.mesh.,'mesh3dprisms'))
+						error('Error: Damage law with 1 (Pralong et al. 2005) is only allowed in ''mesh2dvertical'' and ''mesh2dprisms.');
+					end
+				end
 				md = checkfield(md,'fieldname','damage.D','>=',0,'<=',self.max_damage,'size',[md.mesh.numberofvertices 1]);
 				md = checkfield(md,'fieldname','damage.spcdamage','Inf',1,'timeseries',1);
 				md = checkfield(md,'fieldname','damage.max_damage','<',1,'>=',0);
@@ -185,7 +190,7 @@ classdef damage
 
 			fielddisplay(self,'isdamage','is damage mechanics being used? {true,false}');
 			if self.isdamage
-				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong'',''5: linear'', ''10: no source (debugging)''}');
+				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong'',''4: linear'', ''10: no source (debugging)''}');
 				fielddisplay(self,'D','damage tensor (scalar)');
 				fielddisplay(self,'spcdamage','damage constraints (NaN means no constraint)');
 				fielddisplay(self,'max_damage','maximum possible damage (0<=max_damage<1)');
@@ -198,15 +203,16 @@ classdef damage
 				fielddisplay(self,'reltol','damage relative convergence criterion, NaN: not applied (default: NaN)');
 				fielddisplay(self,'abstol','damage absolute convergence criterion, NaN: not applied (default: NaN)');
 				fielddisplay(self,'elementinterp','interpolation scheme for finite elements {''P1'',''P2''}');
+
 				fielddisplay(self,'stress_threshold','stress threshold for damage initiation (Pa)');
 				fielddisplay(self,'stress_ubound','stress upper bound for damage healing (Pa), arctan law');
 				fielddisplay(self,'kappa','ductility parameter for stress softening and damage');
-				if self.law < 4
+				if any(self.law == [0, 2, 3])
 					fielddisplay(self,'c1','damage parameter 1');
 					fielddisplay(self,'c2','damage parameter 2');
 					fielddisplay(self,'c3','damage parameter 3');
 					fielddisplay(self,'c4','damage parameter 4');
-				elseif self.law == 4
+				elseif self.law == 1
 					fprintf('\n');
 					disp(sprintf('   Damage source term in Pralong et al. (2005)'));
 					disp(sprintf('   f_D = c1 * max((sigma_cr - sigma_th),0)^c2 (1-D)^{k_sigma}'));
@@ -226,18 +232,24 @@ classdef damage
 				fielddisplay(self,'healing','damage healing parameter');
 				fielddisplay(self,'equiv_stress','0: von Mises, 1: max prinecipal, 2: Hayhurst criterion 3: Coulomb');
 
-				if self.equiv_stress == 2
-					disp(sprintf('\n   Hayhurst criterion'));
-					disp(sprintf('      sigma_equiv = alpha*sigma_1 + beta*sigma_{VM} + (1-alpha-beta)*(sigma_1+sigma_2+sigma_3)'));
-					disp(sprintf('      sigma_i : principal stress value'));
-					fielddisplay(self,'equiv_stress_alpha','alpha parameter for Hayhurst criterion (default: 0.21)');
-					fielddisplay(self,'equiv_stress_beta','beta parameter for Hayhurst criterion (default: 0.63)');
-				elseif self.equiv_stress == 3
-					disp(sprintf('\n   Coulomb criterion'));
-					disp(sprintf('      sigma_equiv = (sigma_1 - sigma_3)/2 + mu (sigma_1 + sigma_3)/2'));
-					disp(sprintf('      sigma_i : principal stress value'));
-					fielddisplay(self,'equiv_stress_mu','mu parameter for Coulomb criterion (default: 0.1)');
-				end
+				if self.law == 1
+					if any(self.equiv_stress == [0, 1, 2])
+						fprintf('\n');
+						disp(sprintf('   Hayhurst criterion (including Maximum principal stress (MPS) and von Mises (VM)'));
+						disp(sprintf('      sigma_equiv = alpha*sigma_1 + beta*sigma_{VM} + (1-alpha-beta)*(sigma_1+sigma_2+sigma_3)'));
+						disp(sprintf('      sigma_i : principal stress value'));
+						disp(sprintf('      sigma_1 : maximum principal stress (MPS)'));
+						fprintf('\n');
+						fielddisplay(self,'equiv_stress_alpha','alpha parameter for Hayhurst criterion (default: 0.21)');
+						fielddisplay(self,'equiv_stress_beta','beta parameter for Hayhurst criterion (default: 0.63)');
+					elseif self.equiv_stress == 3
+						fprintf('\n');
+						disp(sprintf('   Coulomb criterion'));
+						disp(sprintf('      sigma_equiv = (sigma_1 - sigma_3)/2 + mu (sigma_1 + sigma_3)/2'));
+						disp(sprintf('      sigma_i : principal stress value'));
+						fprintf('\n');
+						fielddisplay(self,'equiv_stress_mu','mu parameter for Coulomb criterion (default: 0.1)');
+					end
 				fprintf('\n');
 				fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)');
 				fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)');

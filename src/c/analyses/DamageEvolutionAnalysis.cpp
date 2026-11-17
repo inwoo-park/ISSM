@@ -2279,9 +2279,6 @@ void DamageEvolutionAnalysis::ComputeDamageFInput(FemModel* femmodel){/* {{{ */
 				this->CreateDamageFInputArctan(element);
 				break;
 			case 4:
-				this->CreateDamageFInputTest(element);
-				break;
-			case 5:
 				this->CreateDamageFInputLinear(element);
 				break;
 			case 10:
