@@ -73,7 +73,7 @@ class damage(object):
             s += "{}\n".format(fielddisplay(self, "stabilization", "0: no stabilization, 1: artificial diffusion, 2: streamline upwinding, 3: flux corrected transport, 4: SUPG1, 5: SUPG2"))
             s += "{}\n".format(fielddisplay(self, 'shock_capture', 'discontinuity (or shock) capturing in SUPG using YZbeta. 0: off, 1: on (default: 1)'))
             s += "{}\n".format(fielddisplay(self, "maxiter", "maximum number of non linear iterations"))
-            s += "{}\n".format(fielddisplay(self, "elementinterp", "interpolation scheme for finite elements [''P1'', ''P2'']")
+            s += "{}\n".format(fielddisplay(self, "elementinterp", "interpolation scheme for finite elements [''P1'', ''P2'']"))
             s += "{}\n".format(fielddisplay(self, "stress_threshold", "stress threshold for damage initiation (Pa)"))
             s += "{}\n".format(fielddisplay(self, "stress_ubound", "stress upper bound for damage healing (Pa), arctan law"))
             s += "{}\n".format(fielddisplay(self, "kappa", "ductility parameter for stress softening and damage [ > 1]"))
