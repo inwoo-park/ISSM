@@ -27,6 +27,7 @@ class DamageEvolutionAnalysis: public Analysis{
 		void           CreateDamageFInputPralong(Element* element);
 		void           CreateDamageFInputTest(Element* element);
 		void           CreateDamageFInputLinear(Element* element);
+		void           CreateDamageFInputZeros(Element* element);
 		ElementVector* CreateDVector(Element* element);
 		ElementMatrix* CreateJacobianMatrix(Element* element);
 		ElementMatrix* CreateKMatrix(Element* element);
@@ -50,5 +51,6 @@ class DamageEvolutionAnalysis: public Analysis{
 		void           ComputeEffectiveStress2dvertical(Element* element);
 		void           ComputeStressEquivalent(FemModel* femmodel);
 		void           ComputeStressEquivalent(Element* element);
+		void           ComputeDamageFInput(FemModel* femmodel);
 };
 #endif

@@ -29,6 +29,7 @@ void Damagex(FemModel* femmodel){
 		case 3:
 		case 4:
 		case 5:
+		case 10:
 			if(VerboseModule()) _printf0_("   computing damage using source term in advection scheme\n");
 			/* Damage calculated using source term in DamageEvolutionAnalysis */
 			break;

@@ -6,16 +6,20 @@
 classdef damage
 	properties (SetAccess=public)  
 		%damage 
-		isdamage            = 0;
-		D                   = NaN;
-		law                 = 0;
-		spcdamage           = NaN; 
-		max_damage          = 0;
+		isdamage				= 0;
+		D						= NaN;
+		law					= 0;
+		spcdamage			= NaN; 
+		max_damage			= 0;
 	
 		%numerical
-		stabilization       = 0;
-		maxiter             = 0;
-		elementinterp       = '';
+		stabilization		= 0;
+		shock_capture		= 0;
+		maxiter				= 0;
+		reltol				= NaN;
+		restol				= NaN;
+		abstol				= NaN;
+		elementinterp		= '';
 		
 		%general parameters for evolution law: 
 		stress_threshold    = 0;
@@ -72,9 +76,13 @@ classdef damage
 		
 			%Type of stabilization used
 			self.stabilization=1; % 1: artificial diffusion
+			self.shock_capture=1; % capturing shock in SUPG
 			
 			%Maximum number of iterations
 			self.maxiter=100;
+			self.restol =0.001; % 0.1%
+			self.reltol =NaN; % not applied
+			self.abstol =NaN; % not applied
 
 			%finite element interpolation
 			self.elementinterp='P1';
@@ -129,8 +137,15 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.spcdamage','Inf',1,'timeseries',1);
 				md = checkfield(md,'fieldname','damage.max_damage','<',1,'>=',0);
 				md = checkfield(md,'fieldname','damage.critical_damage','<',1,'>=',0);
-				md = checkfield(md,'fieldname','damage.stabilization','numel',[1],'values',[0 1 2 3 4]);
+
+				md = checkfield(md,'fieldname','damage.stabilization','numel',[1],'values',[0 1 2 3 4 5 6 10]);
+				md = checkfield(md,'fieldname','damage.shock_capture','numel',[1],'values',[0, 1])
+
 				md = checkfield(md,'fieldname','damage.maxiter','>=',0);
+				md = checkfield(md,'fieldname','damage.restol','size',[1],'>',0);
+				md = checkfield(md,'fieldname','damage.reltol','size',[1]);
+				md = checkfield(md,'fieldname','damage.abstol','size',[1]);
+
 				md = checkfield(md,'fieldname','damage.elementinterp','values',{'P1','P2'});
 				md = checkfield(md,'fieldname','damage.stress_threshold','>=',0);
 				md = checkfield(md,'fieldname','damage.stress_ubound','>=',0);
@@ -160,9 +175,9 @@ classdef damage
 		function list=defaultoutputs(self,md) % {{{
 
 			if strcmp(domaintype(md.mesh),'2Dhorizontal')
-            list = {'DamageDbar'};
-         else
-            list = {'DamageD'};
+				list = {'DamageDbar'};
+			else
+				list = {'DamageD'};
 			end
 		end % }}}
 		function disp(self) % {{{
@@ -170,14 +185,18 @@ classdef damage
 
 			fielddisplay(self,'isdamage','is damage mechanics being used? {true,false}');
 			if self.isdamage
-				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong'',''4: test'',''5: linear''}');
+				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong'',''4: test'',''5: linear'', ''10: no source (debugging)''}');
 				fielddisplay(self,'D','damage tensor (scalar)');
 				fielddisplay(self,'spcdamage','damage constraints (NaN means no constraint)');
 				fielddisplay(self,'max_damage','maximum possible damage (0<=max_damage<1)');
 				fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches maximum damage. (default: 1-1e-6; Duddu et al., 2013)');
 				
-				fielddisplay(self,'stabilization','0: no stabilization, 1: artificial diffusion, 2: streamline upwinding, 3. SUPG (not working), 4: flux corrected transport');
+				fielddisplay(self,'stabilization','0: no stabilization, 1: artificial diffusion, 2: streamline upwinding, 3: flux corrected transport, 4: SUPG1, 5: SUPG2');
+				fielddisplay(self, 'shock_capture', 'discontinuity (or shock) capturing in SUPG using YZbeta. 0: off, 1: on (default: 1)')
 				fielddisplay(self,'maxiter','maximum number of non linear iterations');
+				fielddisplay(self,'restol','mechanical equiv_stress residual convergence criterion (default: 0.001)');
+				fielddisplay(self,'reltol','damage relative convergence criterion, NaN: not applied (default: NaN)');
+				fielddisplay(self,'abstol','damage absolute convergence criterion, NaN: not applied (default: NaN)');
 				fielddisplay(self,'elementinterp','interpolation scheme for finite elements {''P1'',''P2''}');
 				fielddisplay(self,'stress_threshold','stress threshold for damage initiation (Pa)');
 				fielddisplay(self,'stress_ubound','stress upper bound for damage healing (Pa), arctan law');
@@ -238,8 +257,14 @@ classdef damage
 				WriteData(fid,prefix,'object',self,'fieldname','critical_damage','format','Double');
 
 				WriteData(fid,prefix,'object',self,'fieldname','stabilization','format','Integer');
+				WriteData(fid,prefix,'object',self,'fieldname','shock_capture','format','Boolean');
+
 				WriteData(fid,prefix,'object',self,'fieldname','maxiter','format','Integer');
-				WriteData(fid,prefix,'name','md.damage.elementinterp','data',self.elementinterp,'format','String');
+				WriteData(fid,prefix,'object',self,'fieldname','reltol','format','Double');
+				WriteData(fid,prefix,'object',self,'fieldname','restol','format','Double');
+				WriteData(fid,prefix,'object',self,'fieldname','abstol','format','Double');
+
+				WriteData(fid,prefix,'object',self,'fieldname','elementinterp','format','String');
 				WriteData(fid,prefix,'object',self,'fieldname','stress_threshold','format','Double');
 				WriteData(fid,prefix,'object',self,'fieldname','stress_ubound','format','Double');
 				WriteData(fid,prefix,'object',self,'fieldname','kappa','format','Double');

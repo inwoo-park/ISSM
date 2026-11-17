@@ -112,8 +112,14 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 	parameters->AddObject(new IntParam(DamageModelEnum,damage_model));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.law",DamageLawEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.stabilization",DamageStabilizationEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.shock_capture",DamageShockCaptureEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.max_damage",DamageMaxDamageEnum));
 	parameters->AddObject(iomodel->CopyConstantObject("md.damage.critical_damage",DamageCriticalDamageEnum));
+
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.maxiter",DamageMaxiterEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.restol",DamageRestolEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.reltol",DamageReltolEnum));
+	parameters->AddObject(iomodel->CopyConstantObject("md.damage.abstol",DamageAbstolEnum));
 
 	/*Requested outputs*/
 	//NOTE: this section is duplicted at "modules/ModelProcessorx/CreateParameters.cpp".
@@ -219,10 +225,10 @@ void           DamageEvolutionAnalysis::CreateDamageFInputArctan(Element* elemen
 
 	Input* damage_input = NULL;
 	if(domaintype==Domain2DhorizontalEnum){
-		damage_input = element->GetInput(DamageDbarEnum); 	_assert_(damage_input);
+		damage_input = element->GetInput(DamageDbarOldEnum); 	_assert_(damage_input);
 	}
 	else{
-		damage_input = element->GetInput(DamageDEnum);   _assert_(damage_input);
+		damage_input = element->GetInput(DamageDOldEnum);   _assert_(damage_input);
 	}
 
 	/*Calculate damage evolution source term */
@@ -297,11 +303,11 @@ void           DamageEvolutionAnalysis::CreateDamageFInputExp(Element* element){
 	Input* damage_input = NULL;
 	Input* B_input = NULL;
 	if(domaintype==Domain2DhorizontalEnum){
-		damage_input = element->GetInput(DamageDbarEnum); 	_assert_(damage_input);
+		damage_input = element->GetInput(DamageDbarOldEnum); 	_assert_(damage_input);
 		B_input=element->GetInput(MaterialsRheologyBbarEnum); _assert_(B_input);
 	}
 	else{
-		damage_input = element->GetInput(DamageDEnum);   _assert_(damage_input);
+		damage_input = element->GetInput(DamageDOldEnum);   _assert_(damage_input);
 		B_input=element->GetInput(MaterialsRheologyBEnum); _assert_(B_input);
 	}
 
@@ -395,10 +401,10 @@ void           DamageEvolutionAnalysis::CreateDamageFInputPralong(Element* eleme
 	}
 	Input* damage_input = NULL;
 	if(domaintype==Domain2DhorizontalEnum){
-		damage_input = element->GetInput(DamageDbarEnum); 	_assert_(damage_input);
+		damage_input = element->GetInput(DamageDbarOldEnum); 	_assert_(damage_input);
 	}
 	else{
-		damage_input = element->GetInput(DamageDEnum);   _assert_(damage_input);
+		damage_input = element->GetInput(DamageDOldEnum);   _assert_(damage_input);
 	}
 
 	/*retrieve the desired type of equivalent stress*/
@@ -538,9 +544,9 @@ void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element)
 	/*retrieve what we need: */
 	Input* damage_input = NULL;
 	if(domaintype==Domain2DhorizontalEnum){
-		damage_input = element->GetInput(DamageDbarEnum); 	_assert_(damage_input);
+		damage_input = element->GetInput(DamageDbarOldEnum); 	_assert_(damage_input);
 	}else if((domaintype==Domain2DverticalEnum) || (domaintype==Domain3DEnum)){
-		damage_input = element->GetInput(DamageDEnum);   _assert_(damage_input);
+		damage_input = element->GetInput(DamageDOldEnum);   _assert_(damage_input);
 	}
 
 	Input* stress_equivalent_input = element->GetInput(DamageEffectiveStressEquivalentEnum); _assert_(stress_equivalent_input);
@@ -689,10 +695,10 @@ void           DamageEvolutionAnalysis::CreateDamageFInputLinear(Element* elemen
 	}
 	Input* damage_input = NULL;
 	if(domaintype==Domain2DhorizontalEnum){
-		damage_input = element->GetInput(DamageDbarEnum); 	_assert_(damage_input);
+		damage_input = element->GetInput(DamageDbarOldEnum); 	_assert_(damage_input);
 	}
 	else{
-		damage_input = element->GetInput(DamageDEnum);   _assert_(damage_input);
+		damage_input = element->GetInput(DamageDOldEnum);   _assert_(damage_input);
 	}
 
 	/*retrieve the desired type of equivalent stress*/
@@ -775,6 +781,27 @@ void           DamageEvolutionAnalysis::CreateDamageFInputLinear(Element* elemen
 	xDelete<IssmDouble>(f);
 	delete gauss;
 }/*}}}*/
+void           DamageEvolutionAnalysis::CreateDamageFInputZeros(Element* element){/*{{{*/
+
+	/*Fetch number of vertices and allocate output*/
+	int numnodes = element->GetNumberOfNodes();
+	IssmDouble* f   = xNew<IssmDouble>(numnodes);
+
+	/*Calculate damage evolution source term: */
+	for (int i=0;i<numnodes;i++){
+
+		/* healing could be handled here */
+
+		/* no source term; damage handled in stress balance */
+		f[i]=0.;
+	}
+
+	/*Add input*/
+	element->AddInput(DamageFEnum,f,element->GetElementType());
+
+	/*Clean up and return*/
+	xDelete<IssmDouble>(f);
+}/*}}}*/
 ElementVector* DamageEvolutionAnalysis::CreateDVector(Element* element){/*{{{*/
 	/*Default, return NULL*/
 	return NULL;
@@ -789,13 +816,17 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 	/*Intermediaries*/
 	int         domaintype,dim;
 	int         stabilization;
-	IssmDouble  Jdet,dt,D_scalar,h,hx,hy,hz,factor,tau;
+	bool        shock_capture;
+	IssmDouble  Jdet,dt,D_scalar,h,hx,hy,hz,factor;
+	IssmDouble  tau,tau_h,tau_v; /* stabilization parameter in horiziontal and vertical directions. */
 	IssmDouble  xi;
 	IssmDouble  vel,vx,vy,vz,dvxdx,dvydy,dvzdz; 
 	IssmDouble  u,v,w,um,vm,wm;
+	IssmDouble  damage,damage_old,dD[3],dDdx,dDdy,dDdz;
 	IssmDouble  du[3],dv[3],dw[3],dum[3],dvm[3],dwm[3];
 	IssmDouble  K[3][3];
 	IssmDouble *xyz_list  = NULL;
+	IssmDouble  max_damage; 
 
 	/*Get problem dimension*/
 	element->FindParam(&domaintype,DomainTypeEnum);
@@ -819,6 +850,11 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 	element->GetVerticesCoordinates(&xyz_list);
 	element->FindParam(&dt,TimesteppingTimeStepEnum);
 	element->FindParam(&stabilization,DamageStabilizationEnum);
+	element->FindParam(&max_damage,DamageMaxDamageEnum);
+	element->FindParam(&shock_capture,DamageShockCaptureEnum);
+	Input* damage_input     = element->GetInput(DamageDEnum); _assert_(damage_input);
+	Input* damage_old_input = element->GetInput(DamageDOldEnum); _assert_(damage_old_input);
+	Input* damagef_input = element->GetInput(DamageFEnum); _assert_(damagef_input);
 	Input* vx_input = element->GetInput(VxEnum); _assert_(vx_input);
 	Input* vy_input = element->GetInput(VyEnum); _assert_(vy_input);
 	Input* vz_input = NULL;
@@ -880,6 +916,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 			}
 		}
 
+		/*Prepare stabilizatoin term*/
 		/*Artificial diffusion: */
 		if(stabilization==1){ /*{{{*/
 			if(dim==2){
@@ -889,7 +926,11 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[1*dim+1]=h/2.0*fabs(vy);
 			}
 			else if(dim==3){
+				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
+				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
+				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
 				element->ElementSizes(&hx,&hy,&hz);
+
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 				h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
 				factor=h/(2.*vel);
@@ -897,9 +938,9 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[0*dim+0]=factor*fabs(vx*vx);  D[0*dim+1]=0;                  D[0*dim+2]=0;
 				D[1*dim+0]=0.0;                 D[1*dim+1]=factor*fabs(vy*vy); D[1*dim+2]=0;
 				D[2*dim+0]=0.0;                 D[2*dim+1]=0;                  D[2*dim+2]=factor*fabs(vz*vz);
-				//D[0*dim+0]=h/(2.*vel)*fabs(vx*vx);  D[0*dim+1]=h/(2.*vel)*fabs(vx*vy); D[0*dim+2]=h/(2.*vel)*fabs(vx*vz);
-				//D[1*dim+0]=h/(2.*vel)*fabs(vy*vx);  D[1*dim+1]=h/(2.*vel)*fabs(vy*vy); D[1*dim+2]=h/(2.*vel)*fabs(vy*vz);
-				//D[2*dim+0]=h/(2.*vel)*fabs(vz*vx);  D[2*dim+1]=h/(2.*vel)*fabs(vz*vy); D[2*dim+2]=h/(2.*vel)*fabs(vz*vz);
+				//D[0*dim+0]=factor*fabs(vx*vx);  D[0*dim+1]=factor*fabs(vx*vy); D[0*dim+2]=factor*fabs(vx*vz);
+				//D[1*dim+0]=factor*fabs(vy*vx);  D[1*dim+1]=factor*fabs(vy*vy); D[1*dim+2]=factor*fabs(vy*vz);
+				//D[2*dim+0]=factor*fabs(vz*vx);  D[2*dim+1]=factor*fabs(vz*vy); D[2*dim+2]=factor*fabs(vz*vz);
 			}
 		} /*}}}*/
 		/*Streamline upwinding: */
@@ -915,9 +956,9 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[1*dim+0]=h/(2.0*vel)*vy*vx; D[1*dim+1]=h/(2.0*vel)*vy*vy;
 			}
 			else if(dim==3){
-				//vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
-				//vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
-				//vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
+				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
+				vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
 				element->ElementSizes(&hx,&hy,&hz);
 
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
@@ -928,42 +969,69 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[0*dim+0]=tau*(vx*vx);  D[0*dim+1]=tau*(vx*vy); D[0*dim+2]=tau*(vx*vz);
 				D[1*dim+0]=tau*(vy*vx);  D[1*dim+1]=tau*(vy*vy); D[1*dim+2]=tau*(vy*vz);
 				D[2*dim+0]=tau*(vz*vx);  D[2*dim+1]=tau*(vz*vy); D[2*dim+2]=tau*(vz*vz);
+
+				//D[0*dim+0]=tau*fabs(vx*vx);  D[0*dim+1]=tau*fabs(vx*vy); D[0*dim+2]=tau*fabs(vx*vz);
+				//D[1*dim+0]=tau*fabs(vy*vx);  D[1*dim+1]=tau*fabs(vy*vy); D[1*dim+2]=tau*fabs(vy*vz);
+				//D[2*dim+0]=tau*fabs(vz*vx);  D[2*dim+1]=tau*fabs(vz*vy); D[2*dim+2]=tau*fabs(vz*vz);
 			}
 		} /* }}} */
 		/*SUPG: */
-		else if(stabilization==3){ /* {{{ */
+		else if((stabilization==4) || (stabilization==5) || (stabilization==6) || (stabilization==10)){ /* {{{ */
 			if(dim==2){
 				_error_("not supported yet");
 			}
 			else if (dim==3){
-				//vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
-				//vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
-				//vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
-				element->ElementSizes(&hx,&hy,&hz);
-				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
+				switch(stabilization){
+					case 10:{ /*Isotropic: use min edge{{{*/
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 
-				int idx=1;
-				switch(idx){
-					case 0:{
-						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
+						h=element->MinEdgeLength(xyz_list);
 						xi=1.0;
 						tau=h*xi/(2.*vel);
+
+						tau_h=tau;
+						tau_v=tau;
 						break;
-					}
-					case 1:{
+					} /*}}}*/
+					case 4:{ /*Anisotropic: use different tau in horizontal and vertical {{{*/
+						element->ElementSizes(&hx,&hy,&hz);
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
+
+						/* Anisotropic SUPG as like implemnted in Thermal/Enthalpy formulation */
+						IssmDouble hk;
+						/* compute tau for horizontal direction */
+						hk=sqrt(hx*hx + hy*hy);
+						tau_h = hk/(2.0*vel);
+
+						hk=hz;
+						tau_v = hk/(2.0*vel);
+
+						tau_h = tau_h;
+						tau_v = tau_v;
+						break;
+					} /*}}}*/
+					case 5:{ /*Isostroic: nodal based {{{*/
 						/* stabilization parameter: Tezduyar 2000, 10.1016/S0045-7825(00)00211-5 */
 						/* Only select advection-term */
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
+
 						IssmDouble temp=0.0;
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
-						xi=1.0;
-						h=2*vel/(temp+1e-14);
-						tau=h*xi/(2.*vel);
+						//xi=1.0;
+						//h=2*vel/(temp+1e-14);
+						//tau=h*xi/(2.*vel);
+						tau = 1/(temp+1e-14);
+
+						tau_h=tau;
+						tau_v=tau;
 						break;
-					}
-					case 2:{
+					} /*}}}*/
+					case 6:{ /*Isotropic: nodal based + time dependent {{{*/
 						/* stabilization parameter: Tezduyar 2000, 10.1016/S0045-7825(00)00211-5 */
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
+
 						IssmDouble tau1=dt/2;
 						IssmDouble tau2=0.0;
 
@@ -977,15 +1045,20 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 						tau2 = 1/(temp+1e-14);
 
 						tau=1/sqrt(1/(tau1*tau1) + 1/(tau2*tau2));
+
+						tau_h=tau;
+						tau_v=tau;
 						break;
-					}
-					default:
+					} /*}}}*/
+					default: /* {{{ */
 						_error_("error: not suported");
+						/* }}} */
 				}
 			}
 		} /* }}} */
 
-		if(stabilization==1 || stabilization==2){ /* {{{ */
+		/*Apply additional stabilization term*/
+		if(stabilization==1 || stabilization==2){ /*{{{*/
 			if(dim==2){
 				D[0*dim+0]=D_scalar*D[0*dim+0];
 				D[1*dim+0]=D_scalar*D[1*dim+0];
@@ -1020,59 +1093,102 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 					}
 				}
 			}
-		} /* }}} */
+		} /*}}}*/
 		/*SUPG: */
-		else if(stabilization==3){ /* {{{ */
-			factor = gauss->weight*Jdet*tau;
-
+		else if((stabilization==4) || (stabilization==5) || (stabilization==6) || (stabilization==10)){ /*{{{*/
 			if(dim==2){
 				_error_("not implemented yet");
 			}
 			else if(dim==3){
 				/* Mass matrix: - part 2*/
-				factor = gauss->weight*Jdet*tau;
+				factor = gauss->weight*Jdet;
 				for(int i=0;i<numnodes;i++){
 					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*basis[j]*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]+vz*dbasis[2*numnodes+i]);
+						Ke->values[i*numnodes+j]+=factor*basis[j]*(tau_h*vx*dbasis[0*numnodes+i]+tau_h*vy*dbasis[1*numnodes+i]+tau_v*vz*dbasis[2*numnodes+i]);
 					}
 				}
 				/*Mass matrix - part 3*/
-				factor = gauss->weight*Jdet*tau;
+				factor = gauss->weight*Jdet;
 				for(int i=0;i<numnodes;i++){
 					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*basis[j]*(basis[i]*dvxdx+basis[i]*dvydy+basis[i]*dvzdz);
+						Ke->values[i*numnodes+j]+=factor*basis[j]*(tau_h*basis[i]*dvxdx+tau_h*basis[i]*dvydy+tau_v*basis[i]*dvzdz);
 					}
 				}
 
 				/* Advection matrix: - part 2, A*/
-				factor = dt*gauss->weight*Jdet*tau;
+				factor = dt*gauss->weight*Jdet;
 				for(int i=0;i<numnodes;i++){
 					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]+vz*dbasis[2*numnodes+j])*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]+vz*dbasis[2*numnodes+i]);
+						Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]+vz*dbasis[2*numnodes+j])*(tau_h*vx*dbasis[0*numnodes+i]+tau_h*vy*dbasis[1*numnodes+i]+tau_v*vz*dbasis[2*numnodes+i]);
 					}
 				}
 				/*Advection matrix - part 3, A*/
-				factor = dt*gauss->weight*Jdet*tau;
+				factor = dt*gauss->weight*Jdet;
 				for(int i=0;i<numnodes;i++){
 					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]+vz*dbasis[2*numnodes+j])*(basis[i]*dvxdx+basis[i]*dvydy+basis[i]*dvzdz);
+						Ke->values[i*numnodes+j]+=factor*(vx*dbasis[0*numnodes+j]+vy*dbasis[1*numnodes+j]+vz*dbasis[2*numnodes+j])*(tau_h*basis[i]*dvxdx+tau_h*basis[i]*dvydy+tau_v*basis[i]*dvzdz);
 					}
 				}
 
 				/*Advection matrix - part 2, B*/
-				factor = dt*gauss->weight*Jdet*tau;
+				factor = dt*gauss->weight*Jdet;
 				for(int i=0;i<numnodes;i++){
 					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(vx*dbasis[0*numnodes+i]+vy*dbasis[1*numnodes+i]+vz*dbasis[2*numnodes+i]);
+						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(tau_h*vx*dbasis[0*numnodes+i]+tau_h*vy*dbasis[1*numnodes+i]+tau_v*vz*dbasis[2*numnodes+i]);
 					}
 				}
 				/*Advection matrix - part 3, B*/
-				factor = dt*gauss->weight*Jdet*tau;
+				factor = dt*gauss->weight*Jdet;
 				for(int i=0;i<numnodes;i++){
 					for(int j=0;j<numnodes;j++){
-						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(basis[i]*dvxdx+basis[i]*dvydy+basis[i]*dvzdz);
+						Ke->values[i*numnodes+j]+=factor*(basis[j]*dvxdx+basis[j]*dvydy+basis[j]*dvzdz)*(tau_h*basis[i]*dvxdx+tau_h*basis[i]*dvydy+tau_v*basis[i]*dvzdz);
 					}
 				}
+
+				/*Add YZ-beta: capturing shock*/
+				if (shock_capture){ /*{{{*/
+					IssmDouble tau_shock = 0.0;
+					IssmDouble D_ref; /* D in [0, 1] */
+					D_ref=max_damage;
+
+					IssmDouble h_shock, temp = 0.0;
+					damage_old_input->GetInputDerivativeValue(&dD[0], xyz_list, gauss);
+					dDdx = dD[0]; dDdy = dD[1]; dDdz = dD[2];
+					IssmDouble Dnorm = sqrt(dDdx*dDdx + dDdy*dDdy + dDdz*dDdz) + 1e-10;
+
+					for(int i = 0; i < numnodes; i++){
+						temp += fabs( dDdx*dbasis[0*numnodes+i] + dDdy*dbasis[1*numnodes+i] + dDdz*dbasis[2*numnodes+i] );
+					}
+					h_shock = 2.0 * Dnorm/ (temp + 1e-10);
+
+					IssmDouble residual;
+					IssmDouble dDdt, D1, D0, damagef;
+					damage_input->GetInputValue(&D1,gauss);
+					damage_old_input->GetInputValue(&D0,gauss);
+					damagef_input->GetInputValue(&damagef,gauss);
+					dDdt = (D1 - D0) / dt;
+
+					residual = dDdt + vx*dDdx + vy*dDdy + vz*dDdz + D0*(dvxdx + dvydy + dvzdz) - damagef;
+
+					/*
+					 * beta = 1 : smooth
+					 * beta = 2 : sharp
+					 */
+					int beta=2;
+					if(beta==1)	tau_shock = pow(h_shock/2.0, (IssmDouble)beta)*fabs(residual/D_ref)*pow(Dnorm/D_ref, -1.0);
+					else if(beta==2)	tau_shock = pow(h_shock/2.0, (IssmDouble)beta)*fabs(residual/D_ref);
+
+					factor = dt * gauss->weight * Jdet;
+					for(int i = 0; i < numnodes; i++){
+						for(int j = 0; j < numnodes; j++){
+							Ke->values[i*numnodes+j] += factor * tau_shock * (
+								dbasis[0*numnodes+j]*dbasis[0*numnodes+i] +
+								dbasis[1*numnodes+j]*dbasis[1*numnodes+i] +
+								dbasis[2*numnodes+j]*dbasis[2*numnodes+i]
+							);
+						}
+					}	
+				}/*}}}*/
 			}
 		} /* }}} */
 	}
@@ -1095,7 +1211,8 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 	int      damagelaw;
 	IssmDouble  Jdet,dt;
 	IssmDouble  f,damage;
-	IssmDouble  xi,h,hx,hy,hz,tau;
+	IssmDouble  xi,h,hx,hy,hz;
+	IssmDouble  tau,tau_h,tau_v;
 	IssmDouble  vel,vx,vy,vz,dvxdx,dvydy,dvzdz; 
 	IssmDouble  u,v,w,um,vm,wm;
 	IssmDouble  du[3],dv[3],dw[3],dum[3],dvm[3],dwm[3];
@@ -1122,29 +1239,6 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 	element->GetVerticesCoordinates(&xyz_list);
 	element->FindParam(&dt,TimesteppingTimeStepEnum);
 	element->FindParam(&stabilization,DamageStabilizationEnum);
-	element->FindParam(&damagelaw,DamageLawEnum);
-	switch(damagelaw){
-		case 0:
-			this->CreateDamageFInput(element);
-			break;
-		case 1:
-			this->CreateDamageFInputPralong(element);
-			break;
-		case 2:
-			this->CreateDamageFInputExp(element);
-			break;
-		case 3:
-			this->CreateDamageFInputArctan(element);
-			break;
-		case 4:
-			this->CreateDamageFInputTest(element);
-			break;
-		case 5:
-			this->CreateDamageFInputLinear(element);
-			break;
-		default:
-			_error_("not implemented yet");
-	}
 
 	Input* vx_input  = element->GetInput(VxEnum);	_assert_(vx_input);
 	Input* vy_input  = element->GetInput(VyEnum);	_assert_(vy_input);
@@ -1161,10 +1255,10 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 	Input* damagef_input = element->GetInput(DamageFEnum); _assert_(damagef_input);
 	if(domaintype==Domain2DhorizontalEnum){
 		dim=2;
-		damaged_input = element->GetInput(DamageDbarEnum); _assert_(damaged_input);
+		damaged_input = element->GetInput(DamageDbarOldEnum); _assert_(damaged_input);
 	}else if((domaintype==Domain2DverticalEnum) || (domaintype==Domain3DEnum)) {
 		dim=3;
-		damaged_input = element->GetInput(DamageDEnum); _assert_(damaged_input);
+		damaged_input = element->GetInput(DamageDOldEnum); _assert_(damaged_input);
 	}else{
 		_error_("not implemented yet");
 	}
@@ -1184,19 +1278,19 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 			pe->values[i]+=factor*basis[i];
 		}
 
-		if (stabilization==3){ /* SUPG {{{*/
+		if ((stabilization==4) || (stabilization==5) || (stabilization==6) || (stabilization==10)){ /* SUPG {{{*/
 			if (dim==2){
 				_error_("not supported yet");
 				h = element->CharacteristicLength();
 			}
 			else if(dim==3){
-				element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
-				//vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
-				//vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
-				//vz_input->GetInputAverage(&w); vzm_input->GetInputAverage(&wm); vz=w-wm;
+				/* Get velocity */
 				vx_input->GetInputValue(&u,gauss); vxm_input->GetInputValue(&um,gauss); vx=u-um;
 				vy_input->GetInputValue(&v,gauss); vym_input->GetInputValue(&vm,gauss); vy=v-vm;
 				vz_input->GetInputValue(&w,gauss); vzm_input->GetInputValue(&wm,gauss); vz=w-wm;
+
+				/* Get derivative */
+				element->NodalFunctionsDerivatives(dbasis,xyz_list,gauss);
 				vx_input->GetInputDerivativeValue(&du[0],xyz_list,gauss); vxm_input->GetInputDerivativeValue(&dum[0],xyz_list,gauss);
 				vy_input->GetInputDerivativeValue(&dv[0],xyz_list,gauss); vym_input->GetInputDerivativeValue(&dvm[0],xyz_list,gauss);
 				vz_input->GetInputDerivativeValue(&dw[0],xyz_list,gauss); vzm_input->GetInputDerivativeValue(&dwm[0],xyz_list,gauss);
@@ -1204,29 +1298,57 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 				dvydy=dv[1]-dvm[1];
 				dvzdz=dw[2]-dwm[2];
 
-				element->ElementSizes(&hx,&hy,&hz);
-				vel=sqrt(vx*vx+vy*vy+vz*vz)+1.e-06;
+				switch(stabilization){
+					case 10:{ /*Isotropic: use min edge{{{*/
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 
-				int idx=1;
-				switch(idx){
-					case 0:{
-						h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
+						h=element->MinEdgeLength(xyz_list);
 						xi=1.0;
 						tau=h*xi/(2.*vel);
+
+						tau_h=tau;
+						tau_v=tau;
 						break;
-					}
-					case 1:{
+					} /*}}}*/
+					case 4:{ /*Anisotropic: use different tau in horizontal and vertical {{{*/
+						element->ElementSizes(&hx,&hy,&hz);
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
+
+						/* Anisotropic SUPG as like implemnted in Thermal/Enthalpy formulation */
+						IssmDouble hk;
+						/* compute tau for horizontal direction */
+						hk=sqrt(hx*hx + hy*hy);
+						tau_h = hk/(2.0*vel);
+
+						hk=hz;
+						tau_v = hk/(2.0*vel);
+
+						tau_h = tau_h;
+						tau_v = tau_v;
+						break;
+					} /*}}}*/
+					case 5:{ /*Isostroic: nodal based {{{*/
+						/* stabilization parameter: Tezduyar 2000, 10.1016/S0045-7825(00)00211-5 */
+						/* Only select advection-term */
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
+
 						IssmDouble temp=0.0;
 						for(int i=0;i<numnodes;i++){
 							temp+=fabs(vx*dbasis[0*numnodes+i] + vy*dbasis[1*numnodes+i] + vz*dbasis[2*numnodes+i]);
 						}
-						xi=1.0;
-						h=2*vel/(temp+1e-14);
-						tau=h*xi/(2.*vel);
+						//xi=1.0;
+						//h=2*vel/(temp+1e-14);
+						//tau=h*xi/(2.*vel);
+						tau = 1/(temp+1e-14);
+
+						tau_h=tau;
+						tau_v=tau;
 						break;
-					}
-					case 2:{
+					} /*}}}*/
+					case 6:{ /*Isotropic: nodal based + time dependent {{{*/
 						/* stabilization parameter: Tezduyar 2000, 10.1016/S0045-7825(00)00211-5 */
+						vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
+
 						IssmDouble tau1=dt/2;
 						IssmDouble tau2=0.0;
 
@@ -1240,20 +1362,24 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 						tau2 = 1/(temp+1e-14);
 
 						tau=1/sqrt(1/(tau1*tau1) + 1/(tau2*tau2));
+
+						tau_h=tau;
+						tau_v=tau;
 						break;
-					}
-					default:
+					} /*}}}*/
+					default: /* {{{ */
 						_error_("error: not suported");
+						/* }}} */
 				}
 
 				/*Force vector - part 2*/
 				factor = Jdet*gauss->weight*(damage+dt*f);
 				for(int i=0;i<numnodes;i++){
-					pe->values[i]+=factor*(tau*vx*dbasis[0*numnodes+i]+tau*vy*dbasis[1*numnodes+i]+tau*vz*dbasis[2*numnodes+i]);
+					pe->values[i]+=factor*(tau_h*vx*dbasis[0*numnodes+i]+tau_h*vy*dbasis[1*numnodes+i]+tau_v*vz*dbasis[2*numnodes+i]);
 				}
 				/*Force vector - part 3*/
 				for(int i=0;i<numnodes;i++){
-					pe->values[i]+=factor*(tau*basis[i]*dvxdx+tau*basis[i]*dvydy+tau*basis[i]*dvzdz);
+					pe->values[i]+=factor*(tau_h*basis[i]*dvxdx+tau_h*basis[i]*dvydy+tau_v*basis[i]*dvzdz);
 				}
 			}
 			else{
@@ -2150,3 +2276,38 @@ void DamageEvolutionAnalysis::ComputeStressEquivalent(Element* element){/*{{{*/
 	xDelete<IssmDouble>(sigma_equiv);
 	delete gauss;
 }/*}}}*/
+void DamageEvolutionAnalysis::ComputeDamageFInput(FemModel* femmodel){/* {{{ */
+	int damagelaw;
+	femmodel->parameters->FindParam(&damagelaw,DamageLawEnum);
+
+	for(Object* & object : femmodel->elements->objects){
+		Element* element = xDynamicCast<Element*>(object);
+
+		switch(damagelaw){
+			case 0:
+				this->CreateDamageFInput(element);
+				break;
+			case 1:
+				this->CreateDamageFInputPralong(element);
+				break;
+			case 2:
+				this->CreateDamageFInputExp(element);
+				break;
+			case 3:
+				this->CreateDamageFInputArctan(element);
+				break;
+			case 4:
+				this->CreateDamageFInputTest(element);
+				break;
+			case 5:
+				this->CreateDamageFInputLinear(element);
+				break;
+			case 10:
+				/* NOTE: Only for debugging */
+				this->CreateDamageFInputZeros(element);
+				break;
+			default:
+				_error_("not implemented yet");
+		}
+	}
+}/* }}} */

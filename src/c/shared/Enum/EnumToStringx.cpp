@@ -165,6 +165,9 @@ const char* EnumToStringx(int en){
 		case CumBslcOceanPartitionEnum : return "CumBslcOceanPartition";
 		case CumGmtslcEnum : return "CumGmtslc";
 		case CumGmslcEnum : return "CumGmslc";
+		case DamageAbstolEnum : return "DamageAbstol";
+		case DamageRestolEnum : return "DamageRestol";
+		case DamageReltolEnum : return "DamageReltol";
 		case DamageC1Enum : return "DamageC1";
 		case DamageC2Enum : return "DamageC2";
 		case DamageC3Enum : return "DamageC3";
@@ -184,8 +187,10 @@ const char* EnumToStringx(int en){
 		case DamageKappaEnum : return "DamageKappa";
 		case DamageLawEnum : return "DamageLaw";
 		case DamageMaxDamageEnum : return "DamageMaxDamage";
+		case DamageMaxiterEnum : return "DamageMaxiter";
 		case DamageModelEnum : return "DamageModel";
 		case DamageStabilizationEnum : return "DamageStabilization";
+		case DamageShockCaptureEnum : return "DamageShockCapture";
 		case DamageStressThresholdEnum : return "DamageStressThreshold";
 		case DamageStressUBoundEnum : return "DamageStressUBound";
 		case DebrisMinThicknessEnum : return "DebrisMinThickness";

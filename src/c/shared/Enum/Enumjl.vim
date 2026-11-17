@@ -156,6 +156,9 @@ syn keyword juliaConstC CumBslcHydroPartitionEnum
 syn keyword juliaConstC CumBslcOceanPartitionEnum
 syn keyword juliaConstC CumGmtslcEnum
 syn keyword juliaConstC CumGmslcEnum
+syn keyword juliaConstC DamageAbstolEnum
+syn keyword juliaConstC DamageRestolEnum
+syn keyword juliaConstC DamageReltolEnum
 syn keyword juliaConstC DamageC1Enum
 syn keyword juliaConstC DamageC2Enum
 syn keyword juliaConstC DamageC3Enum
@@ -175,8 +178,10 @@ syn keyword juliaConstC DamageIsEffectiveStressEnum
 syn keyword juliaConstC DamageKappaEnum
 syn keyword juliaConstC DamageLawEnum
 syn keyword juliaConstC DamageMaxDamageEnum
+syn keyword juliaConstC DamageMaxiterEnum
 syn keyword juliaConstC DamageModelEnum
 syn keyword juliaConstC DamageStabilizationEnum
+syn keyword juliaConstC DamageShockCaptureEnum
 syn keyword juliaConstC DamageStressThresholdEnum
 syn keyword juliaConstC DamageStressUBoundEnum
 syn keyword juliaConstC DebrisMinThicknessEnum

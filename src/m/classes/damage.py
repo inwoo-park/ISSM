@@ -4,6 +4,7 @@ from checkfield import checkfield
 from WriteData import WriteData
 from structtoobj import structtoobj
 from matdamageice import matdamageice
+import numpy as np
 
 
 class damage(object):
@@ -17,30 +18,34 @@ class damage(object):
     def __init__(self, *args):  # {{{
         #damage:
         self.isdamage = 0
-        self.D = float('NaN')
-        self.law = float('NaN')
-        self.spcdamage = float('NaN')
-        self.max_damage = float('NaN')
-        self.critical_damage = float('NaN')
+        self.D               = np.nan
+        self.law             = np.nan
+        self.spcdamage       = np.nan
+        self.max_damage      = np.nan
+        self.critical_damage = np.nan
 
         #numerical
-        self.stabilization = float('NaN')
-        self.maxiter = float('NaN')
+        self.stabilization  = np.nan
+        self.shock_capture= 0
+        self.maxiter = np.nan
+        self.restol  = np.nan
+        self.reltol  = np.nan
+        self.abstol  = np.nan
         self.elementinterp = ''
 
         #general parameters for evolution law:
-        self.stress_threshold = float('NaN')
-        self.stress_ubound = float('NaN')
-        self.kappa = float('NaN')
-        self.c1 = float('NaN')
-        self.c2 = float('NaN')
-        self.c3 = float('NaN')
-        self.c4 = float('NaN')
-        self.healing = float('NaN')
+        self.stress_threshold = np.nan
+        self.stress_ubound    = np.nan
+        self.kappa = np.nan
+        self.c1 = np.nan
+        self.c2 = np.nan
+        self.c3 = np.nan
+        self.c4 = np.nan
+        self.healing = np.nan
         self.isdamage_exponent = 0
         self.isPeff            = 0
         self.iseffective_stress= 0
-        self.equiv_stress = float('NaN')
+        self.equiv_stress = np.nan
         self.requested_outputs = []
 
         self.equiv_stress_alpha = 0 # For hayhurst
@@ -61,11 +66,12 @@ class damage(object):
         s += "{}\n".format(fielddisplay(self, "isdamage", "is damage mechanics being used? [0 (default) or 1]"))
         if self.isdamage:
             s += "{}\n".format(fielddisplay(self, "D", "damage tensor (scalar for now)"))
-            s += "{}\n".format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong']"))
+            s += "{}\n".format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong', '10: no source (debugging)']"))
             s += '{}\n'.format(fielddisplay(self, "spcdamage", "damage constraints (NaN means no constraint)"))
             s += "{}\n".format(fielddisplay(self, "max_damage", "maximum possible damage (0 <=max_damage < 1)"))
-            s += "{}\n".format(fielddisplay(self,'critical_damage','critical damage. When D > D_crit is satisfied, D reaches maximum damage. (default: 1-1e-6; Duddu et al., 2013)'))
-            s += "{}\n".format(fielddisplay(self, "stabilization", "0: no stabilization, 1: artificial diffusion, 2: streamline upwinding, 3. SUPG (not working), 4: flux corrected transport"))
+            s += "{}\n".format(fielddisplay(self, "critical_damage",'critical damage. When D > D_crit is satisfied, D reaches maximum damage. (default: 1-1e-6; Duddu et al., 2013)'))
+            s += "{}\n".format(fielddisplay(self, "stabilization", "0: no stabilization, 1: artificial diffusion, 2: streamline upwinding, 3: flux corrected transport, 4: SUPG1, 5: SUPG2"))
+            s += "{}\n".format(fielddisplay(self, 'shock_capture', 'discontinuity (or shock) capturing in SUPG using YZbeta. 0: off, 1: on (default: 1)'))
             s += "{}\n".format(fielddisplay(self, "maxiter", "maximum number of non linear iterations"))
             s += "%s\n" % fielddisplay(self, "elementinterp", "interpolation scheme for finite elements [''P1'', ''P2'']")
             s += "%s\n" % fielddisplay(self, "stress_threshold", "stress threshold for damage initiation (Pa)")
@@ -133,14 +139,18 @@ class damage(object):
         self.critical_damage = 1-1e-6 # If damage value > damage_critical, make D value as Dmax.
 
         #Type of stabilization used
-        self.stabilization = 4
-        
+        self.stabilization = 1
+        self.shock_capture= 1
+
         #Maximum number of iterations
         self.maxiter = 100
-        
+        self.restol  = 0.001 # 0.1% 
+        self.reltol  = np.nan # not applied
+        self.abstol  = np.nan # not applied
+
         #finite element interpolation
         self.elementinterp = 'P1'
-        
+
         #damage evolution parameters
         self.stress_threshold = 1.3e5
         self.stress_ubound = 0
@@ -195,13 +205,20 @@ class damage(object):
             if not isinstance(md.materials,matdamageice):
                 raise Exception('Error: Invalid class of md.materials (=%s). md.materials should be a subclass of "matdamageice".'%(type(md.materials)))
 
-            md = checkfield(md, 'fieldname', 'damage.law', 'numel', [1], 'values', [0, 1, 2, 3, 4, 5])
+            md = checkfield(md, 'fieldname', 'damage.law', 'numel', [1], 'values', [0, 1, 2, 3, 4, 5, 6, 10])
             md = checkfield(md, 'fieldname', 'damage.D', '>=', 0, '<=', self.max_damage, 'size', [md.mesh.numberofvertices])
             md = checkfield(md, 'fieldname', 'damage.spcdamage', 'Inf', 1, 'timeseries', 1)
             md = checkfield(md, 'fieldname', 'damage.max_damage', '<', 1, '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.critical_damage', '<', 1, '>=', 0)
-            md = checkfield(md, 'fieldname', 'damage.stabilization', 'numel', [1], 'values', [0, 1, 2, 3, 4])
+
+            md = checkfield(md, 'fieldname', 'damage.stabilization', 'numel', [1], 'values', [0, 1, 2, 3, 4, 5, 6, 10])
+            md = checkfield(md, 'fieldname', 'damage.shock_capture', 'numel', [1], 'values', [0, 1])
+
             md = checkfield(md, 'fieldname', 'damage.maxiter', '>=', 0)
+            md = checkfield(md, 'fieldname', 'damage.restol', 'size', [1], '>', 0)
+            md = checkfield(md, 'fieldname', 'damage.reltol', 'size', [1])
+            md = checkfield(md, 'fieldname', 'damage.abstol', 'size', [1])
+
             md = checkfield(md, 'fieldname', 'damage.elementinterp', 'values', ['P1', 'P2'])
             md = checkfield(md, 'fieldname', 'damage.stress_threshold', '>=', 0)
             md = checkfield(md, 'fieldname', 'damage.stress_ubound', '>=', 0)
@@ -238,8 +255,14 @@ class damage(object):
             WriteData(fid, prefix, 'object', self, 'fieldname', 'spcdamage', 'format', 'DoubleMat', 'mattype', 1, 'timeserieslength', md.mesh.numberofvertices + 1, 'yts', md.constants.yts)
             WriteData(fid, prefix, 'object', self, 'fieldname', 'max_damage', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'critical_damage', 'format', 'Double')
+
             WriteData(fid, prefix, 'object', self, 'fieldname', 'stabilization', 'format', 'Integer')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'shock_capture', 'format', 'Boolean')
+
             WriteData(fid, prefix, 'object', self, 'fieldname', 'maxiter', 'format', 'Integer')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'reltol', 'format', 'Double')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'restol', 'format', 'Double')
+            WriteData(fid, prefix, 'object', self, 'fieldname', 'abstol', 'format', 'Double')
             WriteData(fid, prefix, 'name', 'md.damage.elementinterp', 'data', self.elementinterp, 'format', 'String')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'stress_threshold', 'format', 'Double')
             WriteData(fid, prefix, 'object', self, 'fieldname', 'stress_ubound', 'format', 'Double')

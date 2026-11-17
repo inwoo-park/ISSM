@@ -330,6 +330,7 @@ issm_sources += \
 	./cores/surfaceslope_core.cpp \
 	./cores/bedslope_core.cpp \
 	./cores/damage_core.cpp \
+	./solutionsequences/solutionsequence_damage_nonlinear.cpp \
 	./cores/levelsetfunctionslope_core.cpp \
 	./cores/movingfront_core.cpp \
 	./cores/groundingline_core.cpp \

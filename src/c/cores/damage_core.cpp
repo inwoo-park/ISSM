@@ -38,6 +38,9 @@ void damage_core(FemModel* femmodel){
 		int damagelaw;
 		femmodel->parameters->FindParam(&damagelaw,DamageLawEnum);
 
+		/* Duplicate: */
+		InputDuplicatex(femmodel,DamageDEnum,DamageDOldEnum);
+
 		if(damagelaw!=0){
 			if(VerboseSolution()) _printf0_("   update effective stress\n");
 			analysis->ComputeEffectiveStress(femmodel);
@@ -48,16 +51,19 @@ void damage_core(FemModel* femmodel){
 		if(VerboseSolution()) _printf0_("   computing damage\n");
 		Damagex(femmodel); /* optionally calculate damage analytically first */
 		femmodel->SetCurrentConfiguration(DamageEvolutionAnalysisEnum);
-		if(stabilization==4){
+
+		if(VerboseSolution()) _printf0_("   update damage input F\n");
+		analysis->ComputeDamageFInput(femmodel);
+		if(stabilization==3){ /* FCT */
 			solutionsequence_fct(femmodel);
 		}
-		else{
-			solutionsequence_linear(femmodel);
+		else{ /* Continuous Galerkin */
+			solutionsequence_damage_nonlinear(femmodel);
 		}
 		delete analysis;
 
 		if(domaintype==Domain2DhorizontalEnum){
-			// duplicate DamageDbar to DamageD
+			/*Duplicate DamageDbar to DamageD*/
 			InputDuplicatex(femmodel,DamageDbarEnum,DamageDEnum);	
 		}
 		else if((domaintype==Domain3DEnum) | (domaintype==Domain2DverticalEnum)){
@@ -66,7 +72,7 @@ void damage_core(FemModel* femmodel){
 			femmodel->parameters->SetParam(DamageDbarEnum,InputToDepthaverageOutEnum);
 			depthaverage_core(femmodel);
 			
-			femmodel->parameters->SetParam(DamageDbar,InputToExtrudeEnum);
+			femmodel->parameters->SetParam(DamageDbarEnum,InputToExtrudeEnum);
 			extrudefrombase_core(femmodel);
 		}
 	}

@@ -152,6 +152,9 @@
 	CumBslcOceanPartitionEnum
 	CumGmtslcEnum
 	CumGmslcEnum
+	DamageAbstolEnum
+	DamageRestolEnum
+	DamageReltolEnum
 	DamageC1Enum
 	DamageC2Enum
 	DamageC3Enum
@@ -171,8 +174,10 @@
 	DamageKappaEnum
 	DamageLawEnum
 	DamageMaxDamageEnum
+	DamageMaxiterEnum
 	DamageModelEnum
 	DamageStabilizationEnum
+	DamageShockCaptureEnum
 	DamageStressThresholdEnum
 	DamageStressUBoundEnum
 	DebrisMinThicknessEnum
@@ -4072,6 +4077,9 @@ function EnumToString(enum::IssmEnum)
 	if(enum==CumBslcOceanPartitionEnum) return "CumBslcOceanPartition" end
 	if(enum==CumGmtslcEnum) return "CumGmtslc" end
 	if(enum==CumGmslcEnum) return "CumGmslc" end
+	if(enum==DamageAbstolEnum) return "DamageAbstol" end
+	if(enum==DamageRestolEnum) return "DamageRestol" end
+	if(enum==DamageReltolEnum) return "DamageReltol" end
 	if(enum==DamageC1Enum) return "DamageC1" end
 	if(enum==DamageC2Enum) return "DamageC2" end
 	if(enum==DamageC3Enum) return "DamageC3" end
@@ -4091,8 +4099,10 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageKappaEnum) return "DamageKappa" end
 	if(enum==DamageLawEnum) return "DamageLaw" end
 	if(enum==DamageMaxDamageEnum) return "DamageMaxDamage" end
+	if(enum==DamageMaxiterEnum) return "DamageMaxiter" end
 	if(enum==DamageModelEnum) return "DamageModel" end
 	if(enum==DamageStabilizationEnum) return "DamageStabilization" end
+	if(enum==DamageShockCaptureEnum) return "DamageShockCapture" end
 	if(enum==DamageStressThresholdEnum) return "DamageStressThreshold" end
 	if(enum==DamageStressUBoundEnum) return "DamageStressUBound" end
 	if(enum==DebrisMinThicknessEnum) return "DebrisMinThickness" end
@@ -7992,6 +8002,9 @@ function StringToEnum(name::String)
 	if(name=="CumBslcOceanPartition") return CumBslcOceanPartitionEnum  end
 	if(name=="CumGmtslc") return CumGmtslcEnum  end
 	if(name=="CumGmslc") return CumGmslcEnum  end
+	if(name=="DamageAbstol") return DamageAbstolEnum  end
+	if(name=="DamageRestol") return DamageRestolEnum  end
+	if(name=="DamageReltol") return DamageReltolEnum  end
 	if(name=="DamageC1") return DamageC1Enum  end
 	if(name=="DamageC2") return DamageC2Enum  end
 	if(name=="DamageC3") return DamageC3Enum  end
@@ -8011,8 +8024,10 @@ function StringToEnum(name::String)
 	if(name=="DamageKappa") return DamageKappaEnum  end
 	if(name=="DamageLaw") return DamageLawEnum  end
 	if(name=="DamageMaxDamage") return DamageMaxDamageEnum  end
+	if(name=="DamageMaxiter") return DamageMaxiterEnum  end
 	if(name=="DamageModel") return DamageModelEnum  end
 	if(name=="DamageStabilization") return DamageStabilizationEnum  end
+	if(name=="DamageShockCapture") return DamageShockCaptureEnum  end
 	if(name=="DamageStressThreshold") return DamageStressThresholdEnum  end
 	if(name=="DamageStressUBound") return DamageStressUBoundEnum  end
 	if(name=="DebrisMinThickness") return DebrisMinThicknessEnum  end

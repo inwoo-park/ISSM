@@ -163,6 +163,9 @@ syn keyword cConstant CumBslcHydroPartitionEnum
 syn keyword cConstant CumBslcOceanPartitionEnum
 syn keyword cConstant CumGmtslcEnum
 syn keyword cConstant CumGmslcEnum
+syn keyword cConstant DamageAbstolEnum
+syn keyword cConstant DamageRestolEnum
+syn keyword cConstant DamageReltolEnum
 syn keyword cConstant DamageC1Enum
 syn keyword cConstant DamageC2Enum
 syn keyword cConstant DamageC3Enum
@@ -182,8 +185,10 @@ syn keyword cConstant DamageIsEffectiveStressEnum
 syn keyword cConstant DamageKappaEnum
 syn keyword cConstant DamageLawEnum
 syn keyword cConstant DamageMaxDamageEnum
+syn keyword cConstant DamageMaxiterEnum
 syn keyword cConstant DamageModelEnum
 syn keyword cConstant DamageStabilizationEnum
+syn keyword cConstant DamageShockCaptureEnum
 syn keyword cConstant DamageStressThresholdEnum
 syn keyword cConstant DamageStressUBoundEnum
 syn keyword cConstant DebrisMinThicknessEnum
