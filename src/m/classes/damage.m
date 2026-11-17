@@ -132,7 +132,7 @@ classdef damage
 					error('Error: Invalid class of md.materials (=%s). md.materials should be a subclass of "matdamageice".',class(md.materials));
 				end
 
-				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3,4,5]);
+				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3,4,5,10]);
 				md = checkfield(md,'fieldname','damage.D','>=',0,'<=',self.max_damage,'size',[md.mesh.numberofvertices 1]);
 				md = checkfield(md,'fieldname','damage.spcdamage','Inf',1,'timeseries',1);
 				md = checkfield(md,'fieldname','damage.max_damage','<',1,'>=',0);
@@ -185,7 +185,7 @@ classdef damage
 
 			fielddisplay(self,'isdamage','is damage mechanics being used? {true,false}');
 			if self.isdamage
-				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong'',''4: test'',''5: linear'', ''10: no source (debugging)''}');
+				fielddisplay(self,'law','damage law {''0: analytical'',''1: pralong'',''5: linear'', ''10: no source (debugging)''}');
 				fielddisplay(self,'D','damage tensor (scalar)');
 				fielddisplay(self,'spcdamage','damage constraints (NaN means no constraint)');
 				fielddisplay(self,'max_damage','maximum possible damage (0<=max_damage<1)');

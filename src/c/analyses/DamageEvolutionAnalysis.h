@@ -21,13 +21,12 @@ class DamageEvolutionAnalysis: public Analysis{
 
 		/*Finite element Analysis*/
 		void           Core(FemModel* femmodel);
-		void           CreateDamageFInput(Element* element);
+		void           CreateDamageFInputZeros(Element* element);
+		void           CreateDamageFInputPralong(Element* element);
 		void           CreateDamageFInputArctan(Element* element);
 		void           CreateDamageFInputExp(Element* element);
-		void           CreateDamageFInputPralong(Element* element);
-		void           CreateDamageFInputTest(Element* element);
 		void           CreateDamageFInputLinear(Element* element);
-		void           CreateDamageFInputZeros(Element* element);
+		void           CreateDamageFInputPralongOld(Element* element);
 		ElementVector* CreateDVector(Element* element);
 		ElementMatrix* CreateJacobianMatrix(Element* element);
 		ElementMatrix* CreateKMatrix(Element* element);

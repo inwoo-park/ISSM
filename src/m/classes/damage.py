@@ -66,7 +66,7 @@ class damage(object):
         s += "{}\n".format(fielddisplay(self, "isdamage", "is damage mechanics being used? [0 (default) or 1]"))
         if self.isdamage:
             s += "{}\n".format(fielddisplay(self, "D", "damage tensor (scalar for now)"))
-            s += "{}\n".format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong', '10: no source (debugging)']"))
+            s += "{}\n".format(fielddisplay(self, "law", "damage law ['0: analytical', '1: pralong', '5: linear', '10: no source (debugging)']"))
             s += '{}\n'.format(fielddisplay(self, "spcdamage", "damage constraints (NaN means no constraint)"))
             s += "{}\n".format(fielddisplay(self, "max_damage", "maximum possible damage (0 <=max_damage < 1)"))
             s += "{}\n".format(fielddisplay(self, "critical_damage",'critical damage. When D > D_crit is satisfied, D reaches maximum damage. (default: 1-1e-6; Duddu et al., 2013)'))
@@ -205,7 +205,7 @@ class damage(object):
             if not isinstance(md.materials,matdamageice):
                 raise Exception('Error: Invalid class of md.materials (=%s). md.materials should be a subclass of "matdamageice".'%(type(md.materials)))
 
-            md = checkfield(md, 'fieldname', 'damage.law', 'numel', [1], 'values', [0, 1, 2, 3, 4, 5, 6, 10])
+            md = checkfield(md, 'fieldname', 'damage.law', 'numel', [1], 'values', [0, 1, 2, 3, 4, 5, 10])
             md = checkfield(md, 'fieldname', 'damage.D', '>=', 0, '<=', self.max_damage, 'size', [md.mesh.numberofvertices])
             md = checkfield(md, 'fieldname', 'damage.spcdamage', 'Inf', 1, 'timeseries', 1)
             md = checkfield(md, 'fieldname', 'damage.max_damage', '<', 1, '>=', 0)

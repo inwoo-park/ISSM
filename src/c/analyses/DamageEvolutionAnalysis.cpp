@@ -169,7 +169,7 @@ void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* i
 void           DamageEvolutionAnalysis::Core(FemModel* femmodel){/*{{{*/
 	_error_("not implemented");
 }/*}}}*/
-void           DamageEvolutionAnalysis::CreateDamageFInput(Element* element){/*{{{*/
+void           DamageEvolutionAnalysis::CreateDamageFInputZeros(Element* element){/*{{{*/
 
 	/*Fetch number of vertices and allocate output*/
 	int numnodes = element->GetNumberOfNodes();
@@ -352,6 +352,141 @@ void           DamageEvolutionAnalysis::CreateDamageFInputExp(Element* element){
 void           DamageEvolutionAnalysis::CreateDamageFInputPralong(Element* element){/*{{{*/
 
 	/*Intermediaries */
+	IssmDouble c1,c2,c3,c4,healing,stress_threshold;
+	IssmDouble s1, s2, s3;
+	IssmDouble s_inv1;
+	IssmDouble pressure;
+	IssmDouble Chi,Psi,PosPsi,NegPsi;
+	IssmDouble damage,sigma_xx,sigma_xy,sigma_xz,sigma_yy,sigma_yz,sigma_zz,stressMaxPrincipal;
+	int equivstress,domaintype,dim;
+
+	IssmDouble  k_sigma=0.0; /* k_sigma in exponential damage model*/
+	int isdamage_exponent;
+
+	/*Fetch number of vertices and allocate output*/
+	int numnodes = element->GetNumberOfNodes();
+	IssmDouble* f   = xNew<IssmDouble>(numnodes);
+
+	/*retrieve parameters:*/
+	element->FindParam(&c1,DamageC1Enum);
+	element->FindParam(&c2,DamageC2Enum);
+	element->FindParam(&c3,DamageC3Enum);
+	element->FindParam(&c4,DamageC4Enum);
+	element->FindParam(&healing,DamageHealingEnum);
+	element->FindParam(&stress_threshold,DamageStressThresholdEnum);
+	element->FindParam(&isdamage_exponent,DamageIsDamageExponentEnum);
+	element->FindParam(&domaintype,DomainTypeEnum);
+
+	/*Get problem dimension*/
+	switch(domaintype){
+		case Domain2DhorizontalEnum: dim = 2; break;
+		case Domain2DverticalEnum:   dim = 2; break;
+		case Domain3DEnum:           dim = 3; break;
+		default: _error_("not implemented");
+	}
+
+	/*retrieve what we need: */
+	Input* damage_input = NULL;
+	if(domaintype==Domain2DhorizontalEnum){
+		damage_input = element->GetInput(DamageDbarOldEnum); 	_assert_(damage_input);
+	}else if((domaintype==Domain2DverticalEnum) || (domaintype==Domain3DEnum)){
+		damage_input = element->GetInput(DamageDOldEnum);   _assert_(damage_input);
+	}
+
+	Input* stress_equivalent_input = element->GetInput(DamageEffectiveStressEquivalentEnum); _assert_(stress_equivalent_input);
+	/* stress */
+	Input* sigma1_input = element->GetInput(StressTensorPrincipalValue1Enum); _assert_(sigma1_input);
+	Input* sigma2_input = element->GetInput(StressTensorPrincipalValue2Enum); _assert_(sigma2_input);
+	Input* sigma3_input = NULL;
+	/* Effective stress */
+	Input* effective_sigma1_input = element->GetInput(DamageEffectiveStressPrincipalValue1Enum); _assert_(effective_sigma1_input);
+	Input* effective_sigma2_input = element->GetInput(DamageEffectiveStressPrincipalValue2Enum); _assert_(effective_sigma2_input);
+	Input* effective_sigma3_input = NULL;
+
+	if(dim==3){
+		sigma3_input = element->GetInput(StressTensorPrincipalValue3Enum); _assert_(sigma3_input);
+		effective_sigma3_input = element->GetInput(DamageEffectiveStressPrincipalValue3Enum); _assert_(effective_sigma3_input);
+	}
+
+	/*Calculate damage evolution source term: */
+	Gauss* gauss=element->NewGauss();
+	for (int i=0;i<numnodes;i++){
+		gauss->GaussNode(element->GetElementType(),i);
+
+		/*Get all variables*/
+		damage_input->GetInputValue(&damage,gauss);
+		stress_equivalent_input->GetInputValue(&Chi,gauss);
+		s3=0.0;
+
+		/*Calculate k_simga value*/
+		if(isdamage_exponent==0){
+			k_sigma = c3;
+		}else if(isdamage_exponent==1){
+			/* Eq 23. Pralong et al. (2005) */
+			IssmDouble k1=3.75e-3; // [Pa-1] Table 3 in Pralong et al. (2005)
+
+			effective_sigma1_input->GetInputValue(&s1,gauss);
+			effective_sigma2_input->GetInputValue(&s2,gauss);
+			if(dim==3) effective_sigma3_input->GetInputValue(&s3,gauss);
+			s_inv1 = s1 + s2 + s3;
+
+			k_sigma = k1 * ( sqrt(max(s_inv1,0.0)) - healing * sqrt(max(-s_inv1,0.0)) );
+		}else if(isdamage_exponent==2){
+			/*FIXME: Hard coding. Parameters from Duddu et al. (2013): doi:10.1007/s00466-012-0778-7 */
+			_error_("Error: not supporte expornent in damage (k_sigma)");
+			IssmDouble k1=-2.63;
+			IssmDouble k2=7.24*1e-6; // unit: Pa-1
+			IssmDouble k3=12.36;
+			IssmDouble k4=-3.83; // unit: Pa-1 
+
+			sigma1_input->GetInputValue(&s1,gauss);
+			sigma2_input->GetInputValue(&s2,gauss);
+			if(dim==3) sigma3_input->GetInputValue(&s3,gauss);
+			s_inv1 = s1+s2+s3;
+
+			/* Eq 18 in Duddu 2013 */
+			if (s_inv1 >= 0) k_sigma = k1 + k2*abs(s_inv1); // tension
+			else if(s_inv1 <0) k_sigma = -(k3 + k3*abs(s_inv1)); // compression
+			else _error_("Error: out of bounds");
+		}else if(isdamage_exponent==3){
+			/*FIXME: Hard coding. Parameters from Duddu et al. (2020)*/
+			IssmDouble k1=-2.63; // unit: -
+			IssmDouble k2=7.24*1e-6; // unit: Pa-1
+
+			sigma1_input->GetInputValue(&s1,gauss);
+			sigma2_input->GetInputValue(&s2,gauss);
+			if(dim==3) sigma3_input->GetInputValue(&s3,gauss);
+			s_inv1 = s1+s2+s3;
+
+			k_sigma = k1 + k2*s_inv1;
+		}else{
+			_error_("not implemented");
+		}
+
+		/*Calculate principal effective stresses*/
+		if(dim==2){
+			Psi=Chi-stress_threshold;
+			PosPsi=max(Psi,0.);
+			NegPsi=max(-Psi,0.); /* healing only for compressive stresses */
+			f[i]= c1*(pow(PosPsi,c2) - healing*pow(NegPsi,c2))*pow((1./(1.-damage)),k_sigma);
+		}
+		else{
+			Psi=Chi-stress_threshold;
+			PosPsi=max(Psi,0.);
+			NegPsi=max(-Psi,0.); /* healing only for compressive stresses */
+			f[i]= c1*(pow(PosPsi,c2) - healing*pow(NegPsi,c2))*pow((1./(1.-damage)),k_sigma);
+		}
+	}
+	/*Add input*/
+	element->AddInput(DamageFEnum,f,P1DGEnum);
+
+	/*Clean up and return*/
+	xDelete<IssmDouble>(f);
+	delete gauss;
+}/*}}}*/
+void           DamageEvolutionAnalysis::CreateDamageFInputPralongOld(Element* element){/*{{{*/
+
+	/*Intermediaries */
 	IssmDouble c1,c2,c3,healing,stress_threshold;
 	IssmDouble s_xx,s_xy,s_xz,s_yy,s_yz,s_zz,s1,s2,stmp;
 	IssmDouble Chi,Psi,PosPsi,NegPsi;
@@ -505,141 +640,6 @@ void           DamageEvolutionAnalysis::CreateDamageFInputPralong(Element* eleme
 	xDelete<IssmDouble>(f);
 	delete gauss;
 }/*}}}*/
-void           DamageEvolutionAnalysis::CreateDamageFInputTest(Element* element){/*{{{*/
-
-	/*Intermediaries */
-	IssmDouble c1,c2,c3,c4,healing,stress_threshold;
-	IssmDouble s1, s2, s3;
-	IssmDouble s_inv1;
-	IssmDouble pressure;
-	IssmDouble Chi,Psi,PosPsi,NegPsi;
-	IssmDouble damage,sigma_xx,sigma_xy,sigma_xz,sigma_yy,sigma_yz,sigma_zz,stressMaxPrincipal;
-	int equivstress,domaintype,dim;
-
-	IssmDouble  k_sigma=0.0; /* k_sigma in exponential damage model*/
-	int isdamage_exponent;
-
-	/*Fetch number of vertices and allocate output*/
-	int numnodes = element->GetNumberOfNodes();
-	IssmDouble* f   = xNew<IssmDouble>(numnodes);
-
-	/*retrieve parameters:*/
-	element->FindParam(&c1,DamageC1Enum);
-	element->FindParam(&c2,DamageC2Enum);
-	element->FindParam(&c3,DamageC3Enum);
-	element->FindParam(&c4,DamageC4Enum);
-	element->FindParam(&healing,DamageHealingEnum);
-	element->FindParam(&stress_threshold,DamageStressThresholdEnum);
-	element->FindParam(&isdamage_exponent,DamageIsDamageExponentEnum);
-	element->FindParam(&domaintype,DomainTypeEnum);
-
-	/*Get problem dimension*/
-	switch(domaintype){
-		case Domain2DhorizontalEnum: dim = 2; break;
-		case Domain2DverticalEnum:   dim = 2; break;
-		case Domain3DEnum:           dim = 3; break;
-		default: _error_("not implemented");
-	}
-
-	/*retrieve what we need: */
-	Input* damage_input = NULL;
-	if(domaintype==Domain2DhorizontalEnum){
-		damage_input = element->GetInput(DamageDbarOldEnum); 	_assert_(damage_input);
-	}else if((domaintype==Domain2DverticalEnum) || (domaintype==Domain3DEnum)){
-		damage_input = element->GetInput(DamageDOldEnum);   _assert_(damage_input);
-	}
-
-	Input* stress_equivalent_input = element->GetInput(DamageEffectiveStressEquivalentEnum); _assert_(stress_equivalent_input);
-	/* stress */
-	Input* sigma1_input = element->GetInput(StressTensorPrincipalValue1Enum); _assert_(sigma1_input);
-	Input* sigma2_input = element->GetInput(StressTensorPrincipalValue2Enum); _assert_(sigma2_input);
-	Input* sigma3_input = NULL;
-	/* Effective stress */
-	Input* effective_sigma1_input = element->GetInput(DamageEffectiveStressPrincipalValue1Enum); _assert_(effective_sigma1_input);
-	Input* effective_sigma2_input = element->GetInput(DamageEffectiveStressPrincipalValue2Enum); _assert_(effective_sigma2_input);
-	Input* effective_sigma3_input = NULL;
-
-	if(dim==3){
-		sigma3_input = element->GetInput(StressTensorPrincipalValue3Enum); _assert_(sigma3_input);
-		effective_sigma3_input = element->GetInput(DamageEffectiveStressPrincipalValue3Enum); _assert_(effective_sigma3_input);
-	}
-
-	/*Calculate damage evolution source term: */
-	Gauss* gauss=element->NewGauss();
-	for (int i=0;i<numnodes;i++){
-		gauss->GaussNode(element->GetElementType(),i);
-
-		/*Get all variables*/
-		damage_input->GetInputValue(&damage,gauss);
-		stress_equivalent_input->GetInputValue(&Chi,gauss);
-		s3=0.0;
-
-		/*Calculate k_simga value*/
-		if(isdamage_exponent==0){
-			k_sigma = c3;
-		}else if(isdamage_exponent==1){
-			/* Eq 23. Pralong et al. (2005) */
-			IssmDouble k1=3.75e-3; // [Pa-1] Table 3 in Pralong et al. (2005)
-
-			effective_sigma1_input->GetInputValue(&s1,gauss);
-			effective_sigma2_input->GetInputValue(&s2,gauss);
-			if(dim==3) effective_sigma3_input->GetInputValue(&s3,gauss);
-			s_inv1 = s1 + s2 + s3;
-
-			k_sigma = k1 * ( sqrt(max(s_inv1,0.0)) - healing * sqrt(max(-s_inv1,0.0)) );
-		}else if(isdamage_exponent==2){
-			/*FIXME: Hard coding. Parameters from Duddu et al. (2013): doi:10.1007/s00466-012-0778-7 */
-			_error_("Error: not supporte expornent in damage (k_sigma)");
-			IssmDouble k1=-2.63;
-			IssmDouble k2=7.24*1e-6; // unit: Pa-1
-			IssmDouble k3=12.36;
-			IssmDouble k4=-3.83; // unit: Pa-1 
-
-			sigma1_input->GetInputValue(&s1,gauss);
-			sigma2_input->GetInputValue(&s2,gauss);
-			if(dim==3) sigma3_input->GetInputValue(&s3,gauss);
-			s_inv1 = s1+s2+s3;
-
-			/* Eq 18 in Duddu 2013 */
-			if (s_inv1 >= 0) k_sigma = k1 + k2*abs(s_inv1); // tension
-			else if(s_inv1 <0) k_sigma = -(k3 + k3*abs(s_inv1)); // compression
-			else _error_("Error: out of bounds");
-		}else if(isdamage_exponent==3){
-			/*FIXME: Hard coding. Parameters from Duddu et al. (2020)*/
-			IssmDouble k1=-2.63; // unit: -
-			IssmDouble k2=7.24*1e-6; // unit: Pa-1
-
-			sigma1_input->GetInputValue(&s1,gauss);
-			sigma2_input->GetInputValue(&s2,gauss);
-			if(dim==3) sigma3_input->GetInputValue(&s3,gauss);
-			s_inv1 = s1+s2+s3;
-
-			k_sigma = k1 + k2*s_inv1;
-		}else{
-			_error_("not implemented");
-		}
-
-		/*Calculate principal effective stresses*/
-		if(dim==2){
-			Psi=Chi-stress_threshold;
-			PosPsi=max(Psi,0.);
-			NegPsi=max(-Psi,0.); /* healing only for compressive stresses */
-			f[i]= c1*(pow(PosPsi,c2) - healing*pow(NegPsi,c2))*pow((1./(1.-damage)),k_sigma);
-		}
-		else{
-			Psi=Chi-stress_threshold;
-			PosPsi=max(Psi,0.);
-			NegPsi=max(-Psi,0.); /* healing only for compressive stresses */
-			f[i]= c1*(pow(PosPsi,c2) - healing*pow(NegPsi,c2))*pow((1./(1.-damage)),k_sigma);
-		}
-	}
-	/*Add input*/
-	element->AddInput(DamageFEnum,f,P1DGEnum);
-
-	/*Clean up and return*/
-	xDelete<IssmDouble>(f);
-	delete gauss;
-}/*}}}*/
 void           DamageEvolutionAnalysis::CreateDamageFInputLinear(Element* element){/*{{{*/
 	/*
 	 Damage evolution as follows:
@@ -781,27 +781,6 @@ void           DamageEvolutionAnalysis::CreateDamageFInputLinear(Element* elemen
 	xDelete<IssmDouble>(f);
 	delete gauss;
 }/*}}}*/
-void           DamageEvolutionAnalysis::CreateDamageFInputZeros(Element* element){/*{{{*/
-
-	/*Fetch number of vertices and allocate output*/
-	int numnodes = element->GetNumberOfNodes();
-	IssmDouble* f   = xNew<IssmDouble>(numnodes);
-
-	/*Calculate damage evolution source term: */
-	for (int i=0;i<numnodes;i++){
-
-		/* healing could be handled here */
-
-		/* no source term; damage handled in stress balance */
-		f[i]=0.;
-	}
-
-	/*Add input*/
-	element->AddInput(DamageFEnum,f,element->GetElementType());
-
-	/*Clean up and return*/
-	xDelete<IssmDouble>(f);
-}/*}}}*/
 ElementVector* DamageEvolutionAnalysis::CreateDVector(Element* element){/*{{{*/
 	/*Default, return NULL*/
 	return NULL;
@@ -933,11 +912,13 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 
 				vel=sqrt(vx*vx + vy*vy + vz*vz)+1.e-14;
 				h=sqrt( pow(hx*vx/vel,2) + pow(hy*vy/vel,2) + pow(hz*vz/vel,2));
-				factor=h/(2.*vel);
+				tau=h/(2.*vel);
 
-				D[0*dim+0]=factor*fabs(vx*vx);  D[0*dim+1]=0;                  D[0*dim+2]=0;
-				D[1*dim+0]=0.0;                 D[1*dim+1]=factor*fabs(vy*vy); D[1*dim+2]=0;
-				D[2*dim+0]=0.0;                 D[2*dim+1]=0;                  D[2*dim+2]=factor*fabs(vz*vz);
+				D[0*dim+0]=tau*fabs(vx*vx);  D[0*dim+1]=0;               D[0*dim+2]=0;
+				D[1*dim+0]=0.0;              D[1*dim+1]=tau*fabs(vy*vy); D[1*dim+2]=0;
+				D[2*dim+0]=0.0;              D[2*dim+1]=0;               D[2*dim+2]=tau*fabs(vz*vz);
+
+				/* NOTE: Old configuration */
 				//D[0*dim+0]=factor*fabs(vx*vx);  D[0*dim+1]=factor*fabs(vx*vy); D[0*dim+2]=factor*fabs(vx*vz);
 				//D[1*dim+0]=factor*fabs(vy*vx);  D[1*dim+1]=factor*fabs(vy*vy); D[1*dim+2]=factor*fabs(vy*vz);
 				//D[2*dim+0]=factor*fabs(vz*vx);  D[2*dim+1]=factor*fabs(vz*vy); D[2*dim+2]=factor*fabs(vz*vz);
@@ -950,10 +931,10 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				vy_input->GetInputAverage(&v); vym_input->GetInputAverage(&vm); vy=v-vm;
 				vel=sqrt(vx*vx+vy*vy)+1.e-8;
 				xi=1.0;
-				factor=xi*h/(2.0*vel);
+				tau=xi*h/(2.0*vel);
 
-				D[0*dim+0]=h/(2.0*vel)*vx*vx; D[0*dim+1]=h/(2.0*vel)*vx*vy;
-				D[1*dim+0]=h/(2.0*vel)*vy*vx; D[1*dim+1]=h/(2.0*vel)*vy*vy;
+				D[0*dim+0]=tau*vx*vx; D[0*dim+1]=tau*vx*vy;
+				D[1*dim+0]=tau*vy*vx; D[1*dim+1]=tau*vy*vy;
 			}
 			else if(dim==3){
 				vx_input->GetInputAverage(&u); vxm_input->GetInputAverage(&um); vx=u-um;
@@ -970,6 +951,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 				D[1*dim+0]=tau*(vy*vx);  D[1*dim+1]=tau*(vy*vy); D[1*dim+2]=tau*(vy*vz);
 				D[2*dim+0]=tau*(vz*vx);  D[2*dim+1]=tau*(vz*vy); D[2*dim+2]=tau*(vz*vz);
 
+				/* NOTE: old configurtion */
 				//D[0*dim+0]=tau*fabs(vx*vx);  D[0*dim+1]=tau*fabs(vx*vy); D[0*dim+2]=tau*fabs(vx*vz);
 				//D[1*dim+0]=tau*fabs(vy*vx);  D[1*dim+1]=tau*fabs(vy*vy); D[1*dim+2]=tau*fabs(vy*vz);
 				//D[2*dim+0]=tau*fabs(vz*vx);  D[2*dim+1]=tau*fabs(vz*vy); D[2*dim+2]=tau*fabs(vz*vz);
@@ -2285,7 +2267,7 @@ void DamageEvolutionAnalysis::ComputeDamageFInput(FemModel* femmodel){/* {{{ */
 
 		switch(damagelaw){
 			case 0:
-				this->CreateDamageFInput(element);
+				this->CreateDamageFInputZeros(element);
 				break;
 			case 1:
 				this->CreateDamageFInputPralong(element);
