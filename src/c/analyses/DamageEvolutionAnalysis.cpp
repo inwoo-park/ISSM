@@ -83,6 +83,7 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	InputUpdateFromConstantx(inputs,elements,0.,VxMeshEnum);
 	InputUpdateFromConstantx(inputs,elements,0.,VyMeshEnum);
 	InputUpdateFromConstantx(inputs,elements,0.,VzMeshEnum);
+	InputUpdateFromConstantx(inputs,elements,0.,DamageShockCaptureResidualEnum);
 
 	iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDEnum);
 	if (iomodel->domaintype==Domain3DEnum){
@@ -803,7 +804,6 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 	IssmDouble  u,v,w,um,vm,wm;
 	IssmDouble  damage,damage_old,dD[3],dDdx,dDdy,dDdz;
 	IssmDouble  du[3],dv[3],dw[3],dum[3],dvm[3],dwm[3];
-	IssmDouble  K[3][3];
 	IssmDouble *xyz_list  = NULL;
 	IssmDouble  max_damage; 
 
@@ -1134,7 +1134,8 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 					D_ref=max_damage;
 
 					IssmDouble h_shock, temp = 0.0;
-					damage_old_input->GetInputDerivativeValue(&dD[0], xyz_list, gauss);
+					damage_input->GetInputDerivativeValue(&dD[0], xyz_list, gauss);
+					//damage_old_input->GetInputDerivativeValue(&dD[0], xyz_list, gauss);
 					dDdx = dD[0]; dDdy = dD[1]; dDdz = dD[2];
 					IssmDouble Dnorm = sqrt(dDdx*dDdx + dDdy*dDdy + dDdz*dDdz) + 1e-10;
 
@@ -1150,7 +1151,7 @@ ElementMatrix* DamageEvolutionAnalysis::CreateKMatrix(Element* element){/*{{{*/
 					damagef_input->GetInputValue(&damagef,gauss);
 					dDdt = (D1 - D0) / dt;
 
-					residual = dDdt + vx*dDdx + vy*dDdy + vz*dDdz + D0*(dvxdx + dvydy + dvzdz) - damagef;
+					residual = dDdt + vx*dDdx + vy*dDdy + vz*dDdz + D1*(dvxdx + dvydy + dvzdz) - damagef;
 
 					/*
 					 * beta = 1 : smooth
