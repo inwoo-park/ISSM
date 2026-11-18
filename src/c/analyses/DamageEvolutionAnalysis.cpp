@@ -83,7 +83,6 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	InputUpdateFromConstantx(inputs,elements,0.,VxMeshEnum);
 	InputUpdateFromConstantx(inputs,elements,0.,VyMeshEnum);
 	InputUpdateFromConstantx(inputs,elements,0.,VzMeshEnum);
-	InputUpdateFromConstantx(inputs,elements,0.,DamageShockCaptureResidualEnum);
 
 	iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDEnum);
 	if (iomodel->domaintype==Domain3DEnum){
