@@ -538,6 +538,7 @@ syn keyword cConstant SealevelchangeViscousPolarMotionEnum
 syn keyword cConstant SealevelchangeRunCountEnum
 syn keyword cConstant SealevelchangeTransitionsEnum
 syn keyword cConstant SealevelchangeRequestedOutputsEnum
+syn keyword cConstant SurfaceHydrologyTypeEnum
 syn keyword cConstant RotationalAngularVelocityEnum
 syn keyword cConstant RotationalEquatorialMoiEnum
 syn keyword cConstant RotationalPolarMoiEnum
@@ -1008,6 +1009,7 @@ syn keyword cConstant UGiaEnum
 syn keyword cConstant UGiaRateEnum
 syn keyword cConstant GradientEnum
 syn keyword cConstant GroundinglineHeightEnum
+syn keyword cConstant HurstEnum
 syn keyword cConstant HydraulicPotentialEnum
 syn keyword cConstant HydraulicPotentialOldEnum
 syn keyword cConstant HydrologyBasalFluxEnum
@@ -1084,6 +1086,7 @@ syn keyword cConstant InversionVelObsEnum
 syn keyword cConstant InversionVxObsEnum
 syn keyword cConstant InversionVyObsEnum
 syn keyword cConstant LambdaSEnum
+syn keyword cConstant LakeDepthEnum
 syn keyword cConstant LevelsetfunctionSlopeXEnum
 syn keyword cConstant LevelsetfunctionSlopeYEnum
 syn keyword cConstant LevelsetObservationEnum
@@ -1106,6 +1109,7 @@ syn keyword cConstant MaterialsRheologyEcbarEnum
 syn keyword cConstant MaterialsRheologyEsEnum
 syn keyword cConstant MaterialsRheologyEsbarEnum
 syn keyword cConstant MaterialsRheologyNEnum
+syn keyword cConstant MeltSupplyEnum
 syn keyword cConstant MeshScaleFactorEnum
 syn keyword cConstant MeshVertexonbaseEnum
 syn keyword cConstant MeshVertexonboundaryEnum
@@ -1215,6 +1219,7 @@ syn keyword cConstant SedimentHeadSubstepEnum
 syn keyword cConstant SedimentHeadTransientEnum
 syn keyword cConstant SedimentHeadResidualEnum
 syn keyword cConstant SedimentHeadStackedEnum
+syn keyword cConstant SigmaEnum
 syn keyword cConstant SigmaNNEnum
 syn keyword cConstant SigmaVMEnum
 syn keyword cConstant SmbAblationEnum
@@ -1487,6 +1492,7 @@ syn keyword cConstant VzMeshEnum
 syn keyword cConstant VzSSAEnum
 syn keyword cConstant WaterColumnOldEnum
 syn keyword cConstant WatercolumnEnum
+syn keyword cConstant WaterDepthEnum
 syn keyword cConstant WaterfractionDrainageEnum
 syn keyword cConstant WaterfractionDrainageIntegratedEnum
 syn keyword cConstant WaterfractionEnum
@@ -3593,6 +3599,9 @@ syn keyword cConstant DoubleArrayInputEnum
 syn keyword cConstant ArrayInputEnum
 syn keyword cConstant IntArrayInputEnum
 syn keyword cConstant Int16ArrayInputEnum
+syn keyword cConstant UInt8ArrayInputEnum
+syn keyword cConstant UInt16ArrayInputEnum
+syn keyword cConstant UInt32ArrayInputEnum
 syn keyword cConstant DoubleExternalResultEnum
 syn keyword cConstant DoubleMatArrayParamEnum
 syn keyword cConstant DoubleMatExternalResultEnum
