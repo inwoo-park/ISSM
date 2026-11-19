@@ -40,8 +40,9 @@ void damage_core(FemModel* femmodel){
 
 		/* Duplicate: */
 		InputDuplicatex(femmodel,DamageDEnum,DamageDOldEnum);
+		InputDuplicatex(femmodel,DamageDbarEnum,DamageDbarOldEnum);
 
-		if(damagelaw!=0){
+		if(damagelaw!=0 && damagelaw!=10){
 			if(VerboseSolution()) _printf0_("   update effective stress\n");
 			analysis->ComputeEffectiveStress(femmodel);
 			if(VerboseSolution()) _printf0_("   update stress equivalent\n");
