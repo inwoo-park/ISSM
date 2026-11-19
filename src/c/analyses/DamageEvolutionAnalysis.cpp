@@ -156,7 +156,7 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.surface",SurfaceEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.base",BaseEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.initialization.pressure",PressureEnum);
-	iomodel->FetchDataToInput(inputs,elements,"md.initialization.sealevel",SealevelEnum);
+	iomodel->FetchDataToInput(inputs,elements,"md.initialization.sealevel",SealevelEnum,0.0);
 
 	if(stabilization==3){
 		iomodel->FetchDataToInput(inputs,elements,"md.damage.spcdamage",DamageSpcdamageEnum,0.0); //for FCT, we need the spc in the element (penlaties)
