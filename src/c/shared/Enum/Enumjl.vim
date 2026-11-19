@@ -912,6 +912,7 @@ syn keyword juliaConstC DamageDEnum
 syn keyword juliaConstC DamageDOldEnum
 syn keyword juliaConstC DamageDbarEnum
 syn keyword juliaConstC DamageDbarOldEnum
+syn keyword juliaConstC DamageSpcdamageEnum
 syn keyword juliaConstC DamageFEnum
 syn keyword juliaConstC DamageEffectiveStressEquivalentEnum
 syn keyword juliaConstC DamageEffectiveStressPrincipalValue1Enum

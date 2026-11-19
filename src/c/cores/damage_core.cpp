@@ -39,8 +39,8 @@ void damage_core(FemModel* femmodel){
 		femmodel->parameters->FindParam(&damagelaw,DamageLawEnum);
 
 		/* Duplicate: */
-		InputDuplicatex(femmodel,DamageDEnum,DamageDOldEnum);
-		InputDuplicatex(femmodel,DamageDbarEnum,DamageDbarOldEnum);
+		if(domaintype==Domain3DEnum) InputDuplicatex(femmodel,DamageDEnum,DamageDOldEnum);
+		else InputDuplicatex(femmodel,DamageDbarEnum,DamageDbarOldEnum);
 
 		if(damagelaw!=0 && damagelaw!=10){
 			if(VerboseSolution()) _printf0_("   update effective stress\n");

@@ -919,6 +919,7 @@ syn keyword cConstant DamageDEnum
 syn keyword cConstant DamageDOldEnum
 syn keyword cConstant DamageDbarEnum
 syn keyword cConstant DamageDbarOldEnum
+syn keyword cConstant DamageSpcdamageEnum
 syn keyword cConstant DamageFEnum
 syn keyword cConstant DamageEffectiveStressEquivalentEnum
 syn keyword cConstant DamageEffectiveStressPrincipalValue1Enum

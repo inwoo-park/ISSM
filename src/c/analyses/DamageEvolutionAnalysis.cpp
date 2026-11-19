@@ -10,48 +10,109 @@ void DamageEvolutionAnalysis::CreateConstraints(Constraints* constraints,IoModel
 
 	/*retrieve some parameters*/
 	int damage_model;
+	int finiteelement,stabilization;
 	iomodel->FindConstant(&damage_model,"md.damage.model");
 	if(damage_model != DamageEvolutionEnum) return;
 
-	int finiteelement;
+	/*Fetch parameters: */
+	iomodel->FindConstant(&stabilization,"md.damage.stabilization");
 	iomodel->FindConstant(&finiteelement,"md.damage.elementinterp");
 
-	/*Fetch parameters: */
-	int stabilization;
-	iomodel->FindConstant(&stabilization,"md.damage.stabilization");
-
-	/*Do not add constraints in DG,  they are weakly imposed*/
-	if(stabilization!=3){
-		IoModelToConstraintsx(constraints,iomodel,"md.damage.spcdamage",DamageEvolutionAnalysisEnum,finiteelement);
-	}
-
 	/*FCT, constraints are imposed using penalties*/
-	if(stabilization==4){
+	if(stabilization==3){
 		constraints->ActivatePenaltyMethod(DamageEvolutionAnalysisEnum);
 	}
 }/*}}}*/
 void DamageEvolutionAnalysis::CreateLoads(Loads* loads, IoModel* iomodel){/*{{{*/
 
-	/*Nothing for now*/
+	/*retrieve some parameters*/
+	int stabilization;
+	iomodel->FindConstant(&stabilization,"md.damage.stabilization");
+
+	/*Loads only in DG*/
+	if(false){
+		if((iomodel->domaintype==Domain2DhorizontalEnum) || (iomodel->domaintype==Domain2DverticalEnum)){/*{{{*/
+			/*Get faces and elements*/
+			CreateFaces(iomodel);
+			iomodel->FetchData(1,"md.damage.D");
+
+			/*First load data:*/
+			for(int i=0;i<iomodel->numberoffaces;i++){
+
+				/*Get left and right elements*/
+				int element=iomodel->faces[4*i+2]-1; //faces are [node1 node2 elem1 elem2]
+
+				/*Now, if this element is not in the partition, pass: */
+				if(!iomodel->my_elements[element]) continue;
+				loads->AddObject(new Numericalflux(i+1,i,i,iomodel));
+			}
+
+			/*Free data: */
+			iomodel->DeleteData(1,"md.damage.D");
+		}/*}}}*/
+		else if(iomodel->domaintype=Domain3DEnum){/*{{{*/
+			/*Now, only for Penta element*/
+			_assert_(iomodel->meshelementtype==PentaEnum);
+
+			/*Get faces and elements*/
+			CreateFaces3d(iomodel);
+			iomodel->FetchData(1,"md.damage.D");
+			
+			int maxnbf  =4; /*maximum number of faces*/
+			int facecols=4+maxnbf;
+
+			/*First load data:*/
+			for(int i=0;i<iomodel->numberoffaces;i++){
+
+				/*Get left and right elements:*/
+				int element;
+				element=iomodel->faces[facecols*i]-1; //faces are [element1, element2, marker, nbv, vertex1, vertex2, vertex3 ...]
+
+				/*Now, if this element is not in the partition, pass: */
+				if(!iomodel->my_elements[element]) continue;
+				loads->AddObject(new Numericalflux(i+1,i,i,iomodel));
+			}
+
+			/*Free data: */
+			iomodel->DeleteData(1,"md.damage.D");
+		}/*}}}*/
+		else{/*{{{*/
+			_error_("Error: Given domain type (=" << EnumToStringx(iomodel->domaintype) << ") is not supported");
+		}/*}}}*/
+	}
 
 }/*}}}*/
 void DamageEvolutionAnalysis::CreateNodes(Nodes* nodes,IoModel* iomodel,bool isamr){/*{{{*/
 
+	/*Fetch parameters: */
+	int stabilization;
 	int finiteelement;
-
+	iomodel->FindConstant(&stabilization,"md.damage.stabilization");
 	iomodel->FindConstant(&finiteelement,"md.damage.elementinterp");
-	::CreateNodes(nodes,iomodel,DamageEvolutionAnalysisEnum,finiteelement);
+
+	/*Create Nodes either DG or CG depending on stabilization*/
+	if(true){ /* CG / FCT scheme */
+		::CreateNodes(nodes,iomodel,DamageEvolutionAnalysisEnum,finiteelement,isamr);
+	}else{ /* DG scheme */
+		::CreateNodes(nodes,iomodel,DamageEvolutionAnalysisEnum,P1DGEnum,isamr);
+	}
 }/*}}}*/
 int  DamageEvolutionAnalysis::DofsPerNode(int** doflist,int domaintype,int approximation){/*{{{*/
 	return 1;
 }/*}}}*/
 void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,IoModel* iomodel,int analysis_counter,int analysis_type){/*{{{*/
 
-	int finiteelement;
+	int finiteelement,stabilization;
 	bool   ismovingfront;
 
-	iomodel->FindConstant(&finiteelement,"md.damage.elementinterp");
 	iomodel->FindConstant(&ismovingfront,"md.transient.ismovingfront");
+	iomodel->FindConstant(&stabilization,"md.damage.stabilization");
+
+	/*Finite element type*/
+	iomodel->FindConstant(&finiteelement,"md.damage.elementinterp");
+	if(false){
+		finiteelement=P1DGEnum;
+	}
 
 	/*Update elements: */
 	iomodel->FetchData(1,"md.flowequation.element_equation");
@@ -85,8 +146,9 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	InputUpdateFromConstantx(inputs,elements,0.,VzMeshEnum);
 
 	iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDEnum);
-	if (iomodel->domaintype==Domain3DEnum){
-		iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDbarEnum,0.0);
+	if (iomodel->domaintype==Domain2DhorizontalEnum ||
+				iomodel->domaintype==Domain2DverticalEnum){
+		iomodel->FetchDataToInput(inputs,elements,"md.damage.D",DamageDbarEnum);
 	}
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ice_levelset",MaskIceLevelsetEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.mask.ocean_levelset",MaskOceanLevelsetEnum);
@@ -94,7 +156,11 @@ void DamageEvolutionAnalysis::UpdateElements(Elements* elements,Inputs* inputs,I
 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.surface",SurfaceEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.geometry.base",BaseEnum);
 	iomodel->FetchDataToInput(inputs,elements,"md.initialization.pressure",PressureEnum);
-	iomodel->FetchDataToInput(inputs,elements,"md.initialization.sealevel",SealevelEnum,0);
+	iomodel->FetchDataToInput(inputs,elements,"md.initialization.sealevel",SealevelEnum);
+
+	if(stabilization==3){
+		iomodel->FetchDataToInput(inputs,elements,"md.damage.spcdamage",DamageSpcdamageEnum,0.0); //for FCT, we need the spc in the element (penlaties)
+	}
 
 }/*}}}*/
 void DamageEvolutionAnalysis::UpdateParameters(Parameters* parameters,IoModel* iomodel,int solution_enum,int analysis_enum){/*{{{*/
@@ -1377,7 +1443,15 @@ ElementVector* DamageEvolutionAnalysis::CreatePVector(Element* element){/*{{{*/
 	return pe;
 }/*}}}*/
 void           DamageEvolutionAnalysis::GetSolutionFromInputs(Vector<IssmDouble>* solution,Element* element){/*{{{*/
-	element->GetSolutionFromInputsOneDof(solution,DamageDbarEnum);
+
+	int domaintype;
+	element->FindParam(&domaintype,DomainTypeEnum);
+	if(domaintype==Domain2DverticalEnum || domaintype==Domain2DverticalEnum){
+		element->GetSolutionFromInputsOneDof(solution,DamageDbarEnum);
+	}else if(domaintype==Domain3DEnum){
+		element->GetSolutionFromInputsOneDof(solution,DamageDEnum);
+	}
+
 }/*}}}*/
 void           DamageEvolutionAnalysis::GradientJ(Vector<IssmDouble>* gradient,Element*  element,int control_type,int control_interp,int control_index){/*{{{*/
 	_error_("Not implemented yet");
@@ -1413,7 +1487,7 @@ void           DamageEvolutionAnalysis::InputUpdateFromSolution(IssmDouble* solu
 	/*Get all inputs and parameters*/
 	int domaintype;
 	element->FindParam(&domaintype,DomainTypeEnum);
-	if(domaintype==Domain2DhorizontalEnum){
+	if(domaintype==Domain2DhorizontalEnum || domaintype==Domain2DverticalEnum){
 		element->AddInput(DamageDbarEnum,newdamage,element->GetElementType());
 	}
 	else{
@@ -1436,12 +1510,18 @@ ElementMatrix* DamageEvolutionAnalysis::CreateFctKMatrix(Element* element){/*{{{
 
 	/*Intermediaries */
 	IssmDouble Jdet;
-	IssmDouble vx,vy;
+	IssmDouble vx,vy,vz,dvx[3],dvy[3],dvz[3];
+	IssmDouble dvxdx, dvydy, dvzdz;
 	IssmDouble* xyz_list = NULL;
 
 	/*Fetch number of nodes and dof for this finite element*/
+	int domaintype;
 	int numnodes = element->GetNumberOfNodes();
 	int dim      = 2;
+	element->FindParam(&domaintype,DomainTypeEnum);
+	if(domaintype==Domain3DEnum){
+		dim=3;
+	}
 
 	/*Initialize Element vector and other vectors*/
 	ElementMatrix* Ke     = element->NewElementMatrix();
@@ -1452,6 +1532,10 @@ ElementMatrix* DamageEvolutionAnalysis::CreateFctKMatrix(Element* element){/*{{{
 	element->GetVerticesCoordinates(&xyz_list);
 	Input* vxaverage_input=element->GetInput(VxEnum); _assert_(vxaverage_input);
 	Input* vyaverage_input=element->GetInput(VyEnum); _assert_(vyaverage_input);
+	Input* vzaverage_input=NULL;
+	if(dim==3){
+		vzaverage_input=element->GetInput(VzEnum); _assert_(vzaverage_input);
+	}
 
 	/* Start  looping on the number of gaussian points: */
 	Gauss* gauss=element->NewGauss(2);
@@ -1463,12 +1547,28 @@ ElementMatrix* DamageEvolutionAnalysis::CreateFctKMatrix(Element* element){/*{{{
 
 		vxaverage_input->GetInputValue(&vx,gauss);
 		vyaverage_input->GetInputValue(&vy,gauss);
+		vxaverage_input->GetInputDerivativeValue(&dvx[0],xyz_list,gauss);
+      vyaverage_input->GetInputDerivativeValue(&dvy[0],xyz_list,gauss);
+		dvxdx=dvx[0];
+		dvydy=dvy[1];
+		if(dim==3){
+			vzaverage_input->GetInputValue(&vz,gauss);
+			vzaverage_input->GetInputDerivativeValue(&dvz[0],xyz_list,gauss);
+			dvzdz=dvz[2];
+		}
 
-		IssmDouble factor = -gauss->weight*Jdet;
+		IssmDouble factor = gauss->weight*Jdet;
 		for(int i=0;i<numnodes;i++){
 			for(int j=0;j<numnodes;j++){
-				/*\phi_i v\cdot\nabla\phi_j*/
-				Ke->values[i*numnodes+j] += factor*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
+				if(dim==2){
+					/*\phi_i v\cdot\nabla\phi_j*/
+					Ke->values[i*numnodes+j] += -factor*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j]);
+					/*\phi_i \phi_j \nabla\cdot v*/
+					Ke->values[i*numnodes+j] += -factor*basis[i]*basis[j]*(dvxdx+dvydy);
+				}else if(dim==3){
+					Ke->values[i*numnodes+j] += -factor*basis[i]*(vx*dbasis[0*numnodes+j] + vy*dbasis[1*numnodes+j] + vz*dbasis[2*numnodes+j]);
+					Ke->values[i*numnodes+j] += -factor*basis[i]*basis[j]*(dvxdx+dvydy+dvzdz);
+				}
 			}
 		}
 	}
@@ -1517,7 +1617,52 @@ ElementMatrix* DamageEvolutionAnalysis::CreateMassMatrix(Element* element){/*{{{
 }/*}}}*/
 ElementVector* DamageEvolutionAnalysis::CreateFctPVector(Element* element){/*{{{*/
 
-	return this->CreatePVector(element);
+	/* Check if ice in element */
+	if(!element->IsIceInElement()) return NULL;
+
+	/*Intermediaries*/
+	int			domaintype,dim;
+	IssmDouble  Jdet,f;
+	IssmDouble* xyz_list = NULL;
+
+	/*Get element*/
+	element->FindParam(&domaintype,DomainTypeEnum);
+	switch(domaintype){
+		case Domain2DverticalEnum:   dim = 2; break;
+		case Domain2DhorizontalEnum: dim = 2; break;
+		case Domain3DEnum:           dim = 3; break;
+	}
+
+	/*Fetch number of nodes and dof for this finite element*/
+	int numnodes = element->GetNumberOfNodes();
+
+	/*Initialize Element vector and other vectors*/
+	ElementVector* pe    = element->NewElementVector();
+	IssmDouble*    basis = xNew<IssmDouble>(numnodes);
+
+	/*Retrieve all inputs and parameters*/
+	element->GetVerticesCoordinates(&xyz_list);
+	Input* damagef_input = element->GetInput(DamageFEnum); _assert_(damagef_input);
+
+	/* Start  looping on the number of gaussian points: */
+	Gauss* gauss=element->NewGauss(2);
+	while(gauss->next()){
+
+		element->JacobianDeterminant(&Jdet,xyz_list,gauss);
+		element->NodalFunctions(basis,gauss);
+
+		damagef_input->GetInputValue(&f,gauss);
+
+		IssmDouble factor = Jdet*gauss->weight*f;
+		for(int i=0;i<numnodes;i++){
+			pe->values[i]+=factor*basis[i];
+		}
+	}
+	/*Clean up and return*/
+	xDelete<IssmDouble>(xyz_list);
+	xDelete<IssmDouble>(basis);
+	delete gauss;
+	return pe;
 
 }/*}}}*/
 void           DamageEvolutionAnalysis::FctKMatrix(Matrix<IssmDouble>** pKff,Matrix<IssmDouble>** pKfs,FemModel* femmodel){/*{{{*/

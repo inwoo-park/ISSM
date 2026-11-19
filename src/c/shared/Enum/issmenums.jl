@@ -908,6 +908,7 @@
 	DamageDOldEnum
 	DamageDbarEnum
 	DamageDbarOldEnum
+	DamageSpcdamageEnum
 	DamageFEnum
 	DamageEffectiveStressEquivalentEnum
 	DamageEffectiveStressPrincipalValue1Enum
@@ -4843,6 +4844,7 @@ function EnumToString(enum::IssmEnum)
 	if(enum==DamageDOldEnum) return "DamageDOld" end
 	if(enum==DamageDbarEnum) return "DamageDbar" end
 	if(enum==DamageDbarOldEnum) return "DamageDbarOld" end
+	if(enum==DamageSpcdamageEnum) return "DamageSpcdamage" end
 	if(enum==DamageFEnum) return "DamageF" end
 	if(enum==DamageEffectiveStressEquivalentEnum) return "DamageEffectiveStressEquivalent" end
 	if(enum==DamageEffectiveStressPrincipalValue1Enum) return "DamageEffectiveStressPrincipalValue1" end
@@ -8778,6 +8780,7 @@ function StringToEnum(name::String)
 	if(name=="DamageDOld") return DamageDOldEnum  end
 	if(name=="DamageDbar") return DamageDbarEnum  end
 	if(name=="DamageDbarOld") return DamageDbarOldEnum  end
+	if(name=="DamageSpcdamage") return DamageSpcdamageEnum  end
 	if(name=="DamageF") return DamageFEnum  end
 	if(name=="DamageEffectiveStressEquivalent") return DamageEffectiveStressEquivalentEnum  end
 	if(name=="DamageEffectiveStressPrincipalValue1") return DamageEffectiveStressPrincipalValue1Enum  end

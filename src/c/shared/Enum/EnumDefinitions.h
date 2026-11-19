@@ -915,6 +915,7 @@ enum definitions{
 	DamageDOldEnum,
 	DamageDbarEnum,
 	DamageDbarOldEnum,
+	DamageSpcdamageEnum,
 	DamageFEnum,
 	DamageEffectiveStressEquivalentEnum,
 	DamageEffectiveStressPrincipalValue1Enum,

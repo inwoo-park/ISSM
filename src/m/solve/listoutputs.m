@@ -107,6 +107,7 @@
 %DamageDOld
 %DamageDbar
 %DamageDbarOld
+%DamageSpcdamage
 %DamageF
 %DamageEffectiveStressEquivalent
 %DamageEffectiveStressPrincipalValue1
