@@ -134,7 +134,7 @@ classdef damage
 
 				md = checkfield(md,'fieldname','damage.law','numel',[1],'values',[0,1,2,3,4,10]);
 				if self.law == 1
-					if ~(isa(md.mesh,'mesh2dvertical') | isa(md.mesh.,'mesh3dprisms'))
+					if ~(isa(md.mesh,'mesh2dvertical') | isa(md.mesh,'mesh3dprisms'))
 						error('Error: Damage law with 1 (Pralong et al. 2005) is only allowed in ''mesh2dvertical'' and ''mesh2dprisms.');
 					end
 				end
@@ -144,7 +144,7 @@ classdef damage
 				md = checkfield(md,'fieldname','damage.critical_damage','<',1,'>=',0);
 
 				md = checkfield(md,'fieldname','damage.stabilization','numel',[1],'values',[0 1 2 3 4 5 6 10]);
-				md = checkfield(md,'fieldname','damage.shock_capture','numel',[1],'values',[0, 1])
+				md = checkfield(md,'fieldname','damage.shock_capture','numel',[1],'values',[0, 1]);
 
 				md = checkfield(md,'fieldname','damage.maxiter','>=',0);
 				md = checkfield(md,'fieldname','damage.restol','size',[1],'>',0);
@@ -249,7 +249,10 @@ classdef damage
 						disp(sprintf('      sigma_i : principal stress value'));
 						fprintf('\n');
 						fielddisplay(self,'equiv_stress_mu','mu parameter for Coulomb criterion (default: 0.1)');
+					else
+						error(['Error: stress equivalent option with ' num2str(self.equiv_stress) ' is not supported']);
 					end
+				end
 				fprintf('\n');
 				fielddisplay(self,'isPeff','considering water pressure at base. 0: off, 1: on (default: 0)');
 				fielddisplay(self,'iseffective_stress','how to compute effective stress term? 0: pralong 2005, 1: keller 2014 (default: 1)');
